@@ -45,7 +45,11 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
                                      vec![&connection.source, &connection.target, &connection.property]
                                  })
                                  .filter(|entity| entity.id.starts_with('?'))
-                                 .map(|entity| entity.id.clone())
+                                 .flat_map(|entity| {
+                                    let var = entity.id.clone();
+                                    let label_var = format!("?{}Label", var.trim_start_matches("?"));
+                                    vec![var, label_var]
+                                })
                                  .collect::<HashSet<_>>();
 
     let projection_list = if projection_set.len() == 0 {
@@ -109,8 +113,14 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
         })
         .collect();
 
+        let indentation = " ".repeat(INDENTATION_COUNT);
+        let service = format!(
+            "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}",
+            indentation
+        );
+
     format!(
-        "{}\nSELECT {} WHERE {{\n{}}}",
-        prefix_list, projection_list, where_clause
+        "{}\nSELECT {} WHERE {{\n{}{}\n}}",
+        prefix_list, projection_list, where_clause, service
     )
 }
