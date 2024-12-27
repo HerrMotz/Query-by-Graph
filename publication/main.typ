@@ -551,6 +551,13 @@ Since SPARQL is mostly used in the context of a web browser, the choice for a we
 Now, the backend had to be watertight regarding explainability and traceability. There are several good choices,
 especially functional programming language, but since Rust#footnote[http://www.rust-lang.org] can be compiled to WebAssembly#footnote[http://webassembly.org] and therefore executed natively in a browser, the choice fell well in its favor over a server-client architecture. This combination of architectures proves to be robust, quick and still formally precise.
 
+=== Considerations
+
+- everything that has to do with metadata is handled in the frontend
+- this is fine for now, as it uses typescript
+- but this could be moved to the rust backend
+- this was done to ease the development. 
+
 === Frontend
 The *frontend* was written using Vite (MIT License), Vue3 (MIT License), ReteJS (MIT License) and TailwindCSS (MIT License). Its purpose is to allow 
 + the user to build a VQG,

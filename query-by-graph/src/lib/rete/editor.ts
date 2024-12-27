@@ -30,7 +30,7 @@ function exportConnectionsHelper(editor:any) {
 
 const fqdnRegex = new RegExp(/(?:[\w-]+\.)+[\w-]+/);
 
-function convertConnectionsToPrefixedRepresentation(connections: Array<ConnectionInterfaceType>): Array<ConnectionInterfaceType> {
+function convertConnectionsToPrefixedRepresentation(connections: Array<ConnectionInterfaceType>, vqgEntities: Array<EntityType>): Array<ConnectionInterfaceType> {
     // this function takes in a connections array from e.g. the rust backend
     // and replaces the full URL with prefixes
 
@@ -48,15 +48,16 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return entity;
             }
 
-            function _metadata_helper()
+            function _metadata_helper(entity: EntityType): EntityType {
+                // this function enriches the entity with metadata
+                //  1. find a matching node in the VQG and make it equal
+                //  2. if there is no node, fetch from the Wikidata API
+                vqgEntities.find(c => )
+            }
 
             function _replace_helper(str: string, uri: string, abbreviation: string) {
                 return str.replace(uri, abbreviation + ":").replace("<", "").replace(">", "")
             }
-
-            // TODO: I could also fill the remaining fields with the information have from the current VQG
-            //  1. find a matching node in the VQG
-            //  2. if there is no node, fetch from the Wikidata API
 
             // for this method to work, the prefixes must be prefix-free to each other.
             // maybe change this in the future, if it causes issues in practical application.
@@ -370,7 +371,10 @@ export async function createEditor(container: HTMLElement) {
             // the graph needs to be changed
 
             // if the graph needs to be changed, it will also auto-align the graph
-            const convertedConnections = convertConnectionsToPrefixedRepresentation(connections);
+            const convertedConnections = convertConnectionsToPrefixedRepresentation(
+                connections,
+                editor.getNodes()
+            );
             // DEBUG
             console.log("Converted Connections")
             console.log(convertedConnections);
