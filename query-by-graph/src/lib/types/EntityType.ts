@@ -5,7 +5,7 @@ interface EntityType {
     label: string,
     description: string,
     prefix: {
-       uri: string,
+       iri: string,
        abbreviation: string,
     };
     dataSource: WikibaseDataSource;

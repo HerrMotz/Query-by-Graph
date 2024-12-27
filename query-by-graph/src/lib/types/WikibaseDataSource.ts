@@ -3,11 +3,11 @@ export interface WikibaseDataSource {
     uri: string,
     preferredLanguages: string[],
     propertyPrefix: {
-        uri: string,
+        iri: string,
         abbreviation: string
     },
     itemPrefix: {
-        uri: string,
+        iri: string,
         abbreviation: string
     },
     queryService: string,
@@ -20,7 +20,7 @@ export type WikiDataEntity = {
     datatype: string;
     concepturi: string;
     repository: string;
-    url: string;
+    url: string; // for the api
     display: {
         label: {
             value: string;

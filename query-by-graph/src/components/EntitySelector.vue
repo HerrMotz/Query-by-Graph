@@ -70,7 +70,7 @@ function queryHelper(query: string) {
         label: entity.display.label.value,
         description: entity.display.description.value,
         prefix: {
-          uri: prefix.uri,
+          uri: prefix.iri,
           abbreviation: prefix.abbreviation,
         },
         dataSource: {...selectedDataSource.value} // save datasource

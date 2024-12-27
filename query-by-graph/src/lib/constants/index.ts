@@ -5,11 +5,11 @@ const wikiDataDataSource: WikibaseDataSource = {
     uri: "https://www.wikidata.org/w/api.php",
     preferredLanguages: ['en'],
     itemPrefix: {
-        uri: "http://www.wikidata.org/entity/",
+        iri: "http://www.wikidata.org/entity/",
         abbreviation: "wd"
     },
     propertyPrefix: {
-        uri: "http://www.wikidata.org/prop/direct/",
+        iri: "http://www.wikidata.org/prop/direct/",
         abbreviation: "wdt"
     },
     queryService: "https://query.wikidata.org/ ",
@@ -20,11 +20,11 @@ const factGridDataSource: WikibaseDataSource = {
     uri: "https://database.factgrid.de/w/api.php",
     preferredLanguages: ['de'],
     itemPrefix: {
-        uri: "https://database.factgrid.de/entity/",
+        iri: "https://database.factgrid.de/entity/",
         abbreviation: "fg"
     },
     propertyPrefix: {
-        uri: "https://database.factgrid.de/prop/direct/",
+        iri: "https://database.factgrid.de/prop/direct/",
         abbreviation: "fgt"
     },
     queryService: "https://database.factgrid.de/query/",
@@ -35,11 +35,11 @@ const testinstanceSource: WikibaseDataSource = {
     uri: "https://daniels-test-instance.wikibase.cloud/",
     preferredLanguages: ['en'],
     itemPrefix: {
-        uri: "https://daniels-test-instance.wikibase.cloud/entity/",
+        iri: "https://daniels-test-instance.wikibase.cloud/entity/",
         abbreviation: "ti"
     },
     propertyPrefix: {
-        uri: "https://daniels-test-instance.wikibase.cloud/prop/direct/",
+        iri: "https://daniels-test-instance.wikibase.cloud/prop/direct/",
         abbreviation: "tt"
     },
     queryService: "https://daniels-test-instance.wikibase.cloud/query/",
@@ -50,11 +50,11 @@ const noDataSource: WikibaseDataSource = {
     uri: "",
     preferredLanguages: [],
     propertyPrefix: {
-        uri: "",
+        iri: "",
         abbreviation: ""
     },
     itemPrefix: {
-        uri: "",
+        iri: "",
         abbreviation: ""
     },
     queryService: "",

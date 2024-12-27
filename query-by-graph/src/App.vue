@@ -70,9 +70,17 @@ const code = ref("");
 function codeChangeEvent() {
   if (editor.value) {
     console.log("code changed")
+    // if the code value is not empty but the returned connection array is,
+    // then there is probably a syntax error.
+    // in this case, do not import the connections
     const graph = JSON.parse(query_to_graph_wasm(code.value));
-    editor.value.importConnections(graph);
-    console.log("graph", graph)
+    if (!!code.value && !!graph && graph?.length > 0) {
+      console.log("graph", graph)
+      editor.value.importConnections(graph);
+    } else {
+      // DEBUG
+      console.log("Code is probably faulty. Doing nothing.");
+    }
   }
 }
 

@@ -48,31 +48,33 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return entity;
             }
 
+            function _metadata_helper()
+
             function _replace_helper(str: string, uri: string, abbreviation: string) {
                 return str.replace(uri, abbreviation + ":").replace("<", "").replace(">", "")
-            }
-
-            // for this method to work, the prefixes must be prefix-free to each other.
-            // maybe change this in the future, if it causes issues in practical application.
-            const matchingDatasourceForItem = dataSources.find(s => s.itemPrefix.uri.includes(fqdn[0]));
-            if (matchingDatasourceForItem) {
-                return {
-                    ...entity,
-                    id: _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.uri, matchingDatasourceForItem.itemPrefix.abbreviation),
-                    prefix: matchingDatasourceForItem.itemPrefix,
-                    dataSource: matchingDatasourceForItem
-                }
             }
 
             // TODO: I could also fill the remaining fields with the information have from the current VQG
             //  1. find a matching node in the VQG
             //  2. if there is no node, fetch from the Wikidata API
 
-            const matchingDatasourceForProperty = dataSources.find(s => s.itemPrefix.uri.includes(fqdn[0]));
+            // for this method to work, the prefixes must be prefix-free to each other.
+            // maybe change this in the future, if it causes issues in practical application.
+            const matchingDatasourceForItem = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
+            if (matchingDatasourceForItem) {
+                return {
+                    ...entity,
+                    id: _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.iri, matchingDatasourceForItem.itemPrefix.abbreviation),
+                    prefix: matchingDatasourceForItem.itemPrefix,
+                    dataSource: matchingDatasourceForItem
+                }
+            }
+
+            const matchingDatasourceForProperty = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
             if (matchingDatasourceForProperty) {
                 return {
                     ...entity,
-                    id: _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.uri, matchingDatasourceForProperty.propertyPrefix.abbreviation),
+                    id: _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation),
                     prefix: matchingDatasourceForProperty.propertyPrefix,
                     dataSource: matchingDatasourceForProperty
                 }
@@ -274,7 +276,7 @@ export async function createEditor(container: HTMLElement) {
                 node.addControl(
                     "entityInput",
                     new EntitySelectorInputControl({
-                        initial: {id: "", label: "", prefix: {uri: "", abbreviation: ""}, description: "", dataSource: noDataSource},
+                        initial: {id: "", label: "", prefix: {iri: "", abbreviation: ""}, description: "", dataSource: noDataSource},
                         change(value) {
                             // DEBUG
                             // console.log("Entity Input called change")

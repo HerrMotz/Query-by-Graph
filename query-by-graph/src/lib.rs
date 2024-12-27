@@ -20,7 +20,7 @@ pub struct Entity {
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
 pub struct Prefix {
-    uri: String,
+    iri: String,
     abbreviation: String,
 }
 
@@ -66,14 +66,14 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             .flat_map(|connection| {
                 vec![&connection.source, &connection.target, &connection.property]
             })
-            .filter(|entity| !entity.prefix.uri.is_empty())
+            .filter(|entity| !entity.prefix.iri.is_empty())
             .map(|entity| entity.prefix.clone())
             .collect::<HashSet<_>>();
 
         let prefix_list = if prefix_set.len() == 0 { String::from("") } else {
             let mut temp = prefix_set.into_iter()
                 // PREFIX wd: <http://www.wikidata.org/entity/>
-                .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.uri))
+                .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.iri))
                 .collect::<Vec<_>>();
             temp.sort();
             temp.join("\n")
@@ -81,19 +81,19 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
 
         let where_clause: String = connections.iter()
             .map(|connection| {
-                let source_uri = if connection.source.prefix.uri.is_empty() {
+                let source_iri = if connection.source.prefix.iri.is_empty() {
                     connection.source.id.clone() // Clone the String to avoid moving it
                 } else {
                     format!("{}:{}", connection.source.prefix.abbreviation, connection.source.id)
                 };
 
-                let property_uri = if connection.property.prefix.uri.is_empty() {
+                let property_iri = if connection.property.prefix.iri.is_empty() {
                     connection.property.id.clone() // Clone the String to avoid moving it
                 } else {
                     format!("{}:{}", connection.property.prefix.abbreviation, connection.property.id)
                 };
 
-                let target_uri = if connection.target.prefix.uri.is_empty() {
+                let target_iri = if connection.target.prefix.iri.is_empty() {
                     connection.target.id.clone() // Clone the String to avoid moving it
                 } else {
                     format!("{}:{}", connection.target.prefix.abbreviation, connection.target.id)
@@ -105,9 +105,9 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
                 format!(
                     "{} {} {} {} .\n{}# {} -- [{}] -> {}\n",
                     indentation,
-                    source_uri,
-                    property_uri,
-                    target_uri,
+                    source_iri,
+                    property_iri,
+                    target_iri,
                     indentation,
                     connection.source.label,
                     connection.property.label,
@@ -187,7 +187,7 @@ fn connection_constructor(subject_name: String, predicate_name: String, object_n
             id: predicate_name.clone(),
             label: predicate_name.clone(),
             prefix: Prefix {
-                uri: "".to_string(),
+                iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
         },
@@ -195,7 +195,7 @@ fn connection_constructor(subject_name: String, predicate_name: String, object_n
             id: subject_name.clone(),
             label: subject_name.clone(),
             prefix: Prefix {
-                uri: "".to_string(),
+                iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
         },
@@ -203,7 +203,7 @@ fn connection_constructor(subject_name: String, predicate_name: String, object_n
             id: object_name.clone(),
             label: object_name.clone(),
             prefix: Prefix {
-                uri: "".to_string(),
+                iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
         },
