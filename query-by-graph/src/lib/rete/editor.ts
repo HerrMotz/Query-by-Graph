@@ -48,36 +48,57 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return entity;
             }
 
-            function _metadata_helper(entity: EntityType): EntityType {
+            function _metadata_helper(id: string, prefixIri: string, prefixAbbreviation: string): EntityType | false {
                 // this function enriches the entity with metadata
                 //  1. find a matching node in the VQG and make it equal
                 //  2. if there is no node, fetch from the Wikidata API
-                vqgEntities.find(c => )
+                const foundMatch = vqgEntities.find((e: Entity) => id === e.id && ((prefixIri === e.itemPrefix.iri && prefixAbbreviation === e.itemPrefix.abbreviation) || (prefixIri === e.propertyPrefix.iri && prefixAbbreviation === e.propertyPrefix.abbreviation)))
+                // This conditional statement looks a bit sketch, because it does not cleanly differentiate between
+                // edges and nodes. However, I can safely assume, that a node will not have a propertyPrefix and vice
+                // versa. In Wikibase, the id already is indicative of whether it is an item or a prop, but the prefixes
+                // are important to differentiate between Wikibase instances.
+                if (!foundMatch) {
+                    return false;
+                }
+
+                return {...foundMatch} // TODO check whether this also work with pass by reference. Could save memory.
             }
 
-            function _replace_helper(str: string, uri: string, abbreviation: string) {
-                return str.replace(uri, abbreviation + ":").replace("<", "").replace(">", "")
+            function _replace_helper(id: string, prefixIri: string) {
+                return id.replace(prefixIri, "").replace("<", "").replace(">", "")
             }
 
             // for this method to work, the prefixes must be prefix-free to each other.
             // maybe change this in the future, if it causes issues in practical application.
             const matchingDatasourceForItem = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
             if (matchingDatasourceForItem) {
-                return {
-                    ...entity,
-                    id: _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.iri, matchingDatasourceForItem.itemPrefix.abbreviation),
-                    prefix: matchingDatasourceForItem.itemPrefix,
-                    dataSource: matchingDatasourceForItem
+                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.iri)
+                const matchInVQG = _metadata_helper(newIdentifier);
+                if (matchInVQG === false) {
+                    return {
+                        ...entity,
+                        id: newIdentifier,
+                        prefix: matchingDatasourceForItem.itemPrefix,
+                        dataSource: matchingDatasourceForItem
+                    }
+                } else {
+                    return matchInVQG;
                 }
             }
 
             const matchingDatasourceForProperty = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
             if (matchingDatasourceForProperty) {
-                return {
-                    ...entity,
-                    id: _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation),
-                    prefix: matchingDatasourceForProperty.propertyPrefix,
-                    dataSource: matchingDatasourceForProperty
+                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation);
+                const matchInVQG = _metadata_helper(newIdentifier);
+                if (matchInVQG === false) {
+                    return {
+                        ...entity,
+                        id: newIdentifier,
+                        prefix: matchingDatasourceForProperty.propertyPrefix,
+                        dataSource: matchingDatasourceForProperty
+                    }
+                } else {
+                    return matchInVQG;
                 }
             }
 
@@ -373,7 +394,8 @@ export async function createEditor(container: HTMLElement) {
             // if the graph needs to be changed, it will also auto-align the graph
             const convertedConnections = convertConnectionsToPrefixedRepresentation(
                 connections,
-                editor.getNodes()
+                // put the associated entities of nodes and edges in the same array
+                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().map(e => e.property)))
             );
             // DEBUG
             console.log("Converted Connections")

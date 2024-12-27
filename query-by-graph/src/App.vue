@@ -126,28 +126,28 @@ onMounted(async () => {
         const node = editor.value?.getNode(nodeId);
 
         if (node) {
-          const entity = (node as any).entity;
-          const entityId = entity.id; // Q number
-          const label = entity.label; // Label from Wikidata
-          const dataSource = entity.dataSource;
+          const item = (node as any).item;
+          const itemId = item.id; // Q number
+          const label = item.label; // Label from Wikidata
+          const dataSource = item.dataSource;
 
           // everything but metadata is for debugging, can be removed later
           selectedNode.value = {
             id: nodeId,
             label: label,
-            entityId: entityId,
+            entityId: itemId,
             dataSource: dataSource,
             metadata: null,
           };
 
           // extract relevant Metadata from wikidata
           const wds = new WikibaseDataService(dataSource);
-          wds.getItemMetaInfo(entityId).then((metadata) =>{
+          wds.getItemMetaInfo(itemId).then((metadata) =>{
             selectedNode.value!.metadata = metadata;
           });
 
           // DEBUG
-          console.log('Selected Entity ID:', entityId);
+          console.log('Selected Entity ID:', itemId);
         }
       }
     });
