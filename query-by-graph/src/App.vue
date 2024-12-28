@@ -126,7 +126,7 @@ onMounted(async () => {
         const node = editor.value?.getNode(nodeId);
 
         if (node) {
-          const item = (node as any).item;
+          const item = (node as any).entity;
           const itemId = item.id; // Q number
           const label = item.label; // Label from Wikidata
           const dataSource = item.dataSource;
