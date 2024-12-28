@@ -52,7 +52,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 // this function enriches the entity with metadata
                 //  1. find a matching node in the VQG and make it equal
                 //  2. if there is no node, fetch from the Wikidata API
-                const foundMatch = vqgEntities.find((e: Entity) => id === e.id && ((prefixIri === e.itemPrefix.iri && prefixAbbreviation === e.itemPrefix.abbreviation) || (prefixIri === e.propertyPrefix.iri && prefixAbbreviation === e.propertyPrefix.abbreviation)))
+                const foundMatch = vqgEntities.find((e: EntityType) => id === e.id && prefixIri === e.prefix.iri && prefixAbbreviation === e.prefix.abbreviation)
                 // This conditional statement looks a bit sketch, because it does not cleanly differentiate between
                 // edges and nodes. However, I can safely assume, that a node will not have a propertyPrefix and vice
                 // versa. In Wikibase, the id already is indicative of whether it is an item or a prop, but the prefixes
@@ -73,7 +73,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
             const matchingDatasourceForItem = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
             if (matchingDatasourceForItem) {
                 const newIdentifier = _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.iri)
-                const matchInVQG = _metadata_helper(newIdentifier);
+                const matchInVQG = _metadata_helper(newIdentifier, matchingDatasourceForItem.itemPrefix.iri, matchingDatasourceForItem.itemPrefix.abbreviation);
                 if (matchInVQG === false) {
                     return {
                         ...entity,
@@ -88,8 +88,9 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
 
             const matchingDatasourceForProperty = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
             if (matchingDatasourceForProperty) {
-                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation);
-                const matchInVQG = _metadata_helper(newIdentifier);
+                // duplicate code to above statement. Think about refactoring.
+                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri);
+                const matchInVQG = _metadata_helper(newIdentifier, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation);
                 if (matchInVQG === false) {
                     return {
                         ...entity,
@@ -395,7 +396,9 @@ export async function createEditor(container: HTMLElement) {
             const convertedConnections = convertConnectionsToPrefixedRepresentation(
                 connections,
                 // put the associated entities of nodes and edges in the same array
-                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().map(e => e.property)))
+                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().filter(e=>e.property!==undefined).map(e => e.property ?? noEntity)))
+                // I do not know why typescript gives me an error without the default noEntity, but there should be no
+                // case where this comes up, especially with the filter statement.
             );
             // DEBUG
             console.log("Converted Connections")
