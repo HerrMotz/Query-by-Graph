@@ -48,20 +48,15 @@ export type WikiDataSearchApiResponse = {
     success: number;
 };
 
-export interface WikiDataLabel {
-    language: string;
-    value: string;
-}
-
-export interface WikiDataDescription {
+export interface LanguageTaggedLiteral {
     language: string;
     value: string;
 }
 
 export interface WikiDataEntityDetails {
     id: string;
-    labels: { [language: string]: WikiDataLabel };
-    descriptions: { [language: string]: WikiDataDescription };
+    labels: { [language: string]: LanguageTaggedLiteral };
+    descriptions: { [language: string]: LanguageTaggedLiteral };
     claims: { [key: string]: any[] };
     image?: string | null;
 }

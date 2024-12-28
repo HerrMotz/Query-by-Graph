@@ -14,7 +14,7 @@ import CustomInputControl from "../../components/EntitySelectorInputControl.vue"
 import {noEntity,variableEntityConstructor} from "./constants.ts";
 import {noDataSource} from "../constants";
 import {dataSources} from "../../store.ts";
-import {WikibaseDataSource} from "../types/WikibaseDataSource.ts";
+import {WikibaseDataSource, LanguageTaggedLiteral} from "../types/WikibaseDataSource.ts";
 import WikibaseDataService from "../wikidata/WikibaseDataService.ts";
 
 function exportConnectionsHelper(editor:any) {
@@ -32,7 +32,7 @@ function exportConnectionsHelper(editor:any) {
 
 const fqdnRegex = new RegExp(/(?:[\w-]+\.)+[\w-]+/);
 
-function convertConnectionsToPrefixedRepresentation(connections: Array<ConnectionInterfaceType>, vqgEntities: Array<EntityType>): Array<ConnectionInterfaceType> {
+function convertConnectionsToPrefixedRepresentation(connections: Array<ConnectionInterfaceType>, vqgEntities: Array<EntityType>): Promise<ConnectionInterfaceType>[] {
     // this function takes in a connections array from e.g. the rust backend
     // and replaces the full URL with prefixes
 
@@ -42,27 +42,43 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
     return connections.map(connection => {
         const { property, source, target } = connection;
 
-        function replaceWithPrefix(entity:EntityType) {
-            // find, which data source the entity might belong to
-
+        function _replaceWithPrefix(entity:EntityType) {
+            // find out, which data source the entity might belong to
             const fqdn = fqdnRegex.exec(entity.id);
             if (!fqdn || !fqdn[0]) {
                 return entity;
             }
 
-            async function _wikibase_metadata_helper(entity: EntityType, datasource: WikibaseDataSource): Promise<EntityType | false> {
+            async function _wikibase_metadata_helper(entity: EntityType, newIdentifier: string, datasource: WikibaseDataSource): Promise<EntityType | false> {
                 // queries the wikidata api
                 // returns false if no match could be found
                 // else it will return an enriched entity
                 const wds = new WikibaseDataService(datasource);
-                const apiResult = await wds.getItemMetaInfo(entity.id);
 
-                if (apiResult) {
+                function _findTheRightTranslation(preferredLanguages: string[], languageTaggedDict: { [language: string]: LanguageTaggedLiteral }) {
+                    // This function takes the first found preferred language of the language tagged literal labels
+                    // If the preferred language is not available, it will use English
+                    // If English is not available, it will use the first available tagged literal.
+                    return preferredLanguages.find(lang => languageTaggedDict[lang].value) || languageTaggedDict['en'].value || languageTaggedDict[Object.keys(languageTaggedDict)[0]].value || "No literal found";
+                }
+
+                try {
+                    const apiResult = await wds.getItemMetaInfo(newIdentifier);
+                    if (apiResult) {
+                        return {
+                            ...entity,
+                            id: newIdentifier,
+                            label: _findTheRightTranslation(datasource.preferredLanguages, apiResult.labels),
+                            description: _findTheRightTranslation(datasource.preferredLanguages, apiResult.descriptions)
+                            // TODO add the remaining fields here (if you can think of any)
+                        }
+                    }
+                    return entity;
+                } catch (e) {
                     return {
                         ...entity,
-                        label: datasource.preferredLanguages.find(lang => apiResult.labels[lang].value) || apiResult.labels['en'].value || apiResult.labels[Object.keys(apiResult.labels)[0]].value
-                        // TODO add the remaining fields here
-                    }
+                        id: newIdentifier
+                    };
                 }
             }
 
@@ -89,6 +105,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return id.replace(prefixIri, "").replace("<", "").replace(">", "")
             }
 
+            // TODO somehow it uses the property id with prefix but not this does not happen for itemprefix. Why? Ask someone else.
             type ValidPrefixKeys = 'itemPrefix' | 'propertyPrefix';
             function _wrapper(fqdn: string, prefixKey: ValidPrefixKeys) {
                 // this method is just a wrapper, because the code for items and props is identical, except for the
@@ -99,7 +116,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                     const matchInVQG = _vqg_metadata_helper(newIdentifier, matchingDatasourceForEntity[prefixKey].iri, matchingDatasourceForEntity[prefixKey].abbreviation);
                     if (matchInVQG === false) {
                         // try to fetch from wikidata
-                        return _wikibase_metadata_helper(entity, matchingDatasourceForEntity).then(matchInWikibase => {
+                        return _wikibase_metadata_helper(entity, newIdentifier, matchingDatasourceForEntity).then(matchInWikibase => {
                             if (matchInWikibase === false) {
                                 return {
                                     ...entity,
@@ -136,11 +153,30 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
             return entity;
         }
 
-        return {
-            property: replaceWithPrefix(property),
-            source: replaceWithPrefix(source),
-            target: replaceWithPrefix(target)
-        };
+        return Promise.allSettled([
+            _replaceWithPrefix(property),
+            _replaceWithPrefix(source),
+            _replaceWithPrefix(target)
+        ]).then((values) => {
+            if (
+                values.every(
+                    (result): result is PromiseFulfilledResult<EntityType> => result.status === "fulfilled"
+                )
+            ) {
+                return {
+                    property: (values[0] as PromiseFulfilledResult<EntityType>).value,
+                    source: (values[1] as PromiseFulfilledResult<EntityType>).value,
+                    target: (values[2] as PromiseFulfilledResult<EntityType>).value
+                };
+            } else {
+                // this case will not occur, nevertheless typescript requires me to catch it.
+                return {
+                    property: noEntity,
+                    source: noEntity,
+                    target: noEntity
+                };
+            }
+        });
     });
 }
 
@@ -423,19 +459,24 @@ export async function createEditor(container: HTMLElement) {
             // the graph needs to be changed
 
             // if the graph needs to be changed, it will also auto-align the graph
-            const convertedConnections = convertConnectionsToPrefixedRepresentation(
+            const convertedConnectionsPromise = convertConnectionsToPrefixedRepresentation(
                 connections,
                 // put the associated entities of nodes and edges in the same array
                 (editor.getNodes().map(n => n.entity).concat(editor.getConnections().filter(e=>e.property!==undefined).map(e => e.property ?? noEntity)))
                 // I do not know why typescript gives me an error without the default noEntity, but there should be no
                 // case where this comes up, especially with the filter statement.
             );
-            // DEBUG
-            console.log("Converted Connections")
-            console.log(convertedConnections);
-            return convertedConnections != exportConnectionsHelper(editor);
 
+            Promise.allSettled(convertedConnectionsPromise).then(convertedConnections => {
+                console.log("Converted Connections")
+                console.log(convertedConnections);
+                // TODO
+                //  1. auto-arrange nodes
+                //  2. remove all connections in VQG
+                //  3. Add the convertedConnections to VQG
+            });
 
+            return true;
         },
         exportConnections: (): ConnectionInterfaceType[] => {
             return exportConnectionsHelper(editor)
