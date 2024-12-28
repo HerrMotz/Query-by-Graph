@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, shallowRef} from 'vue';
 import {createEditor} from "./lib/rete/editor.ts";
-import { ClassicPreset } from 'rete';
+import {ClassicPreset} from 'rete';
 
 import {graph_to_query_wasm, query_to_graph_wasm} from "../pkg";
 
@@ -39,6 +39,7 @@ const MONACO_EDITOR_OPTIONS = {
   formatOnType: true,
   formatOnPaste: true,
 }
+
 // your action
 function formatCode() {
   codeEditorRef.value?.getAction('editor.action.formatDocument').run()
@@ -49,8 +50,9 @@ import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
 import ClipboardButton from "./components/ClipboardButton.vue";
 import QueryButton from './components/QueryButton.vue';
 import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
-import { selectedDataSource, dataSources } from './store.ts';
+import {selectedDataSource, dataSources} from './store.ts';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
+import {debounce} from "./lib/utils";
 
 
 interface Editor {
@@ -58,8 +60,9 @@ interface Editor {
   removeSelectedConnections: () => Promise<void>;
   undo: () => void;
   redo: () => void;
-  importConnections: (connections: ConnectionInterfaceType[]) => boolean;
+  importConnections: (connections: ConnectionInterfaceType[]) => Promise<Promise<true>[] | undefined>;
   exportConnections: () => ConnectionInterfaceType[];
+  layout: (animate: boolean) => void;
   getNode: (nodeId: string) => ClassicPreset.Node | undefined;
 }
 
@@ -67,6 +70,7 @@ const editor = ref<Editor | null>();  // Define the type of editor as Promise<Ed
 const rete = ref();
 
 const code = ref("");
+const loadingForCodeChanges = ref(false);
 
 function codeChangeEvent() {
   if (editor.value) {
@@ -77,13 +81,26 @@ function codeChangeEvent() {
     const graph = JSON.parse(query_to_graph_wasm(code.value));
     if (!!code.value && !!graph && graph?.length > 0) {
       console.log("graph", graph)
-      editor.value.importConnections(graph);
+      loadingForCodeChanges.value = true;
+      editor.value.importConnections(graph).then(ps => {
+        if (ps) {
+          Promise.all(ps).then(_ => {
+            loadingForCodeChanges.value = false;
+          })
+        } else {
+          console.error("There was an error while building the new graph");
+          loadingForCodeChanges.value = false;
+        }
+
+      });
     } else {
       // DEBUG
       console.log("Query is probably faulty. Doing nothing.");
     }
   }
 }
+
+const debouncedCodeChangeEvent = debounce(codeChangeEvent, 1000);
 
 const selectedNode = ref<{ id: any; label: any; entityId: any; metadata: any; dataSource: any } | null>(null);
 
@@ -113,7 +130,7 @@ onMounted(async () => {
       }
 
       // Fill the metainfo window with the selected node's data
-      if(context.type === 'nodeselected'){
+      if (context.type === 'nodeselected') {
         const nodeId = context.data.id;
         const node = editor.value?.getNode(nodeId);
 
@@ -133,13 +150,15 @@ onMounted(async () => {
           };
 
           // extract relevant Metadata from wikidata
-          const wds = new WikibaseDataService(dataSource);
-          wds.getItemMetaInfo(itemId).then((metadata) =>{
-            selectedNode.value!.metadata = metadata;
-          });
+          if (!itemId.startsWith('?')) {
+            const wds = new WikibaseDataService(dataSource);
+            wds.getItemMetaInfo(itemId).then((metadata) => {
+              selectedNode.value!.metadata = metadata;
+            });
 
-          // DEBUG
-          console.log('Selected Entity ID:', itemId);
+            // DEBUG
+            console.log('Selected Entity ID:', itemId);
+          }
         }
       }
     });
@@ -162,6 +181,7 @@ const gotoLink = (url?: string) => {
   window.open(link, '_blank');
 }
 
+
 </script>
 
 <template>
@@ -177,52 +197,53 @@ const gotoLink = (url?: string) => {
         <div class="w-2/12 bg-amber-50 rounded-tl-2xl h-full">
           <h2 class="text-xl font-semibold bg-amber-100 p-4">
             Metainfo
-            <span v-if="selectedNode?.dataSource?.name" class="inline"> (from {{ selectedNode.dataSource.name}}) </span>
+            <span v-if="selectedNode?.dataSource?.name"
+                  class="inline"> (from {{ selectedNode.dataSource.name }}) </span>
           </h2>
           <!-- Metainfowindow content -->
           <div class="p-4 overflow-auto max-h-[90%]">
-          <!-- Display when a node is selected -->
-          <div v-if="selectedNode">
-            <div v-if="selectedNode.metadata">
-              <!-- Labels Section -->
-              <h3 class="text-lg font-bold mb-2">Labels:</h3>
-              <ul class="list-disc pl-6 mb-4">
-                <li v-for="(label, lang) in selectedNode.metadata.labels" :key="lang">
-                  <span class="font-medium">{{ label.value }} </span>
-                </li>
-              </ul>
+            <!-- Display when a node is selected -->
+            <div v-if="selectedNode">
+              <div v-if="selectedNode.metadata">
+                <!-- Labels Section -->
+                <h3 class="text-lg font-bold mb-2">Labels:</h3>
+                <ul class="list-disc pl-6 mb-4">
+                  <li v-for="(label, lang) in selectedNode.metadata.labels" :key="lang">
+                    <span class="font-medium">{{ label.value }} </span>
+                  </li>
+                </ul>
 
-              <!-- Descriptions Section -->
-              <h3 class="text-lg font-bold mb-2">Descriptions:</h3>
-              <ul class="list-disc pl-6 mb-4">
-                <li v-for="(description, lang) in selectedNode.metadata.descriptions" :key="lang">
-                  <span class="font-medium">{{ description.value }}</span>
-                </li>
-              </ul>
+                <!-- Descriptions Section -->
+                <h3 class="text-lg font-bold mb-2">Descriptions:</h3>
+                <ul class="list-disc pl-6 mb-4">
+                  <li v-for="(description, lang) in selectedNode.metadata.descriptions" :key="lang">
+                    <span class="font-medium">{{ description.value }}</span>
+                  </li>
+                </ul>
 
-             <img v-if="selectedNode.metadata.image" :src="selectedNode.metadata.image" alt="Entity Image" />
+                <img v-if="selectedNode.metadata.image" :src="selectedNode.metadata.image" alt="Entity Image"/>
 
 
-              <!-- Claims Section -->
-              <h3 class="text-lg font-bold mb-2">Claims:</h3>
-              <div class="space-y-4">
-                <div v-for="(claims, property) in selectedNode.metadata.claims" :key="property" class="border-t pt-2">
-                  <h4 class="text-md font-semibold mb-1">{{ property }}</h4>
-                  <ul class="list-disc pl-6">
-                    <li v-for="claim in claims" :key="claim.id">
-                      {{ claim.mainsnak.datavalue?.value || 'No value available' }}
-                    </li>
-                  </ul>
+                <!-- Claims Section -->
+                <h3 class="text-lg font-bold mb-2">Claims:</h3>
+                <div class="space-y-4">
+                  <div v-for="(claims, property) in selectedNode.metadata.claims" :key="property" class="border-t pt-2">
+                    <h4 class="text-md font-semibold mb-1">{{ property }}</h4>
+                    <ul class="list-disc pl-6">
+                      <li v-for="claim in claims" :key="claim.id">
+                        {{ claim.mainsnak.datavalue?.value || 'No value available' }}
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Fallback when no node is selected -->
-          <p v-else class="text-gray-500">
-            No node selected.
-          </p>
-        </div>
+            <!-- Fallback when no node is selected -->
+            <p v-else class="text-gray-500">
+              No node selected.
+            </p>
+          </div>
 
         </div>
         <div class="w-8/12 bg-amber-50 rounded-tl-2xl h-full">
@@ -268,14 +289,23 @@ const gotoLink = (url?: string) => {
               </div>
             </div>
 
+            <div class="flex-col flex gap-2">
+              <h4 class="font-semibold">History</h4>
+              <div class="flex gap-4">
+                <Button class="grow" @click="() => {if (editor) {editor.layout(true)}}">
+                  Auto-Arrange the graph
+                </Button>
+              </div>
+            </div>
+
             <!-- Data Source Selector -->
             <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Data Source</h4>
               <div class="flex gap-4">
                 <Button
-                  v-for="ds in dataSources"
-                  :class="{'highlighted': selectedDataSource.name === ds.name}"
-                  @click="setDataSource(ds)">
+                    v-for="ds in dataSources"
+                    :class="{'highlighted': selectedDataSource.name === ds.name}"
+                    @click="setDataSource(ds)">
                   Use {{ ds.name }}
                 </Button>
               </div>
@@ -303,7 +333,7 @@ const gotoLink = (url?: string) => {
             <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Open new query builder</h4>
               <Button
-                @click="gotoLink()">
+                  @click="gotoLink()">
                 Open builder
               </Button>
               <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
@@ -322,12 +352,25 @@ const gotoLink = (url?: string) => {
         <div class="bg-amber-100 rounded-t-2xl p-4">
           <!-- This has the same propeties as the toolbox heading -->
           <h2 class="font-semibold text-xl flex justify-between">
-            <span>Generated SPARQL Query</span>
+            <span>
+              Generated SPARQL Query
+              <span v-if="loadingForCodeChanges">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                     viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </span>
+            </span>
             <span class="flex items-center space-x-2">
-              <ClipboardButton @click="copyToClipboard();" />
-              <QueryButton @click="gotoLink(selectedDataSource.queryService+'#'+encodeURIComponent(code));" />
+              <ClipboardButton @click="copyToClipboard();"/>
+              <QueryButton @click="gotoLink(selectedDataSource.queryService+'#'+encodeURIComponent(code));"/>
             </span>
           </h2>
+          <span>
+
+          </span>
           <span class="text-sm font-medium block">
                 This contains the generated SPARQL code. It is updated with every change in the editor.
           </span>
@@ -340,8 +383,11 @@ const gotoLink = (url?: string) => {
               language="sparql"
               :options="MONACO_EDITOR_OPTIONS"
               @mount="handleMount"
-              @change="codeChangeEvent()"
+              @change="debouncedCodeChangeEvent()"
           />
+        </div>
+        <div>
+          asd
         </div>
       </div>
 

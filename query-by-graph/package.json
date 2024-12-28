@@ -22,7 +22,8 @@
     "rete-history-plugin": "^2.0.1",
     "rete-render-utils": "^2.0.2",
     "rete-vue-plugin": "^2.0.3",
-    "vue": "^3.4.31"
+    "vue": "^3.4.31",
+    "rete-auto-arrange-plugin": "^2.0.2"
   },
   "devDependencies": {
     "@heroicons/vue": "^2.1.5",

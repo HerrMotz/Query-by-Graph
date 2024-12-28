@@ -55,9 +55,12 @@ class WikibaseDataService {
       if (!entity) {
         throw new Error(`Item with ID ${itemId} not found`);
       }
+
+      // TODO this can be done using the API.
       const filteredLabels = Object.fromEntries(
         Object.entries(entity.labels).filter(([lang]) => languages.includes(lang))
       );
+      // TODO this as well. Just pass the "languages" parameter to the action API
       const filteredDescriptions = Object.fromEntries(
         Object.entries(entity.descriptions).filter(([lang]) => languages.includes(lang))
       );
