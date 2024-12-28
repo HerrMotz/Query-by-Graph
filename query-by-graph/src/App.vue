@@ -290,7 +290,7 @@ const gotoLink = (url?: string) => {
             </div>
 
             <div class="flex-col flex gap-2">
-              <h4 class="font-semibold">History</h4>
+              <h4 class="font-semibold">Arrangement</h4>
               <div class="flex gap-4">
                 <Button class="grow" @click="() => {if (editor) {editor.layout(true)}}">
                   Auto-Arrange the graph
