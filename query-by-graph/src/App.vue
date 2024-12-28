@@ -50,6 +50,7 @@ import ClipboardButton from "./components/ClipboardButton.vue";
 import QueryButton from './components/QueryButton.vue';
 import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
 import { selectedDataSource, dataSources } from './store.ts';
+import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 
 
 interface Editor {
@@ -79,7 +80,7 @@ function codeChangeEvent() {
       editor.value.importConnections(graph);
     } else {
       // DEBUG
-      console.log("Code is probably faulty. Doing nothing.");
+      console.log("Query is probably faulty. Doing nothing.");
     }
   }
 }
@@ -89,8 +90,6 @@ const selectedNode = ref<{ id: any; label: any; entityId: any; metadata: any; da
 
 // for listening to the EntitySelector
 // DEBUG
-let lol = 10000
-
 const triggerEvents = [
   "connectioncreated",
   "connectionremoved",
@@ -102,13 +101,6 @@ onMounted(async () => {
   if (rete.value) {
     editor.value = await createEditor(rete.value);
     editor.value?.setVueCallback((context) => { // add pipe to parent scope
-      // DEBUG
-      if (lol > 0) {
-        // DEBUG
-        // console.log("context type in app.vue")
-        // console.log(context.type)
-        lol--;
-      }
       if (triggerEvents.includes(context.type)) {
         setTimeout(() => {
           const connections = editor.value!.exportConnections()
@@ -158,9 +150,9 @@ const copyToClipboard = () => {
   navigator.clipboard.writeText(code.value);
 }
 
-const setDataSource = (source: keyof typeof dataSources) => {
-  if (dataSources[source]) {
-    selectedDataSource.value = dataSources[source];
+const setDataSource = (source: WikibaseDataSource) => {
+  if (source) {
+    selectedDataSource.value = source;
     console.log('selectedDataSource updated to:', selectedDataSource.value);
   }
 };
@@ -331,10 +323,10 @@ const gotoLink = (url?: string) => {
           <!-- This has the same propeties as the toolbox heading -->
           <h2 class="font-semibold text-xl flex justify-between">
             <span>Generated SPARQL Query</span>
-            <div class="flex items-center space-x-2">
+            <span class="flex items-center space-x-2">
               <ClipboardButton @click="copyToClipboard();" />
-              <QueryButton @click="gotoLink(selectedDataSource.queryService);" />
-            </div>
+              <QueryButton @click="gotoLink(selectedDataSource.queryService+'#'+encodeURIComponent(code));" />
+            </span>
           </h2>
           <span class="text-sm font-medium block">
                 This contains the generated SPARQL code. It is updated with every change in the editor.

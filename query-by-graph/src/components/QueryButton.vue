@@ -5,7 +5,7 @@ import {ArrowRightStartOnRectangleIcon} from '@heroicons/vue/24/outline'
 
 <template>
   <button class="flex h-9 w-24 rounded bg-amber-300 hover:bg-gray-200 items-center justify-center">
-    <span class="text-xs mr-1">Open</span>
+    <span class="text-xs mr-1">Run</span>
     <ArrowRightStartOnRectangleIcon class="h-5 w-5" />
   </button>
 </template>
