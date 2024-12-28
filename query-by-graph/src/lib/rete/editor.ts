@@ -14,6 +14,8 @@ import CustomInputControl from "../../components/EntitySelectorInputControl.vue"
 import {noEntity,variableEntityConstructor} from "./constants.ts";
 import {noDataSource} from "../constants";
 import {dataSources} from "../../store.ts";
+import {WikibaseDataSource} from "../types/WikibaseDataSource.ts";
+import WikibaseDataService from "../wikidata/WikibaseDataService.ts";
 
 function exportConnectionsHelper(editor:any) {
     return editor.getConnections().map((connection:any) => {
@@ -48,15 +50,34 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return entity;
             }
 
-            function _metadata_helper(id: string, prefixIri: string, prefixAbbreviation: string): EntityType | false {
+            async function _wikibase_metadata_helper(entity: EntityType, datasource: WikibaseDataSource): Promise<EntityType | false> {
+                // queries the wikidata api
+                // returns false if no match could be found
+                // else it will return an enriched entity
+                const wds = new WikibaseDataService(datasource);
+                const apiResult = await wds.getItemMetaInfo(entity.id);
+
+                if (apiResult) {
+                    return {
+                        ...entity,
+                        label: datasource.preferredLanguages.find(lang => apiResult.labels[lang].value) || apiResult.labels['en'].value || apiResult.labels[Object.keys(apiResult.labels)[0]].value
+                        // TODO add the remaining fields here
+                    }
+                }
+            }
+
+            function _vqg_metadata_helper(id: string, prefixIri: string, prefixAbbreviation: string): EntityType | false {
                 // this function enriches the entity with metadata
                 //  1. find a matching node in the VQG and make it equal
                 //  2. if there is no node, fetch from the Wikidata API
                 const foundMatch = vqgEntities.find((e: EntityType) => id === e.id && prefixIri === e.prefix.iri && prefixAbbreviation === e.prefix.abbreviation)
                 // This conditional statement looks a bit sketch, because it does not cleanly differentiate between
-                // edges and nodes. However, I can safely assume, that a node will not have a propertyPrefix and vice
+                // edges and nodes. However, I can safely assume, that a node will not have a property prefix and vice
                 // versa. In Wikibase, the id already is indicative of whether it is an item or a prop, but the prefixes
                 // are important to differentiate between Wikibase instances.
+                // In case the above explanation was unclear: This statement would match an edge with an item prefix and
+                // Q-number as identifier. However, this "cannot" be the case, unless something is wrong in the Wikibase
+                // instance data model. At this point, I just assume that it is.
                 if (!foundMatch) {
                     return false;
                 }
@@ -68,41 +89,50 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return id.replace(prefixIri, "").replace("<", "").replace(">", "")
             }
 
+            type ValidPrefixKeys = 'itemPrefix' | 'propertyPrefix';
+            function _wrapper(fqdn: string, prefixKey: ValidPrefixKeys) {
+                // this method is just a wrapper, because the code for items and props is identical, except for the
+                // keys "itemPrefix" and "propertyPrefix"
+                const matchingDatasourceForEntity = dataSources.find(s => s[prefixKey].iri.includes(fqdn));
+                if (matchingDatasourceForEntity) {
+                    const newIdentifier = _replace_helper(entity.id, matchingDatasourceForEntity[prefixKey].iri)
+                    const matchInVQG = _vqg_metadata_helper(newIdentifier, matchingDatasourceForEntity[prefixKey].iri, matchingDatasourceForEntity[prefixKey].abbreviation);
+                    if (matchInVQG === false) {
+                        // try to fetch from wikidata
+                        return _wikibase_metadata_helper(entity, matchingDatasourceForEntity).then(matchInWikibase => {
+                            if (matchInWikibase === false) {
+                                return {
+                                    ...entity,
+                                    id: newIdentifier,
+                                    prefix: matchingDatasourceForEntity[prefixKey],
+                                    dataSource: matchingDatasourceForEntity
+                                }
+                            } else {
+                                return matchInWikibase;
+                            }
+                        });
+                    } else {
+                        return matchInVQG;
+                    }
+                } else {
+                    return false;
+                }
+
+            }
+
             // for this method to work, the prefixes must be prefix-free to each other.
             // maybe change this in the future, if it causes issues in practical application.
-            const matchingDatasourceForItem = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
-            if (matchingDatasourceForItem) {
-                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForItem.itemPrefix.iri)
-                const matchInVQG = _metadata_helper(newIdentifier, matchingDatasourceForItem.itemPrefix.iri, matchingDatasourceForItem.itemPrefix.abbreviation);
-                if (matchInVQG === false) {
-                    return {
-                        ...entity,
-                        id: newIdentifier,
-                        prefix: matchingDatasourceForItem.itemPrefix,
-                        dataSource: matchingDatasourceForItem
-                    }
-                } else {
-                    return matchInVQG;
-                }
+            const item = _wrapper(fqdn[0], "itemPrefix")
+            if (item) {
+                return item
             }
 
-            const matchingDatasourceForProperty = dataSources.find(s => s.itemPrefix.iri.includes(fqdn[0]));
-            if (matchingDatasourceForProperty) {
-                // duplicate code to above statement. Think about refactoring.
-                const newIdentifier = _replace_helper(entity.id, matchingDatasourceForProperty.propertyPrefix.iri);
-                const matchInVQG = _metadata_helper(newIdentifier, matchingDatasourceForProperty.propertyPrefix.iri, matchingDatasourceForProperty.propertyPrefix.abbreviation);
-                if (matchInVQG === false) {
-                    return {
-                        ...entity,
-                        id: newIdentifier,
-                        prefix: matchingDatasourceForProperty.propertyPrefix,
-                        dataSource: matchingDatasourceForProperty
-                    }
-                } else {
-                    return matchInVQG;
-                }
+            const property = _wrapper(fqdn[0], "propertyPrefix")
+            if (property) {
+                return property;
             }
 
+            // return the entity from the input unchanged
             return entity;
         }
 

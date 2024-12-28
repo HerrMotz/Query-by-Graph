@@ -12,7 +12,7 @@ const wikiDataDataSource: WikibaseDataSource = {
         iri: "http://www.wikidata.org/prop/direct/",
         abbreviation: "wdt"
     },
-    queryService: "https://query.wikidata.org/ ",
+    queryService: "https://query.wikidata.org/", // do not leave blank spaces in urls
 }
 
 const factGridDataSource: WikibaseDataSource = {

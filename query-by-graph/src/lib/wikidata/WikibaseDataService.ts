@@ -21,8 +21,6 @@ class WikibaseDataService {
     });
   }
 
-
-
   /**
    * Fetch metadata about a WikiData item by its ID.
    * @param itemId - The WikiData item ID (e.g., Q42 for Douglas Adams).
