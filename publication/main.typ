@@ -204,23 +204,25 @@ It will use Wikibase-specific features and conventions, such as:
 
 - RDF constructs, i.e. Qualifiers (see @heading:qualifiers).
 
-The concrete improvements over other approaches are: #todo[Move this to the Results section?]
+The concrete enhancements over other approaches are: #todo[Move this to the Results section?]
 
-- the advancement regarding user-friendlyness of similar visual query builders, such as @Vargas2019_RDF_Explorer,
+- *higher user-satisfaction* compared to similar visual query builders, such as @Vargas2019_RDF_Explorer, as #todo[write limited user study and name more query builders]
 
-- the ability to create federated queries over multiple data sources,
+- the ability to create queries over *multiple Wikibase data sources*,
 
-- the ability to import existing SPARQL queries
+- *importing* existing SPARQL queries,
+
+- *editing* the query and associated graph using an *integrated code editor*
 
 - #todo[list more :-)]
 
-For this, I decided to develop a lightweight web application, which at its heart has Rust-code to translate visually built queries to SPARQL queries and vice versa#footnote[The code is publicly available at #link("https://github.com/HerrMotz/bachelor-thesis/")[`http://github.com/HerrMotz/bachelor-thesis`].] (see @heading:implementation). The program is already in practical application at the time of writing. Changes to the code have been made by a team from the digital humanities at the Friedrich Schiller University Jena under my lead, where a hands-on session with students was conducted. Any changes which do not originate from my work are clearly marked in the code repository.#todo[lasse ich das wirklich so stehen?]
+For this, I decided to develop a lightweight web application, which at its heart has Rust-code to translate visually built queries to SPARQL queries and vice versa#footnote[The code is publicly available at #link("https://github.com/HerrMotz/bachelor-thesis/")[`http://github.com/HerrMotz/bachelor-thesis`].] (see @heading:implementation). The program is already in practical application at the time of writing. Changes to the code have been made by a team from the digital humanities at the Friedrich Schiller University Jena under my lead, where a hands-on session with students was conducted. Any changes which do not originate from my work are clearly marked in the code repository. #todo[lasse ich das wirklich so stehen?]
 
 == Related Work
 
 === RDF Explorer <heading:rdf_explorer>
 
-The approach by Vargas et al. @Vargas2019_RDF_Explorer is to show all possible assertions about an object #todo[Is "object" the right word?] already while building the query. The goal is to guide the formulation of the user's question from a known starting point. This approach uses a fuzzy search prompt for an RDF resource as a starting point. After adding an object from the prompt results to the drawing board, the user can select from a list of all relations to other objects to augment the prompt. The user may also leave the relation unspecified, add a new object and select from a list of all assertions between these two objects. A user may just as well choose to let any object or property be a variable.
+The approach by Vargas et al. @Vargas2019_RDF_Explorer is to show all possible assertions about an item already while building the query. The goal is to guide the formulation of the user's question from a known starting point. This approach uses a fuzzy search prompt for an RDF resource as a starting point. After adding an object from the prompt results to the drawing board, the user can select from a list of all relations to other objects to augment the prompt. The user may also leave the relation unspecified, add a new object and select from a list of all assertions between these two objects. A user may just as well choose to let any object or property be a variable.
 
 #example[
   The _Wikidata_ object `wd:Q5879`, also known as _Johann Wolfgang von Goethe_, offers several possible assertions, such as that he is "instance of" human and that he was "educated at" the University of Leipzig. This approach shows these in a sidebar, implying that those might be sensible next steps to specify a question.
@@ -302,7 +304,7 @@ The W3C#sym.trademark.registered recommends a standard for exchange of semantica
 
 - the Internationalised Resource Identifier (@heading:iri) and
 
-- the query language SPARQL (see @sparql_heading).
+- the query language SPARQL (see @heading:sparql).
 
 This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.#sym.space.punct\e. Wikibase. 
 
@@ -404,11 +406,50 @@ A computer still does not understand what it means to be educated at some place 
 
 However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
 
-=== SPARQL Protocol and RDF Query Language <sparql_heading>
+=== SPARQL Protocol and RDF Query Language <heading:sparql>
+
+This section follows the current standard RDF v1.1 @W3C_SPARQL_Specification.
 
 #blockquote[
-  SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. SPARQL also supports extensible value testing and constraining queries by source RDF graph. The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
+  SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. [...] The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
 ]
+
+#todo[what is the sparql *protocol*? and what is an rdf query language?]
+
+==== Syntax
+Writing SPARQL queries is pretty straight-forward: The wanted structure
+is expressed in terms of the query language, and the unkonwn parts are left out. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query. The key challenge is to formalise the question. Even this step is difficult for a user
+#figure(caption: "Which educational institutions did Goethe visit?",
+  ```HTML
+  PREFIX wd: <http://www.wikidata.org/entity/>
+  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+  SELECT ?1 WHERE {
+      wd:Q5879 wdt:P69 ?1 .
+      # Johann Wolfgang von Goethe -- [educated at] -> Variable
+  }
+  ```
+) <example:goethe_query>
+
+==== Results of a SPARQL query
+The result can either be a set of possible value combinations
+
+==== Expressing IRIs
+An IRI in SPARQL is indicated by the delimiters `<` and `>` (in that order). According to the documentation
+
+==== Prefixes and bases
+SPARQL allows to define a *prefix*, which acts as an *abbreviation of an IRI*. The IRI `http://www.wikidata.org/entity/Q5879` can be abbreviated using the above defined prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
+A *base* works similarly, only that it is prefixed to any IRI in the document. It is also prefixed to `PREFIX` statements, as you can see in @example:arbitrary_position_of_base_and_prefix.
+
+#figure(caption: [The position of a statement in a SPARQL query\ does not have an effect on the result.],
+  ```HTML
+  PREFIX wd: </entity/>
+  BASE <http://www.wikidata.org/>
+  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+  SELECT ?1 WHERE {
+      wd:Q5879 wdt:P69 ?1 .
+  }
+  ```
+) <example:arbitrary_position_of_base_and_prefix>
 
 #todo[
   Which features does SPARQL offer?
@@ -418,13 +459,34 @@ However, for any structured querying to be possible, the databases ought to be f
   - Define prefix
 ]
 
-=== RDF Mapping in Wikibase
-Wikibase is one of the most widely used softwares for community knowledge bases, storing \~115 million data items. Wikibase instances, such as Wikidata#footnote[http://wikidata.org --- an initiative for a free community knowledge base], allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of RDF terminology to refer to structures within Wikibase. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
+=== RDF Data Model in Wikibase
+*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominant instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
+
+#remark[This specific data model is interesting, because of its wide use, it defines a de-facto standard in the semantic web community.]
 
 ==== Wikibase terminology
-A thing is referred to as an *Item* and assigned a unique *Q-Number* within a Wikibase instance. Any predicate is called *Property* and assigned a unique *P-Number*.
+A thing is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any predicate is called *property* and assigned a unique *P-Number*.
 
-#figure(caption: [An excerpt of IRI prefixes defined by Wikidata],
+As can be seen in @example:prefixes_in_wikidata, there are many prefixes apparently for the same things, namely *items* and *properties*. However, their use 
+in Wikibase depends on the context. @fig:rdf_mapping shows how they come into play in the Wikibase data model. It is important to mention, that once an item 
+or property is added to Wikibase, it is referencable using all of the prefixes of the data model.
+
+/*```turtle
+ wd:P22 a wikibase:Property ;
+     rdfs:label "Item property"@en ;
+     wikibase:propertyType wikibase:WikibaseItem ;
+     wikibase:directClaim wdt:P22 ;
+     wikibase:claim p:P22 ;
+     wikibase:statementProperty ps:P22 ;
+     wikibase:statementValue psv:P22 ;
+     wikibase:qualifier pq:P22 ;
+     wikibase:qualifierValue pqv:P22 ;
+     wikibase:reference pr:P22 ;
+     wikibase:referenceValue prv:P22 ;
+     wikibase:novalue wdno:P22 .
+```*/
+
+#figure(caption: [An excerpt of customary IRI prefixes defined by Wikidata],
 ```HTML
 PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
@@ -439,7 +501,7 @@ PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX wdv: <http://www.wikidata.org/value/>
 PREFIX wikibase: <http://wikiba.se/ontology#>
 ```
-)
+) <example:prefixes_in_wikidata>
 
 #figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic],
   image("rdf_mapping.svg", width: 87%)
@@ -466,8 +528,8 @@ $ <assertions_goethe_education_revised>
   Let $Sigma$ be a valid alphabet and $Sigma^*$ its Kleene closure. Let
   $f_p, f_q, f_s in I$ be _distinct_ IRI prefixes for *p*\roperties, *q*\ualifiers and property *s*\tatements,
   $s in I$ be a specific subject,#sym.space.med
-  $Q:= { x | u in Sigma^* and x = f_q u}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
-  $P:= { x | u in Sigma^* and x = f_p u}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
+  $Q:= { f_q u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
+  $P:= { f_p u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
   with the limitation $u in Sigma^*$ and $q_1 = f_q u <=> p = f_p u$. Additionally, let 
   $p_s := f_s u <=> p := f_p u$ be the property with a statement prefix,#sym.space.med
   $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and #sym.space.med
@@ -506,7 +568,7 @@ This chapter mostly follows @Vargas2019_RDF_Explorer.
   Note here, that the VQG does not contain blank nodes.
 ]
 
-The VQG is _constructed_ using a _visual query language_, consisting of four algebraic operators, which will correspond to atomic user interactions:
+Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual query language_, consisting of four algebraic operators, which will correspond to atomic user interactions: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the action of adding and removing an edge qualifier.
 
 #figure(
   table(columns: 2,
@@ -514,8 +576,10 @@ The VQG is _constructed_ using a _visual query language_, consisting of four alg
     [Adding a variable node], [Removing a node],
     [Adding a literal node], [Removing a node],
     [Adding a directed edge], [Removing a directed edge],
+    [*Adding an edge qualifier*], [*Removing an edge qualifier*]
   )
 )
+
 
 
 == Linked Open Data <heading:lod>
@@ -542,9 +606,9 @@ Should contain the following aspects:
 
 The goal of this work is to create two mostly separate programs:
 + the _visual query building interface_ (forthon called *frontend*) and
-+ the _translator from VGQ to SPARQL_ and vice versa (forthon called *backend*).
++ the _translator from VGQ to SPARQL and vice versa_ (forthon called *backend*).
 
-The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, the focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature.
+The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, the focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature. Firstly, this stopped me from implementing the ontology integration module. #todo[Explain what the ontology integration module is, if I have enough time.]
 
 == Architecture
 Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious.
@@ -595,23 +659,36 @@ Novel to current work:
 ]
 
 #todo[
-  Explain why I can just use propertyPrefix and itemPrefix. Should it even be this way?
+  Explore the expression capabilities of my tool. Can it write an arbitrary SPARQL query?
+]
+
+#todo[
+  Does Wikibase really only use one property and item prefix when it returns from this query?
+  This has the very big limitation, that if a user uses a different prefix, that it does not work.
+  Maybe I should comment on this from a user perspective, as in: "a standard user will not write a query so complex, that it cannot do this".
   ```javascript
   export interface WikibaseDataSource {
     name: string;
     url: string,
     preferredLanguages: string[],
     propertyPrefix: {
-        url: string,
+        iri: string,
         abbreviation: string
     },
     itemPrefix: {
-        url: string,
+        iri: string,
         abbreviation: string
     },
     queryService: string,
 }
   ```
+]
+
+#todo[
+  Write the missing capabilities:
+  - I cannot write SPARQL local names
+  - no Filters
+  - ...
 ]
 
 
@@ -649,6 +726,9 @@ A SPARQL-SELECT-Query
 
 #todo[How do I license the code? Maybe Rechtsamt fragen.]
 
+== User Feedback
+100% of female users reported that the user interface looked very nice.
+
 = Further Work
 
 + Creating/Manipulating RDF assertions (INSERT and UPDATE statements)
@@ -661,6 +741,13 @@ A SPARQL-SELECT-Query
   - ...
 
 + Implementing the OWL integration within Query by Graph
+
++ If an entity in the SPARQL query is selected, also highlight in the retejs editor
+
++ If the query is changed, try to not move the nodes, but reuse their position.
+  - this would involve rewriting the importConnections
+
++ Formulating queries from natural language using Large Language Models
 
 = Declaration of Academic Integrity
 
