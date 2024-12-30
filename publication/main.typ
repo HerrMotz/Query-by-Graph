@@ -327,7 +327,7 @@ This chapter introduces the parts of the recommendation which are relevant to th
 An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.
 
 #definition[
-  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing one blank node $circle.dotted$ and *$L$* denote the set of literals (see @heading:literals). Let
+  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes and *$L$* denote the set of literals (see @heading:literals). Let
   subject $bold("s") in bold("I") union bold("B")$,
   predicate $bold("p") in bold("I")$ and
   object $bold("o") in bold("I") union bold("L") union bold("B")$.
@@ -340,13 +340,13 @@ An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in 
   #align(center)[or equivalently]
   $ 
     bold("s") xarrow(bold("p")) bold("o"),
-  $ <def_spo>
+  $ <def:spo>
 ]
 
 if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
 
 #example[
-  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was a student at the object. Using the formalism from @def_spo, one might be inclined to produce something like:
+  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was a student at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
   $
     bold("s") := "Johann Wolfgang von Goethe", \
     bold("p") := "educated at", \
@@ -374,24 +374,40 @@ The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.
   + a *language tag*, which allows to add express from which language the *lexical form* stems and
   + a *base direction tag*, which occurs in combination with the *language tag* to indicate the reading direction (left-to-right or right-to-left).
 
-  _Remark: The necessity of the language and base direction tag are indicated by two separate *special IRIs*._
-
-  _The only difference to RDF v1.1 is, that is does not allow for a base direction tag._ 
-] <def_literals>
+  _Remarks: (1) The necessity of the language and base direction tag are indicated by two separate *special IRIs*. (2) The only difference to RDF v1.1 is, that is does not allow for a base direction tag._ 
+] <def:literals>
 
 #definition[
   The *literal value* of a *literal* in an RDF graph is defined in dependence of the fields available in the *literal*. The availability of a tuple entry is characterising for the *literal type*. The literal value is a tuple. #todo[mention, whether this is supported in the implementation]
 
-  #align(center, table(columns: 2, align: horizon,
+  #figure(caption: [Mapping from literal to literal value],
+  align(center, table(columns: 2, align: horizon,
     [Literal Type], [Literal Value],
     [language-tagged], [(lexical form, language tag)],
     [direction-tagged], [(lexical form, language tag, base direction tag)],
     [has IRI stated in the\ #link("https://www.w3.org/TR/rdf12-concepts/#dfn-recognized-datatype-iri")[list of recognized data type IRIs]], [the literal value interpreted\ as the indicated data type]
-  ))
+  )))
 ]
 
 === Blank nodes
-#todo[Write this section!]
+RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
+It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*.
+In most common RDF formats, a blank node can be locally referenced using a *local name*.
+
+#figure(caption: [*Turtle syntax*#footnote[https://www.w3.org/TR/turtle/] example showing the use of a *blank node* $bold(b)$. Usually, a blank node is indicated by a _special prefix_, followed by a *local name*. In the case of Turtle, the underline character, followed by a local name, which can essentially be alphanumerical (see @def:prefixes_and_bases for more on prefixes). Example taken from @Dengel2012_Semantic_Technologies.],
+```TURTLE
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix carfs: <http://www.carfs-ag.de/Personen#> .
+@prefix carfin: <http://www.carfs-ag.de/Finanzen#> .
+@prefix ex: <http://www.dfki.de/example/#> .
+
+carfs:baispilov ex:Briefwechsel _:b .
+_:b rdf:type rdf:Seq .
+_:b rdf:_1 carfin:Anfrage-2010-153 .
+_:b rdf:_2 carfin:Anfrage-2010-632 .
+_:b rdf:_3 carfin:Anfrage-2010-632b .
+```
+)
 
 /*=== Modelling Information using Triples
 
@@ -432,11 +448,13 @@ is expressed in terms of the query language, and the unkonwn parts are left out.
 
 ==== Results of a SPARQL query
 The result can either be a set of possible value combinations
+#todo[Finish section]
 
 ==== Expressing IRIs
 An IRI in SPARQL is indicated by the delimiters `<` and `>` (in that order). According to the documentation
+#todo[Keep it brief, but explain.]
 
-==== Prefixes and bases
+==== Prefixes and bases <def:prefixes_and_bases>
 SPARQL allows to define a *prefix*, which acts as an *abbreviation of an IRI*. The IRI `http://www.wikidata.org/entity/Q5879` can be abbreviated using the above defined prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
 A *base* works similarly, only that it is prefixed to any IRI in the document. It is also prefixed to `PREFIX` statements, as you can see in @example:arbitrary_position_of_base_and_prefix.
 
@@ -539,7 +557,7 @@ $ <assertions_goethe_education_revised>
       {(s,bold(p),o), (s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
   $
   Statements such as $(b, q_i, o_i)$ are called *qualifiers* and $(s, bold(p), o)$ is called *qualified property*.
-] <def_qualifiers>
+] <def:qualifiers>
 
 #remark[
   The term and concept "qualifier" are *not* used or specified in the RDF references @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal.  This definition follows the Wikibase implementation, where the *qualified property* is displayed hierarchically above the qualifiers. The seemingly duplicate assertion $(s,p,o_1)$ is not erroneous, but an implementation detail of Wikibase and simply for convenience. ]
@@ -580,7 +598,17 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual que
   )
 )
 
+#definition[
+  A *qualifier* in the VQG $G=(V,E)$ is defined as a decorated edge $e_q in E subset N times (V union V) times N$ as defined above.
+  #todo[Complete this definition. This is not a decorated edge, yet.]
+]
 
+#todo[How would a blank node in a VQG look like?]
+
+#todo[]
+
+== Mapping Visual Query Graphs to SPARQL queries
+The VQG allows for arbitrary triple assertions with variables. It does not offer the expression capabilities to apply filters or 
 
 == Linked Open Data <heading:lod>
 
@@ -648,7 +676,10 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 == Feature List
 #todo[Decide on how detailed do I want this to be.]
 
-== Visual Query Graph-SPARQL Mapping
+== VQG-SPARQL Mapping-Algorithm
+
+
+
 Novel to current work:
 + Qualifiers are visualised more intuitively (see Simons Blog @Simons_Blog_Entry_Graphic_query)
 + Multiple data sources and clear prefixes #todo[Check, whether this is actually new]
@@ -689,6 +720,12 @@ Novel to current work:
   - I cannot write SPARQL local names
   - no Filters
   - ...
+]
+
+#todo[
+  How could I implement something like the same-time highlighting of code and node in the graph?
+  - instead of deleting the node, I simply look for equivalents and change the class properties
+  - i calculate the steps of algebraic operations necessary to build the graph
 ]
 
 
