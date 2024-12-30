@@ -517,7 +517,8 @@ export async function createEditor(container: HTMLElement) {
                 // case where this comes up, especially with the filter statement.
             );
 
-            // TODO this function has a race condition. Test how bad it is.
+            // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
+            //  Leaving this for the future :)
             return Promise.allSettled(convertedConnectionsPromise).then(values => {
                 if (values.every((result) => result.status === "fulfilled")) {
                     const convertedConnections = values.map(v => v.value)
