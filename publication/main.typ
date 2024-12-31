@@ -172,6 +172,8 @@ _So, how could this resurce-consuming process be in parts avoided or supported, 
 
 This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
 
+#todo[loop back to "infrastructure of knowledge"]
+
 == Problem
 
 This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
@@ -549,12 +551,12 @@ $ <assertions_goethe_education_revised>
 
 #definition[
   Let $Sigma$ be a valid alphabet and $Sigma^*$ its Kleene closure. Let
-  $f_p, f_q, f_s in I$ be _distinct_ IRI prefixes for *p*\roperties, *q*\ualifiers and property *s*\tatements,
+  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for *p*\roperties, *q*\ualifying properties and property *s*\tatements,
   $s in I$ be a specific subject,#sym.space.med
-  $Q:= { f_q u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
-  $P:= { f_p u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
-  with the limitation $u in Sigma^*$ and $q_1 = f_q u <=> p = f_p u$. Additionally, let 
-  $p_s := f_s u <=> p := f_p u$ be the property with a statement prefix,#sym.space.med
+  $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
+  $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
+  and the limitation $u in Sigma^*$ and $q_1 = f_q u <=> p = f_p u$. Additionally, let 
+  $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$ be the property with a statement prefix,#sym.space.med
   $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and #sym.space.med
   $b in B$ a blank node. #todo[Is this a blank or unnamed node? Look at a dump.]
   Then, a *qualified statement* is defined as a set containing the triples
@@ -604,7 +606,7 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual que
 )
 
 #definition[
-  A *qualifier* $e_q$ in the visual query graph $G=(N,E)$ is defined as an edge, going *from a qualified edge* $e in E$ to a *qualifying value* $n in N$: $e_q in E_q subset E times (bold("I") union bold("V")) times N$.
+  A *qualifier* is a special directed, labelled edge $bold(e_q) in E_q$ in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying property* and $n in N$ is called *qualifying value*.
 ]
 
 #todo[
