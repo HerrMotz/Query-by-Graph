@@ -230,6 +230,13 @@ The concrete enhancements over other approaches are: #todo[Move this to the Resu
 
 For this, I decided to develop a lightweight web application, which at its heart has Rust-code to translate visually built queries to SPARQL queries and vice versa#footnote[The code is publicly available at #link("https://github.com/HerrMotz/bachelor-thesis/")[`http://github.com/HerrMotz/bachelor-thesis`].] (see @heading:implementation). The program is already in practical application at the time of writing. Changes to the code have been made by a team from the digital humanities at the Friedrich Schiller University Jena under my lead, where a hands-on session with students was conducted. Any changes which do not originate from my work are clearly marked in the code repository. #todo[lasse ich das wirklich so stehen?]
 
+
+#todo[Why should a user be able to edit the query? What sense does this make?
+- can be used to import an existing query
+- some users can maybe write some parts of a SPARQL query and should have the possibility to do so.
+- pasting parts from another query is also very useful
+]
+
 == Related Work
 
 === RDF Explorer <heading:rdf_explorer>
@@ -576,19 +583,9 @@ $ <assertions_goethe_education_revised>
 #remark[
   The term and concept "qualifier" are *not* used or specified in the RDF references @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal.  This definition follows the Wikibase implementation, where the *qualified property* is displayed hierarchically above the qualifiers. The seemingly duplicate assertion $(s,p,o_1)$ is not erroneous, but an implementation detail of Wikibase and simply for convenience. ]
 
-This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
+// This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
 
-#todo[
-  How do qualifiers actually work in the context of the spec @W3C_RDF_1.2_Proposal? Do they use blank nodes?
-  - They are not specified by RDF
-  - They *probably* use blank nodes. I need to do more research on this.
-]
-
-#todo[How do qualifiers get their name in Wikidata?
-- Don't understand the question. A qualified statement is specified by the first "qualifier" statement
-]
-
-#todo[Are qualifiers specific to an RDF implementation?]
+#todo[Are qualifiers specific to an RDF implementation? I should explain this.]
 
 
 == Visual Query Graph
@@ -610,7 +607,7 @@ A qualifier, as defined in @heading:qualifiers, would now be constructed as show
 ]
 
 #todo[
-  This is still unclear.
+  This is probably still unclear.
 ]
 
 #let vql_ops = (
@@ -791,7 +788,7 @@ A SPARQL-SELECT-Query
 #todo[How do I license the code? Maybe Rechtsamt fragen.]
 
 == User Feedback
-100% of female users reported that the user interface looked very nice.
+// 100% of female users reported that the user interface looked very nice.
 
 = Further Work
 
