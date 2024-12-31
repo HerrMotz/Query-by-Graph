@@ -616,7 +616,7 @@ The VQG allows for arbitrary triple assertions with variables. It does not offer
 @Sack2009_OWL_und_OWL_Semantik
 @Lacy2005_OWL
 
-= Developed architecture / system design / implementation <heading:implementation>
+= Developed Architecture, System Design and Implementation <heading:implementation>
 
 #todo[
 Should contain the following aspects:
