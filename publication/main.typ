@@ -19,7 +19,7 @@
 #show: great-theorems-init
 
 #let spct = sym.space.punct
-#let examiner = [Prof.#spct\Dr. Clemens Beckstein\ M.#spct\Sc. Johannes Mitschunas]
+#let assessor = [Prof.#spct\Dr. Clemens Beckstein\ M.#spct\Sc. Johannes Mitschunas]
 #let degree = [Bachelor of Science (B.#spct\Sc.)]
 
 #show: ilm.with(
@@ -33,7 +33,7 @@
   //   academic-degree: degree,
   //   field-of-study: "Informatik",
   //   author-info: "15. Juli 2001 in Chemnitz, Deutschland",
-  //   examiner: examiner,
+  //   assessor: assessor,
   //   place-and-submission-date: "Jena, 12. Januar 2025",
   // ),
 
@@ -44,7 +44,7 @@
     academic-degree: degree,
     field-of-study: "Computer Science",
     author-info: "15 July 2001 in Chemnitz, Germany",
-    examiner: examiner,
+    assessor: assessor,
     place-and-submission-date: "Jena, 12 January 2025",
   ),
   

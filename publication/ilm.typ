@@ -35,7 +35,7 @@
     academic-degree: none,
     field-of-study: none,
     author-info: none,
-    examiner: none,
+    assessor: none,
     place-and-submission-date: none,
   ),
 
@@ -47,7 +47,7 @@
       academic-degree: [Bachelor of Science (B.#sym.space.punct\Sc.)],
       field-of-study: "Informatik",
       author-info: "15.07.2001 in Chemnitz",
-      examiner: "Prof. Dr. Clemens Beckstein",
+      assessor: "Prof. Dr. Clemens Beckstein",
       place-and-submission-date: "Jena, 12. Januar 2025",
     ),
   */
@@ -59,7 +59,7 @@
     academic-degree: none,
     field-of-study: none,
     author-info: none,
-    examiner: none,
+    assessor: none,
     place-and-submission-date: none,
   ),
 
@@ -161,7 +161,7 @@
   
         #language-specific-text.at(4)
         
-        #cover.examiner
+        #cover.assessor
 
         #v(2em)
         
@@ -189,7 +189,7 @@
       "in",
       "submitted by",
       "born on",
-      "Examiner"
+      "Assessed by"
     )
     // page("") // empty page for printing
     cover-page-helper(cover-english, english-language-specific-text)
