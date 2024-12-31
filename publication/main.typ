@@ -581,7 +581,7 @@ This method of describing information allows us to implicitly define new concept
 This chapter mostly follows @Vargas2019_RDF_Explorer. 
 
 #definition[
-  A visual query graph (VQG) is defined as a directed, edge-labelled graph $G=(V,E)$, with vertices $V$ and edges $E$. The vertices of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
+  A visual query graph (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
   The edges of the VQG are a finite set of triples, where each triple indicated a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
   Note here, that the VQG does not contain blank nodes.
 ]
@@ -599,8 +599,11 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual que
 )
 
 #definition[
-  A *qualifier* in the VQG $G=(V,E)$ is defined as a decorated edge $e_q in E subset N times (V union V) times N$ as defined above.
-  #todo[Complete this definition. This is not a decorated edge, yet.]
+  A *qualifier* $e_q$ in the visual query graph $G=(N,E)$ is defined as an edge, going *from a qualified edge* $e in E$ to a *qualifying value* $n in N$: $e_q in E_q subset E times (bold("I") union bold("V")) times N$.
+]
+
+#remark[
+  A *decorated edge* can be looked at as a node.
 ]
 
 #todo[How would a blank node in a VQG look like?]
