@@ -569,10 +569,10 @@ $ <assertions_goethe_education_revised>
   $s in I$ be a specific subject,#sym.space.med
   $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
   $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
-  and the limitation $u in Sigma^*$ and $q_1 = f_q u <=> p = f_p u$. Additionally, let 
+  and the limitation $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let 
   $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$ be the property with a statement prefix,#sym.space.med
-  $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and #sym.space.med
-  $b in B$ a blank node. #todo[Is this a blank or unnamed node? Look at a dump.]
+  $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
+  $b in B$ a blank node.
   Then, a *qualified statement* is defined as a set containing the triples
   $
       {(s,bold(p),o), (s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
@@ -581,7 +581,7 @@ $ <assertions_goethe_education_revised>
 ] <def:qualifiers>
 
 #remark[
-  The term and concept "qualifier" are *not* used or specified in the RDF references @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal.  This definition follows the Wikibase implementation, where the *qualified property* is displayed hierarchically above the qualifiers. The seemingly duplicate assertion $(s,p,o_1)$ is not erroneous, but an implementation detail of Wikibase and simply for convenience. ]
+  The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. This definition follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the *qualified property* is displayed hierarchically above the qualifiers. The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase and added for convenience.]
 
 // This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
 
@@ -699,6 +699,22 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 
 == Feature List
 #todo[Decide on how detailed do I want this to be.]
+
+A full feature list can be found in the technical documentation of the repository. This section will only give an overview.
+
+#figure(
+  table(columns: 2,
+  [Feature], [Status],
+  [Drawing a VQG with variables and literals], [#sym.checkmark],
+  [Searching for entities on multiple Wikibase instances], [#sym.checkmark],
+  [Creating SPARQL-Select-Queries from a VQG], [#sym.checkmark],
+  [Code editor for SPARQL queries], [#sym.checkmark],
+  [Applying changes in the code editor to the VQG], [#sym.checkmark],
+  [Enriching unseen entities with metadata from the Wikibase API], [#sym.checkmark],
+  [Ability to add multiple Wikibase instances as sources], [#sym.checkmark],
+  [Meta-Info Panel], [#sym.checkmark],
+  )
+)
 
 == VQG-SPARQL Mapping-Algorithm
 
