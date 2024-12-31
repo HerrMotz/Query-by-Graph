@@ -71,6 +71,8 @@
     ("IRI", [Internationalised Resource Identifier (see @heading:iri)]),
     ("OWL", "Web Ontology Language"),
     ("VQG", "Visual Query Graph (user-built query graph)"),
+    ("VQL", "Visual Query Language"),
+    ("qVQG", "qualifiable Visual Query Graph"),
     ("API", "Application Programming Interface"),
     ("WWW", "World Wide Web")
   ),
@@ -179,6 +181,9 @@ This "formalise as you go"-approach allows for maximal flexibility of the data m
 This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
 
 I reviewed several visual query helpers @Vargas2019_RDF_Explorer @KnowledgeGraphExplorationForLaypeople @Sparnatural and found them to have room for improvement in routine use and expressability. The aim of this work is to lay the groundwork for a visual query builder, which enables a previously unintroduced user to create complex SPARQL queries on Wikibase instances in daily use.
+
+An important example are *qualifiers*, which are widely used in Wikibase instances to further specify a relationship between individuals. For example, a statement such as "Goethe was educated at the University of Leipzig #underline[from 1765 to 1768]" can be modelled as three assertions:
+(1) Goethe was educated at the University of Leipzig, (2) this education started in 1765 and (3) it ended in 1768. The underlined part of above expression is a *qualifying statement*. As this structure is commonly used in Wikibase, Olaf Simons proposes a visualisation of such qualifiers, which can not yet be found in current implementations.
 
 /*
 Most factual knowledge can easily be written in terms of relations between individuals.
@@ -533,7 +538,7 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 ) <fig:rdf_mapping>
 
 === Qualifiers <heading:qualifiers>
-Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the limited triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". The triples exemplify a *qualified statement* as seen in Wikibase instances: #todo[Rework formulation]
+Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the limited triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". The following triples exemplify a *qualified statement* as seen in Wikibase instances:
 $
   "Goethe" &longArrow("educated at") && "Uni Leipzig", \
   "Goethe" &longArrow("educated at") && "Implicit1", \
@@ -546,8 +551,10 @@ Having specified such an implicit concept for our concept "educated at for a cer
 
 $
   "Implicit1" &longArrow("field of study") && "Law", \
-  "Implicit1" &longArrow("graduated") && "True"
+  "Implicit1" &longArrow("graduated") && "True".
 $ <assertions_goethe_education_revised>
+
+#remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
 
 #definition[
   Let $Sigma$ be a valid alphabet and $Sigma^*$ its Kleene closure. Let
@@ -585,25 +592,18 @@ This method of describing information allows us to implicitly define new concept
 
 
 == Visual Query Graph
-This chapter mostly follows @Vargas2019_RDF_Explorer. 
+#definition[
+  Following @Vargas2019_RDF_Explorer, a *visual query graph* (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
+  The edges of the VQG are a finite set of triples, where each triple indicated a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
+] <def:vqg>
+
+A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier. Following @def:qualifiers, a qualifier, however, requires a _blank node_, which the VQG does not offer. Secondly, this visualisation is not intuitive.
+
+#figure(image("Qualifier_ohne.svg", width: 360pt), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
 
 #definition[
-  A visual query graph (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
-  The edges of the VQG are a finite set of triples, where each triple indicated a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
-  Note here, that the VQG does not contain blank nodes.
+  Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $E_q subset E times Q times N$.
 ]
-
-Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual query language_, consisting of four algebraic operators, which will correspond to atomic user interactions: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the action of adding and removing an edge qualifier.
-
-#figure(
-  table(columns: 2,
-    [User Interaction], [Inverse User Action],
-    [Adding a variable node], [Removing a node],
-    [Adding a literal node], [Removing a node],
-    [Adding a directed edge], [Removing a directed edge],
-    [*Adding an edge qualifier*], [*Removing an edge qualifier*]
-  )
-)
 
 #definition[
   A *qualifier* is a special directed, labelled edge $bold(e_q) in E_q$ in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying property* and $n in N$ is called *qualifying value*.
@@ -613,18 +613,31 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using a _visual que
   This is still unclear.
 ]
 
-#remark[
-  A *decorated edge* can be looked at as a node.
-]
+#let vql_ops = (
+   [User Interaction], [Inverse User Action],
+    [Adding a variable node], [Removing a node],
+    [Adding a literal node], [Removing a node],
+    [Adding a directed edge], [Removing a directed edge],
+    [*Adding a qualifier*], [*Removing a qualifier*]
+)
 
-#todo[How would a blank node in a VQG look like?]
+Following @Vargas2019_RDF_Explorer, the qVQG is _constructed_ using the _qualifiable visual query language (qVQL)_, consisting of #{vql_ops.len()/2-1} algebraic operators, which will correspond to atomic user interactions: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the action of adding and removing an edge qualifier.
 
-#todo[]
+#figure(
+  caption: "Operations in the VQL",
+  table(columns: 2,
+  ..vql_ops
+  )
+)
+
+Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query.
+
+#figure(image("Qualifier_mit.svg", width: 300pt), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
+
+#todo[How would a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code]
 
 == Mapping Visual Query Graphs to SPARQL queries
 The VQG allows for arbitrary triple assertions with variables. It does not offer the expression capabilities to apply filters or 
-
-== Linked Open Data <heading:lod>
 
 == Web Ontology Language <heading:owl>
 @Sack2009_OWL_und_OWL_Semantik
