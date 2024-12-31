@@ -189,7 +189,7 @@
       "in",
       "submitted by",
       "born on",
-      "Assessed by"
+      "assessed by"
     )
     // page("") // empty page for printing
     cover-page-helper(cover-english, english-language-specific-text)
