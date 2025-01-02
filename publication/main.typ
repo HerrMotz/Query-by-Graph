@@ -60,7 +60,7 @@
       Write a heartwarming preface.
       - mention Olaf Simons for the idea in his blog post
       - mention Lucas Werkmeister for his assistance on technical details on Wikibase
-      - mention C. B. and J. M. for their support in writing and proofreading my thesis
+      - mention C. B. and J. M. for their mentoring
       - mention Patrick Stahl for his work on the thesis
     ] 
   ],
