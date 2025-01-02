@@ -41,6 +41,15 @@ W3C_SPARQL_Specification:
   url: 
     value: https://www.w3.org/TR/rdf-sparql-query/
     date: 2024-11-3
+
+W3C_SPARQL_Formal_Definition:
+  type: misc
+  title: 'W3C SPARQL Formal Definition'
+  author: W3C
+  date: 2006-07-03
+  url:
+    value: https://www.w3.org/2001/sw/DataAccess/rq23/sparql-defns.html
+    date: 2024-12-1
     
 Vargas2019_RDF_Explorer:
   type: article
@@ -409,6 +418,7 @@ wikibase_rdf_mapping_graphic:
   author: Schönitzer, Michael F.
   url:
     value: https://commons.wikimedia.org/w/index.php?curid=63880194
+    date: 2024-11-15
   note: "Licensed under CC BY 4.0, no changes made"
 
 
@@ -417,3 +427,5 @@ wikibase_rdf_mapping_article:
   title: "Wikibase RDF Mapping Article"
   url:
     value: https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
+    date: 2024-11-15
+

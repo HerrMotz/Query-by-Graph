@@ -67,8 +67,9 @@
     ("W3C", "World Wide Web Consortium (registered trademark)"),
     ("RDF", "Resource Description Framework"),
     ("RDFS", "Resource Description Framework Schema (Ontology within RDF)"),
-    ("SPARQL", "SPARQL Protocol And RDF Query Language (recursive acronym)"),
+    ("SPARQL", [SPARQL Protocol And RDF Query Language (see @heading:sparql)]),
     ("IRI", [Internationalised Resource Identifier (see @heading:iri)]),
+    ("BGP", [Basic Graph Pattern (@def:bgp)]),
     ("OWL", "Web Ontology Language"),
     ("VQG", "Visual Query Graph (user-built query graph)"),
     ("VQL", "Visual Query Language"),
@@ -291,6 +292,8 @@ Visual Interfaces seem to be promising advantages in the research community and 
 
 = Fundamentals <heading:fundamentals>
 
+Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
+
 == Semantic Technologies
 #todo[
 
@@ -299,15 +302,10 @@ Questions, which I would like to be answered in this chapter:
 - What are RDF databases in comparison to other semantic technologies?
 - What is the advantage of using a strict formal ontology in comparison to an RDF database?
 ]
-@Dengel2012_Semantic_Technologies
-
-// (There are Springer conferences on semantic web technologies: https://suche.thulb.uni-jena.de/Record/1041330375?sid=49057082)
 
 #todo[
   Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
 ]
-
-Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
 
 The original idea by Tim Berners-Lee was to annotate web pages using a well-defined common vocabulary, so that any computer can, without human assistance, extract the relevant contents of a website. For example, a doctors office might post opening times on their website. Using a well-defined and public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. #todo[insert example code from the book on Semantic Technologies] @Dengel2012_Semantic_Technologies. This concept is not necessarily limited to websites, but can just as well be applied for any data storage. These deliberations waged the establishment of standards for describing meta information, such as:
 
@@ -343,19 +341,19 @@ This chapter introduces the parts of the recommendation which are relevant to th
 
 === Graphs and Triples <heading:triples>
 
-An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.
+#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
 
 #definition[
-  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes and *$L$* denote the set of literals (see @heading:literals). Let
+  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
   subject $bold("s") in bold("I") union bold("B")$,
   predicate $bold("p") in bold("I")$ and
-  object $bold("o") in bold("I") union bold("L") union bold("B")$.
+  object $bold("o") in bold("T")$.
 
   Then, following @W3C_RDF_1.1_Reference, any three-tuple or triple in an RDF graph is of the form
 
   $
     (bold("s"), bold("p"), bold("o"))
-  $
+  $ <def:spo1>
   #align(center)[or equivalently]
   $ 
     bold("s") xarrow(bold("p")) bold("o"),
@@ -410,8 +408,7 @@ The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.
 
 === Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
-It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*.
-In most common RDF formats, a blank node can be locally referenced using a *local name*.
+It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
 
 #figure(caption: [*Turtle syntax*#footnote[https://www.w3.org/TR/turtle/] example showing the use of a *blank node* $bold(b)$. Usually, a blank node is indicated by a _special prefix_, followed by a *local name*. In the case of Turtle, the underline character, followed by a local name, which can essentially be alphanumerical (see @def:prefixes_and_bases for more on prefixes). Example taken from @Dengel2012_Semantic_Technologies.],
 ```TURTLE
@@ -443,17 +440,41 @@ However, for any structured querying to be possible, the databases ought to be f
 
 === SPARQL Protocol and RDF Query Language <heading:sparql>
 
-This section follows the current standard RDF v1.1 @W3C_SPARQL_Specification.
+The acronym _SPARQL_ is recursive and stands for *S*\PARQL, *P*\rotocol *A*\nd *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This section follows its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
 #blockquote[
   SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. [...] The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
 ]
 
-#todo[what is the sparql *protocol*? and what is an rdf query language?]
+The following section follows the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
+#definition[
+  A *SPARQL query* is defined as a tuple $(G P, D S, S M, R)$ where:
+  $G P$ is a graph pattern (defined below),
+  $D S$ is an RDF Dataset (essentially a set of RDF graphs),
+  $S M$ is a set of solution modifiers and
+  $R$ is a result form.
+]<def:sparql_query>
 
-==== Syntax
+#definition[
+  A *Graph Pattern* is one of: *Basic Graph Pattern*,
+  _Group Graph Pattern_,
+  _Value Constraints_,
+  _Optional Graph Pattern_,
+  _Union Graph Pattern_ and
+  _RDF Dataset Graph Pattern_.
+]<def:graph_pattern>
+
+#definition[
+  A *Basic Graph Pattern (BGP)* is a set of SPARQL triple patterns
+  $(T union V) times (I union V) times (T union V)$.
+]<def:bgp>
+
+#remark[
+  This implies, that a SPARQL query can query for a triple, which has a literal as its subject. #todo[How does this make sense?]
+]
+
 Writing SPARQL queries is pretty straight-forward: The wanted structure
-is expressed in terms of the query language, and the unkonwn parts are left out. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query. The key challenge is to formalise the question. Even this step is difficult for a user
+is expressed in terms of the query language, and the unkonwn parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query.
 #figure(caption: "Which educational institutions did Goethe visit?",
   ```HTML
   PREFIX wd: <http://www.wikidata.org/entity/>
@@ -470,8 +491,7 @@ The result can either be a set of possible value combinations
 #todo[Finish section]
 
 ==== Expressing IRIs
-An IRI in SPARQL is indicated by the delimiters `<` and `>` (in that order). According to the documentation
-#todo[Keep it brief, but explain.]
+An IRI in SPARQL is indicated by the delimiters `<` and `>` (in that order). 
 
 ==== Prefixes and bases <def:prefixes_and_bases>
 SPARQL allows to define a *prefix*, which acts as an *abbreviation of an IRI*. The IRI `http://www.wikidata.org/entity/Q5879` can be abbreviated using the above defined prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
@@ -499,7 +519,7 @@ A *base* works similarly, only that it is prefixed to any IRI in the document. I
 === RDF Data Model in Wikibase
 *Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominant instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
 
-#remark[This specific data model is interesting, because of its wide use, it defines a de-facto standard in the semantic web community.]
+#remark[This specific data model is interesting, because of its wide use, it defines a de facto standard in the semantic web community.]
 
 ==== Wikibase terminology
 A thing is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any predicate is called *property* and assigned a unique *P-Number*.
@@ -585,8 +605,6 @@ $ <assertions_goethe_education_revised>
 
 // This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
 
-#todo[Are qualifiers specific to an RDF implementation? I should explain this.]
-
 
 == Visual Query Graph
 #definition[
@@ -634,7 +652,7 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 #todo[How would a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code]
 
 == Mapping Visual Query Graphs to SPARQL queries
-The VQG allows for arbitrary triple assertions with variables. It does not offer the expression capabilities to apply filters or 
+A VQG $G=(N,E)$ is primarily defined by its edges $E={(s,p,o)}$ with $s in N, p in I union V, o in N$, which can be directly translated to BGPs in a SPARQL query (see @def:bgp).
 
 == Web Ontology Language <heading:owl>
 @Sack2009_OWL_und_OWL_Semantik
@@ -661,6 +679,14 @@ The goal of this work is to create two mostly separate programs:
 + the _translator from VGQ to SPARQL and vice versa_ (forthon called *backend*).
 
 The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, the focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature. Firstly, this stopped me from implementing the ontology integration module. #todo[Explain what the ontology integration module is, if I have enough time.]
+
+The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find a question which is unintuitive to model` is not as simple to model as it would seem at first glance: 
+
+```HTML
+SELECT
+```
+
+#todo[Extend this section.]
 
 == Architecture
 Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious.
