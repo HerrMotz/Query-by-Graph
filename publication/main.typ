@@ -18,6 +18,9 @@
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
 
+// set the width of images in the whole document
+#set image(width: 360pt)
+
 #let spct = sym.space.punct
 #let assessor = [Prof.#spct\Dr. Clemens Beckstein\ M.#spct\Sc. Johannes Mitschunas]
 #let degree = [Bachelor of Science (B.#spct\Sc.)]
@@ -65,8 +68,9 @@
   appendix: [
     #set heading(outlined: false)
     #todo[This chapter should contain all code listings, figures, tables and so on.]
+    
     == Use of Generative AI
-    This bachelor thesis was written in assistance of the OpenAI large language models GPT-4o and GPT-o1 preview. The large language models were used at the very start to get an overview over the domain, to ease literature research and to point out stylistic, orthographical and grammatical mistakes to the writer. The models were _not_ used to generate passages of this work. 
+    This bachelor thesis was written in assistance of the OpenAI large language models GPT-4o and GPT-o1 preview. The large language models were used to ease literature research and to point out stylistic, orthographical and grammatical mistakes to the writer.
   ],
   
   abbreviations: (
@@ -80,6 +84,7 @@
     ("VQG", [Visual Query Graph (see @def:vqg)]),
     ("VQL", "Visual Query Language"),
     ("qVQG", [qualifiable Visual Query Graph (see @def:qvqg)]),
+    ("WASM", [Web Assembly]),
     ("API", "Application Programming Interface"),
     ("WWW", "World Wide Web")
   ),
@@ -177,7 +182,7 @@ The present internet search engines use a refined mix of network and metadata an
 
 The idea of formalising knowledge is not new. The field of formal ontology revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
 
-_So, how could this resurce-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
+_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
 
 This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
 
@@ -187,10 +192,10 @@ This "formalise as you go"-approach allows for maximal flexibility of the data m
 
 This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
 
-I reviewed several visual query helpers @Vargas2019_RDF_Explorer @KnowledgeGraphExplorationForLaypeople @Sparnatural and found them to have room for improvement in routine use and expressability. The aim of this work is to lay the groundwork for a visual query builder, which enables a previously unintroduced user to create complex SPARQL queries on Wikibase instances in daily use.
+I reviewed several visual query helpers @Vargas2019_RDF_Explorer @KnowledgeGraphExplorationForLaypeople @Sparnatural and found them to have room for improvement in routine use and expressiveness. The aim of this work is to lay the groundwork for a visual query builder, which enables a previously unintroduced user to create complex SPARQL queries on Wikibase instances in daily use.
 
 An important example are *qualifiers*, which are widely used in Wikibase instances to further specify a relationship between individuals. For example, a statement such as "Goethe was educated at the University of Leipzig #underline[from 1765 to 1768]" can be modelled as three assertions:
-(1) Goethe was educated at the University of Leipzig, (2) this education started in 1765 and (3) it ended in 1768. The underlined part of above expression is a *qualifying statement*. As this structure is commonly used in Wikibase, Olaf Simons proposes a visualisation of such qualifiers, which can not yet be found in current implementations.
+(1) Goethe was educated at the University of Leipzig, (2) this education started in 1765 and (3) it ended in 1768. The underlined part of above expression form two *qualifiers*. As this structure is commonly used in Wikibase, Olaf Simons proposes a visualisation of such qualifiers, which can not yet be found in current implementations.
 
 /*
 Most factual knowledge can easily be written in terms of relations between individuals.
@@ -210,11 +215,11 @@ RDF databases store large amounts of validated data and are freely available, ho
 - allow for no systemic consistency checks (i.e. those have to be ran as post-hoc batch jobs).*/
 
 == Proposed Solution
-This thesis aims to explore methods and concrete implementation, which guides the user through the process of finding an answer to a given question in an RDF database. This includes:
+This thesis aims to explore methods and concrete implementation, which guides the user through the process of finding an answer to a given question in a Wikibase knowledge base. This includes:
 
-- enabling a layman to create complex SPARQL-SELECT-queries using a visual interface and
+- enabling a layman to create complex SPARQL SELECT-queries using a visual interface and
 
-- allow changes to the SPARQL-SELECT-query, which will in turn change the graph in the visual interface.
+- allow changes to the SPARQL SELECT-query, which will in turn change the graph in the visual interface.
 
 It will use Wikibase-specific features and conventions, such as:
 - the fuzzy search API,
@@ -246,6 +251,7 @@ For this, I decided to develop a lightweight web application, which at its heart
 
 == Related Work
 
+#set heading(outlined:false)
 === RDF Explorer <heading:rdf_explorer>
 
 The approach by Vargas et al. @Vargas2019_RDF_Explorer is to show all possible assertions about an item already while building the query. The goal is to guide the formulation of the user's question from a known starting point. This approach uses a fuzzy search prompt for an RDF resource as a starting point. After adding an object from the prompt results to the drawing board, the user can select from a list of all relations to other objects to augment the prompt. The user may also leave the relation unspecified, add a new object and select from a list of all assertions between these two objects. A user may just as well choose to let any object or property be a variable.
@@ -295,6 +301,8 @@ Visual Interfaces seem to be promising advantages in the research community and 
 #todo[Build a bridge between related work and my work]
 
 #todo[Make the summaries of other papers more concise, so that it can be put into one running text]
+
+#set heading(outlined:true)
 
 = Fundamentals <heading:fundamentals>
 
@@ -458,7 +466,7 @@ The following section follows the _Formal Definition of the SPARQL query languag
   $G P$ is a graph pattern (defined below),
   $D S$ is an RDF Dataset (essentially a set of RDF graphs),
   $S M$ is a set of solution modifiers and
-  $R$ is a result form.
+  $R$ is a result form. A *SPARQL SELECT-query* is a SPARQL query, where $R$ indicates a projection statement. A SELECT-query consists of a set of projection variables, which will be returned as results and a selection-clause (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
 ]<def:sparql_query>
 
 #definition[
@@ -526,7 +534,7 @@ A *base* works similarly, only that it is prefixed to any IRI in the document. I
 ]
 
 === RDF Data Model in Wikibase
-*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominant instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
+*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
 
 #remark[This specific data model is interesting, because of its wide use, it defines a de facto standard in the semantic web community.]
 
@@ -623,7 +631,7 @@ $ <assertions_goethe_education_revised>
 
 A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier. Following @def:qualifiers, a qualifier, however, requires a _blank node_, which the VQG does not offer. Secondly, this visualisation is not intuitive.
 
-#figure(image("Qualifier_ohne.svg", width: 360pt), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
+#figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
 
 #definition[
   Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
@@ -656,13 +664,16 @@ Following @Vargas2019_RDF_Explorer, the qVQG is _constructed_ using the _qualifi
 
 Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query.
 
-#figure(image("Qualifier_mit.svg", width: 300pt), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
+#figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
 
 #todo[How could a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code.
 - To represent a blank node I simply use a variable. The query will match the blank node and the variable is left out in the projection statement.
 ]
 
-== Mapping Visual Query Graphs to SPARQL queries
+== Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
+
+#todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
+
 A VQG is primarily defined by its edges, which can be directly translated to BGPs of a SPARQL query, as the edge list of a VQG forms a BGP (see @def:bgp).
 
 #proof[Let $G=(N,E)$ be a VQG. An edge $e$ in the VQG is defined as $e_G in E, E:={(s_G,p_G,o_G) | s,o in N, p in I union V}$. A BGP is a set of triples $X$ with $e_X in X, X:={(s_X,p_X,o_X) | s,o in T union V, p in I union V}$. To translate an $e_B$ to $e_X$ means to interpret $e_B$ as $e_X$. Using $T := I union L union V$ (see @def:graph_pattern), and since $(E subset I union V) subset (T union V)$ and $(N subset I union V) subset (T union V)$ are true, a VQG triple can be interpreted as a BGP triple without information loss. #todo[Lektorat notwendig.]
@@ -702,50 +713,71 @@ Should contain the following aspects:
 
 The goal of this work is to create two mostly separate programs:
 + the _visual query building interface_ (forthon called *frontend*) and
-+ the _translator from VGQ to SPARQL and vice versa_ (forthon called *backend*).
++ the _translator between VGQ and SPARQL_ (forthon called *backend*).
 
-The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, the focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature. Firstly, this stopped me from implementing the ontology integration module. #todo[Explain what the ontology integration module is, if I have enough time.]
+The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day use as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, this work's focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature.
 
-The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find a question which is unintuitive to model` is not as simple to model as it would seem at first glance: 
+As motivated in the introduction in order to answer a question, the questioner needs to know enough to ask the question. Query by Graph _does not assist this step_. Secondly, the questioner needs to formalise the question into a BGP. This involves finding the appropriate items and properties in the Wikibase instance. Query by Graph aids this step by offering a direct access to the fuzzy search API. I should add, that the search _does not avert the studying of conventions of a Wikibase_. The design of such assistants is beyond the scope of this thesis, but will find a place in @heading:further_work.
 
+#todo[probably remove the following paragraph]
+The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using an ontology. It is cumbersome to the user to have to remember such conventions, especially, when they could be automatically enforced.
+
+#todo[put this idea in future work as well]
+
+#figure(
+  caption: [SPARQL query: Find all Nobel prize winners with a student who won the same Nobel prize. @Vargas2019_RDF_Explorer],
 ```HTML
-SELECT
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?prize ?student ?winner WHERE {
+     ?winner wdt:P166 ?prize .
+    # Variable -- [award received] -> Variable
+     ?student wdt:P802 ?winner .
+    # Variable -- [student] -> Variable
+     ?student wdt:P166 ?prize .
+    # Variable -- [award received] -> Variable
+     ?prize wdt:P31 wd:Q7191 .
+    # Variable -- [instance of] -> Nobel Prize
+}
 ```
+)
 
-#todo[Extend this section.]
+#remark[Though the query copied from @Vargas2019_RDF_Explorer seems to be correct, it yields an empty result. There are two items which are `instance of` `Nobel prize`, however, neither are a Nobel prize.]
+
+#todo[Wie formuliere ich hier freundlich, dass obwohl ein Werkzeug verwendet wurde das die möglichen Ergebnisse einer Abfrage im Voraus anzeigt, die produzierte Abfrage trotzdem keine Ergebnisse liefert, der Sinn und die Nutzbarkeit des Tools also fragwürdig scheint.]
+
+Lastly, a major shortcoming of the tools I encountered @vanDam2015_RDF2Graph @Vargas2019_RDF_Explorer could not to switch between multiple data sources within the same session. As a result, writing federated queries is not possible. My approach allows to configure new data sources while using the program.
 
 == Architecture
-Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious.
-Now, the backend had to be watertight regarding explainability and traceability. There are several good choices,
-especially functional programming language, but since Rust#footnote[http://www.rust-lang.org] can be compiled to WebAssembly#footnote[http://webassembly.org] and therefore executed natively in a browser, the choice fell well in its favor over a server-client architecture. This combination of architectures proves to be robust, quick and still formally precise.
+Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious. The backend was designed to be explainable and traceable. For this, there are several good choices, especially functional programming language, but since Rust#footnote[http://www.rust-lang.org] can be compiled to Web Assembly#footnote[http://webassembly.org] and therefore executed natively in a browser, the choice fell well in its favour over a server-client architecture. This combination of architectures proves to be extendable, quick and still formally precise.
 
-=== Considerations
+#todo[Mention, that I am limited to two prefixes, wdt and wd. Also mention, that there is a configuration file, which contains all Wikibase data sources. ]
+
+==== Considerations
 
 - everything that has to do with metadata is handled in the frontend
 - this is fine for now, as it uses typescript
 - but this could be moved to the rust backend
 - this was done to ease the development. 
 
-=== Frontend
-The *frontend* was written using Vite (MIT License), Vue3 (MIT License), ReteJS (MIT License) and TailwindCSS (MIT License). Its purpose is to allow 
-+ the user to build a VQG,
-+ searching for items and properties in arbitrary Wikibase instances and
-+ display meta-information on items and properties.
+The *frontend* was written using the libraries Vite, Vue3, ReteJS and TailwindCSS (all under MIT license). Its purpose is to allow the user to
++ build a VQG, and edit it from the SPARQL code editor,
++ searching for items and properties in arbitrary Wikibase instances,
++ display meta-information on items and properties and
++ configure data sources.
 
-For 
+The Wikibase *data sources* are configured by the user and stored in the browser's local storage, allowing them to resume their work. Following the conventions of Wikibase, the choice was made to only allow one prefix for items and one for properties. The program assumes, that the item prefixes point directly to the item, e.g. `wd`, and the property prefixes to the property value, e.g. `wdt` (see @fig:rdf_mapping). This assumption is based on the premise that users writing queries involving more than this level of abstraction, typically have a deeper understanding of the underlying mechanics and are likely capable of composing an adequate SPARQL query.
 
-- Web App (Vite+Vue+Rust+ReteJS+TailwindCSS)
-- All mapping algorithms are written in Rust to ensure completeness and speed
-- Integrates fuzzy search using Wikibase APIs (exemplary implementation for Wikidata and FactGrid)
-
-=== Backend
-- mention which tools I used (spargebra)
-- and how the algorithm comes to its results
+The *backend's* purpose is to handle the algebraic parts of the mapping between SPARQL queries and VQGs.
 
 
 #todo[
+- mention which tools I used (spargebra)
+- and how the algorithm comes to its results
+
 The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 - especially comment on optimisations, like when something is semantically equal i do not redraw the VQG
+- when is something semantically equal?
 ]
 
 
@@ -764,14 +796,31 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
   )
 )
 
-== VQG-SPARQL Mapping-Algorithm
+== VQG-SPARQL Mapping Algorithm
+
+The implementation of the mapping between VQGs and BGPs uses two different algorithms for each direction of the mapping.
+
+=== VQG to SPARQL
+The mapping is done according to the proofs in @heading:mapping_theory. The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI --- or to use Wikibase terminology, an entity. The BGPs in turn are mapped to a SPARQL SELECT-query with all variables from the VQG added to the projection. #todo[Check if this is still the case when I am finished with the qualifier feature, or whether I leave out the blank-node-placeholder variables.]
 
 
+
+#todo[define what a SPARQL select query is]
+
+Novel to current work @Vargas2019_RDF_Explorer @Vargas2020_UI_for_Exploring_KGs, _the generated query is displayed instantaneously_ below the visual query builder, thanks to the speed of the backend. 
+
+=== SPARQL to VQG
+The backend makes use of a SPARQL parser package called `spargebra`. Currently, only the mapping from SPARQL-Select-queries with BGPs is defined without loss in the implementation. Any language feature which is not implemented will be ignored, e.g. the SPARQL keywords like `FILTER` are ignored. The used parser package, however, has definitions for most#footnote[Here, I must say I did not notice an important language feature which is not implemented, however, there is no statement by the makers which asserts this statement.] of the SPARQL language features. These features can be very easily added in future versions, thanks to the program's modular design. 
 
 Novel to current work:
 + Qualifiers are visualised more intuitively (see Simons Blog @Simons_Blog_Entry_Graphic_query)
 + Multiple data sources and clear prefixes #todo[Check, whether this is actually new]
 + ... more?
+
+
+#todo[
+  Explain which shortcomings in addition to the theoretical ones this makes. (If there are any)
+]
 
 #todo[
   Mention the reason for use of wdt prefix (https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements)
@@ -823,21 +872,6 @@ Novel to current work:
   the item and property prefixes must be prefix-free (one may not be prefix of the other).
 ]
 
-== SPARQL-OWL Mapping
-
-=== Select Queries
-#todo[
-  Which features can I graphically visualise?
-  - Triples
-  - Qualifiers
-  - Literals
-  - blank nodes?
-  - Filters?
-  - ...
-]
-
-A SPARQL-SELECT-Query
-
 = Measurement results / analysis / discussion
 
 #todo[
@@ -850,8 +884,6 @@ A SPARQL-SELECT-Query
 - Patrick Stahl developed for Clemens Beck
 - Changes / contributions by patrick are clearly marked in Version Control
 
-#todo[How do I license the code? Maybe Rechtsamt fragen.]
-
 == User Feedback
 // 100% of female users reported that the user interface looked very nice.
 
@@ -859,7 +891,7 @@ A SPARQL-SELECT-Query
   Why does it make sense, that a user can edit a SPARQL query?
 ]
 
-= Further Work
+= Further Work <heading:further_work>
 
 + Creating/Manipulating RDF assertions (INSERT and UPDATE statements)
 
