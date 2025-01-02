@@ -325,7 +325,8 @@
   )
 
   // Break large tables across pages.
-  show figure.where(kind: table): set block(breakable: true)
+  // show figure.where(kind: table): set block(breakable: true) // DM 02.01.2025
+  
   set table(
     // Increase the table cell's padding
     inset: 7pt, // default is 5pt

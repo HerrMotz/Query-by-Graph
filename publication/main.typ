@@ -53,7 +53,13 @@
   ],
   
   preface: align(left)[
-    #todo[Write a heartwarming preface.]
+    #todo[
+      Write a heartwarming preface.
+      - mention Olaf Simons for the idea in his blog post
+      - mention Lucas Werkmeister for his assistance on technical details on Wikibase
+      - mention C. B. and J. M. for their support in writing and proofreading my thesis
+      - mention Patrick Stahl for his work on the thesis
+    ] 
   ],
   
   appendix: [
@@ -71,9 +77,9 @@
     ("IRI", [Internationalised Resource Identifier (see @heading:iri)]),
     ("BGP", [Basic Graph Pattern (@def:bgp)]),
     ("OWL", "Web Ontology Language"),
-    ("VQG", "Visual Query Graph (user-built query graph)"),
+    ("VQG", [Visual Query Graph (see @def:vqg)]),
     ("VQL", "Visual Query Language"),
-    ("qVQG", "qualifiable Visual Query Graph"),
+    ("qVQG", [qualifiable Visual Query Graph (see @def:qvqg)]),
     ("API", "Application Programming Interface"),
     ("WWW", "World Wide Web")
   ),
@@ -165,9 +171,9 @@ I should also state some general information:
 ]*/
 
 == Background <problem_heading>
-Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actionally asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
+Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
  
-The present internet search engines use a refined mix of network and metadata analysis as well as natural language processing (NLP) to identify the most relevant results to a topic. The World Wide Web also includes large websites like Wikipedia, which, similar to a printed encyclopedia, provide information in natural language. Depending on the topic being discussed, an entry usually shows a certain structure. Entries about individuals typically include their dates of birth and death, while entries about monuments most commonly provide information about their architect, location, and year of construction, among other details. The fundamental idea of _Wikibase_#footnote[https://wikiba.se/, also note that there were similar approches, such as #link("https://en.wikipedia.org/wiki/Freebase_(database)")[Freebase]] is to enable the user to strictly formalise such semi-structured articles, so that its contents are annotated to be machine-readable.
+The present internet search engines use a refined mix of network and metadata analysis as well as natural language processing (NLP) to identify the most relevant results to a topic. The World Wide Web also includes large websites like Wikipedia, which, similar to a printed encyclopedia, provide information in natural language. Depending on the topic being discussed, an entry usually shows a certain structure. Entries about individuals typically include their dates of birth and death, while entries about monuments most commonly provide information about their architect, location, and year of construction, among other details. The fundamental idea of _Wikibase_#footnote[https://wikiba.se/, also note that there were similar approaches, such as #link("https://en.wikipedia.org/wiki/Freebase_(database)")[Freebase]] is to enable the user to strictly formalise such semi-structured articles, so that its contents are annotated to be machine-readable.
 
 The idea of formalising knowledge is not new. The field of formal ontology revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
 
@@ -353,12 +359,12 @@ This chapter introduces the parts of the recommendation which are relevant to th
 
   $
     (bold("s"), bold("p"), bold("o"))
-  $ <def:spo1>
+  $
   #align(center)[or equivalently]
   $ 
     bold("s") xarrow(bold("p")) bold("o"),
-  $ <def:spo>
-]
+  $
+] <def:spo>
 
 if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
 
@@ -474,8 +480,8 @@ The following section follows the _Formal Definition of the SPARQL query languag
 ]
 
 Writing SPARQL queries is pretty straight-forward: The wanted structure
-is expressed in terms of the query language, and the unkonwn parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query.
-#figure(caption: "Which educational institutions did Goethe visit?",
+is expressed in terms of the query language, and the unknown parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query.
+#figure(caption: "A SPARQL query to determine which educational institutions Goethe visited.",
   ```HTML
   PREFIX wd: <http://www.wikidata.org/entity/>
   PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -514,6 +520,9 @@ A *base* works similarly, only that it is prefixed to any IRI in the document. I
   - How does "describe" work? (because it might be interesting as a graph exploring method)
 
   - Define prefix
+
+  Maybe introduce this syntax here, but somewhere at least:
+  https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QSynBlankNodes
 ]
 
 === RDF Data Model in Wikibase
@@ -617,8 +626,8 @@ A qualifier, as defined in @heading:qualifiers, would now be constructed as show
 #figure(image("Qualifier_ohne.svg", width: 360pt), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
 
 #definition[
-  Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $E_q subset E times Q times N$.
-]
+  Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
+] <def:qvqg>
 
 #definition[
   A *qualifier* is a special directed, labelled edge $bold(e_q) in E_q$ in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying property* and $n in N$ is called *qualifying value*.
@@ -649,10 +658,27 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 #figure(image("Qualifier_mit.svg", width: 300pt), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
 
-#todo[How would a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code]
+#todo[How could a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code.
+- To represent a blank node I simply use a variable. The query will match the blank node and the variable is left out in the projection statement.
+]
 
 == Mapping Visual Query Graphs to SPARQL queries
-A VQG $G=(N,E)$ is primarily defined by its edges $E={(s,p,o)}$ with $s in N, p in I union V, o in N$, which can be directly translated to BGPs in a SPARQL query (see @def:bgp).
+A VQG is primarily defined by its edges, which can be directly translated to BGPs of a SPARQL query, as the edge list of a VQG forms a BGP (see @def:bgp).
+
+#proof[Let $G=(N,E)$ be a VQG. An edge $e$ in the VQG is defined as $e_G in E, E:={(s_G,p_G,o_G) | s,o in N, p in I union V}$. A BGP is a set of triples $X$ with $e_X in X, X:={(s_X,p_X,o_X) | s,o in T union V, p in I union V}$. To translate an $e_B$ to $e_X$ means to interpret $e_B$ as $e_X$. Using $T := I union L union V$ (see @def:graph_pattern), and since $(E subset I union V) subset (T union V)$ and $(N subset I union V) subset (T union V)$ are true, a VQG triple can be interpreted as a BGP triple without information loss. #todo[Lektorat notwendig.]
+]
+
+A qVQG is equivalent to a VQG, with the addition of qualifiers. Therefore, it needs to be shown that a qualifier triple can be translated and interpreted into a BGP. Secondly, together with the above shown VQG translation, it needs to form a qualifier from @def:qualifiers.
+
+#proof[
+  Let $G_q=(N, E, E_q)$ be a qVQG. Let $e_q$ be a qualifier edge with $e_q in E_q, E_q := {(e, q, n) | e in E, q in Q, n in N}$, $X$ be defined above. Furthermore, let $X'$ be a set of sets of tuples and $b in B$ a blank node. The mapping $f: E_q -> X', f: (e, q, n) arrow.long.bar {(n,b,)}$
+
+  #todo[Folgendes formalisieren:
+  Man nimmt einfach das Qualifierkonstrukt hinzu und lässt die VQG Kante stehen. So entsteht das vollständige Qualifierkonstrukt wie in Wikibase.
+
+  Aber: ich brauche irgendwie die Knoten von $e$ im VQG. Ich weiß noch nicht wie ich das schön aufschreiben kann.
+  ]
+]
 
 == Web Ontology Language <heading:owl>
 @Sack2009_OWL_und_OWL_Semantik
@@ -723,12 +749,8 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 ]
 
 
-== Feature List
-#todo[Decide on how detailed do I want this to be.]
-
-A full feature list can be found in the technical documentation of the repository. This section will only give an overview.
-
 #figure(
+  caption: [An overview of all features currently implemented.\ A full feature list can be found in the technical documentation of the repository.],
   table(columns: 2,
   [Feature], [Status],
   [Drawing a VQG with variables and literals], [#sym.checkmark],
@@ -754,6 +776,7 @@ Novel to current work:
 #todo[
   Mention the reason for use of wdt prefix (https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Truthy_statements)
 ]
+
 
 #todo[
   Explore the expression capabilities of my tool. Can it write an arbitrary SPARQL query?
@@ -832,6 +855,10 @@ A SPARQL-SELECT-Query
 == User Feedback
 // 100% of female users reported that the user interface looked very nice.
 
+#todo[
+  Why does it make sense, that a user can edit a SPARQL query?
+]
+
 = Further Work
 
 + Creating/Manipulating RDF assertions (INSERT and UPDATE statements)
@@ -852,6 +879,7 @@ A SPARQL-SELECT-Query
   - this would involve rewriting the importConnections
 
 + Formulating queries from natural language using Large Language Models
+
 
 = Declaration of Academic Integrity
 
