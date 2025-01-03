@@ -178,7 +178,17 @@ I should also state some general information:
 == Background <problem_heading>
 #todo[Die 10 Sätze, die ich gestern Nacht zu Felix gesagt habe.]
 
-Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
+Over the history of humanity, it has built an _infrastructure for knowledge_. It started as stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines, for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata, which arose as a "machine-readable" version of Wikipedia. Wikidata has become a form of library, in which the knowledge is not written in human, but machine language. Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
+
+== This Work
+#todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
+
+This thesis aims to lay the ground work for a visual query builder for SPARQL queries. The program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
+
+== Related Work
+The approach by Vargas et al. @Vargas2019_RDF_Explorer is to build a query, starting from one Wikbase entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result.  
+
+/*Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
  
 The present internet search engines use a refined mix of network and metadata analysis as well as natural language processing (NLP) to identify the most relevant results to a topic. The World Wide Web also includes large websites like Wikipedia, which, similar to a printed encyclopedia, provide information in natural language. Depending on the topic being discussed, an entry usually shows a certain structure. Entries about individuals typically include their dates of birth and death, while entries about monuments most commonly provide information about their architect, location, and year of construction, among other details. The fundamental idea of _Wikibase_#footnote[https://wikiba.se/, also note that there were similar approaches, such as #link("https://en.wikipedia.org/wiki/Freebase_(database)")[Freebase]] is to enable the user to strictly formalise such semi-structured articles, so that its contents are annotated to be machine-readable.
 
@@ -186,13 +196,13 @@ The idea of formalising knowledge is not new. The field of formal ontology revol
 
 _So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
 
-This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
+This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.*/
 
 #todo[loop back to "infrastructure of knowledge"]
 
+/*
 == Problem
 
-#todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
 
 This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
 
@@ -217,7 +227,8 @@ RDF databases store large amounts of validated data and are freely available, ho
 - usually contain no formal ontology to inference on their data,
 - can hardly automatically be made consistent with a formal ontology and
 - allow for no systemic consistency checks (i.e. those have to be ran as post-hoc batch jobs).*/
-
+*/
+/*
 == Proposed Solution
 This thesis aims to explore methods and concrete implementation, which guides the user through the process of finding an answer to a given question in a Wikibase knowledge base. This includes:
 
@@ -251,7 +262,7 @@ For this, I decided to develop a lightweight web application, which at its heart
 - can be used to import an existing query
 - some users can maybe write some parts of a SPARQL query and should have the possibility to do so.
 - pasting parts from another query is also very useful
-]
+]*/
 
 == Related Work
 
