@@ -14,8 +14,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "=0.2.93"
-
+wasm-bindgen = "0.2.84"
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
@@ -23,6 +22,8 @@ wasm-bindgen = "=0.2.93"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 serde_json = "1.0.122"
 serde = { version = "1.0.204", features = ["derive"] }
+getrandom = { version = "0.2", features = ["js"] }
+spargebra = "0.3.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

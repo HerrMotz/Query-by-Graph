@@ -1,30 +1,30 @@
-import WikibaseDataSource from "../types/WikibaseDataSource.ts";
+import {WikibaseDataSource} from "../types/WikibaseDataSource.ts";
 
 const wikiDataDataSource: WikibaseDataSource = {
     name: "WikiData",
-    url: "https://www.wikidata.org/w/api.php",
+    uri: "https://www.wikidata.org/w/api.php",
     preferredLanguages: ['en'],
-    entityPrefix: {
-        url: "http://www.wikidata.org/entity/",
+    itemPrefix: {
+        iri: "http://www.wikidata.org/entity/",
         abbreviation: "wd"
     },
     propertyPrefix: {
-        url: "http://www.wikidata.org/prop/direct/",
+        iri: "http://www.wikidata.org/prop/direct/",
         abbreviation: "wdt"
     },
-    queryService: "https://query.wikidata.org/ ",
+    queryService: "https://query.wikidata.org/", // do not leave blank spaces in urls
 }
 
 const factGridDataSource: WikibaseDataSource = {
     name: "FactGrid",
-    url: "https://database.factgrid.de/w/api.php",
+    uri: "https://database.factgrid.de/w/api.php",
     preferredLanguages: ['de'],
-    entityPrefix: {
-        url: "https://database.factgrid.de/entity/",
+    itemPrefix: {
+        iri: "https://database.factgrid.de/entity/",
         abbreviation: "fg"
     },
     propertyPrefix: {
-        url: "https://database.factgrid.de/prop/direct/",
+        iri: "https://database.factgrid.de/prop/direct/",
         abbreviation: "fgt"
     },
     queryService: "https://database.factgrid.de/query/",
@@ -47,14 +47,14 @@ const testinstanceSource: WikibaseDataSource = {
 
 const noDataSource: WikibaseDataSource = {
     name: "",
-    url: "",
+    uri: "",
     preferredLanguages: [],
     propertyPrefix: {
-        url: "",
+        iri: "",
         abbreviation: ""
     },
-    entityPrefix: {
-        url: "",
+    itemPrefix: {
+        iri: "",
         abbreviation: ""
     },
     queryService: "",
