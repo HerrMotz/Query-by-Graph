@@ -22,8 +22,14 @@
 #set image(width: 360pt)
 
 #let spct = sym.space.punct
-#let assessor = [Prof.#spct\Dr. Clemens Beckstein\ M.#spct\Sc. Johannes Mitschunas]
-#let degree = [Bachelor of Science (B.#spct\Sc.)]
+//#show "e.g.": [e.#spct\g.] // unsure whether I like this.
+//#show "i.e.": [i.#spct\e.]
+#show "B.Sc.": [B.#spct\Sc.]
+#show "M.Sc.": [M.#spct\Sc.]
+#show "Prof. Dr.": [Prof.#spct\Dr.]
+
+#let assessor = [Prof. Dr. Clemens Beckstein\ M. Sc. Johannes Mitschunas]
+#let degree = [Bachelor of Science (B. Sc.)]
 
 #show: ilm.with(
   title: [Query by Graph],
@@ -178,7 +184,7 @@ I should also state some general information:
 == Background <problem_heading>
 #todo[Die 10 Sätze, die ich gestern Nacht zu Felix gesagt habe.]
 
-Over the history of humanity, it has built an _infrastructure for knowledge_. It started as stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines, for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata, which arose as a "machine-readable" version of Wikipedia. Wikidata has become a form of library, in which the knowledge is not written in human, but machine language. Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines, for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata, which arose as a "machine-readable" version of Wikipedia. Wikidata has become a form of library, in which the knowledge is not written in human, but machine language. Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
 
 == This Work
 #todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
@@ -186,7 +192,17 @@ Over the history of humanity, it has built an _infrastructure for knowledge_. It
 This thesis aims to lay the ground work for a visual query builder for SPARQL queries. The program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
 
 == Related Work
-The approach by Vargas et al. @Vargas2019_RDF_Explorer is to build a query, starting from one Wikbase entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result.  
+Main inspiration for this work was a blog entry by Olaf Simons, called *"You should be able to graphically search in a graph database"* @Simons_Blog_Entry_Graphic_query, where he describes a visual query interface, which models the structure of the RDF graph it is trying to query. The user can create nodes and draw edges between them, where the edges relate to Wikibase properties and nodes to items. Simons makes an interesting addition to the graphical repertoire, which are qualifiers. A qualifier can add additional information to a property between to items, for example, the relationship `educated-at` could be qualified by the two statements `from 2020` and `to 2023`. In Wikibase, a user can define arbitary properties to be qualifying of a relationship and is not limited to statements about time, like in this example. The RDF graph structure necessary is, however, not intuitive, as it involves implicit nodes. Simons proposes the simple graphical element, to draw additional edges from the qualified property, making querying for qualifiers using a graphical tool manageable in the first place.
+
+The approach by Vargas et al. @Vargas2019_RDF_Explorer called *RDF Explorer* is to build a query for a Wikibase instance, starting from a single entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result. The software is called RDF Explorer#footnote[A demonstration is available at https://rdfexplorer.org.] and works with one Wikibase instance at a time. It offers example queries, which can be dragged to the graph building pane. Their work aims to allow the user to build a query, but also discover what the data source has to offer at the same time.
+
+*Sparnatural* @Sparnatural allows to build queries using an interface similar to block-based visual programming languages. It works for arbitrary RDF data sources, not just Wikibase. However, it requires an OWL ontology to generate the categories and options in the user interface. Anything not covered by the ontology, cannot be asked for in a built query. Still, the implementation is very advanced and offers many of the language features of SPARQL, i.e. `FILTER` statements.
+
+*SPARQLVis* @SPARQLVis proposes a form-based interface and promises features such as a preview of all related entities to an item and the same querying functionalities as the other here mentioned approaches. The work contains screenshots of the program, which show a relatively complicated interface for the same functionality offered by others (e.g. Vargas).
+
+#todo[irgendwo anders unterbringen:]
+Query by Graph lays the to focus on graph-based query building, like RDF Explorer, because the user can discover the data offered in a Wikibase instance by using the already existing web-interfaces. They are by design adequate to the modeled data. The advantage to have a discovery function integrated with the query builder is obvious, however, only small. The possible assertions for an elaborated item are large and their suggestion can lead to confusion. A query builder's main tasks are to enable the user to quickly find entities the user knows of, write potent queries using an intuitive visualisation and to generate a SPARQL query.
+
 
 /*Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
  
@@ -197,8 +213,6 @@ The idea of formalising knowledge is not new. The field of formal ontology revol
 _So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
 
 This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.*/
-
-#todo[loop back to "infrastructure of knowledge"]
 
 /*
 == Problem
@@ -265,6 +279,7 @@ For this, I decided to develop a lightweight web application, which at its heart
 - pasting parts from another query is also very useful
 ]*/
 
+/*
 == Related Work
 
 #set heading(outlined:false)
@@ -319,6 +334,7 @@ Visual Interfaces seem to be promising advantages in the research community and 
 #todo[Make the summaries of other papers more concise, so that it can be put into one running text]
 
 #set heading(outlined:true)
+*/
 
 = Preliminaries <heading:fundamentals>
 #todo[
@@ -731,7 +747,7 @@ The goal of this work is to create two mostly separate programs:
 
 The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day use as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, this work's focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature.
 
-As motivated in the introduction in order to answer a question, the questioner needs to know enough to ask the question. Query by Graph _does not assist this step_. Secondly, the questioner needs to formalise the question into a BGP. This involves finding the appropriate items and properties in the Wikibase instance. Query by Graph aids this step by offering a direct access to the fuzzy search API. I should add, that the search _does not avert the studying of conventions of a Wikibase_. The design of such assistants is beyond the scope of this thesis, but will find a place in @heading:further_work.
+As motivated in the introduction in order to answer a question, the questioner needs to know enough to ask the question. Query by Graph _does not assist this step_. Secondly, the questioner needs to formalise the question into a BGP. This involves finding the appropriate items and properties in the Wikibase instance. Query by Graph aids this step by offering a direct access to the fuzzy search API. I should add, that the search _does not avert the studying of conventions of a Wikibase_. 
 
 #todo[probably remove the following paragraph]
 The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using an ontology. It is cumbersome to the user to have to remember such conventions, especially, when they could be automatically enforced.
