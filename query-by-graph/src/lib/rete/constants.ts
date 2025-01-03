@@ -7,7 +7,7 @@ const variableEntity: EntityType = { // EntityType
     label: 'Variable',
     description: 'Variable Entity',
     prefix: {
-        uri: "",
+        iri: "",
         abbreviation: "",
     },
     dataSource: noDataSource
@@ -24,7 +24,7 @@ const noEntity: EntityType = {
     label: '',
     description: '',
     prefix: {
-        uri: "",
+        iri: "",
         abbreviation: "",
     },
     dataSource: noDataSource
