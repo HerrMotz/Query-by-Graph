@@ -176,6 +176,8 @@ I should also state some general information:
 ]*/
 
 == Background <problem_heading>
+#todo[Die 10 Sätze, die ich gestern Nacht zu Felix gesagt habe.]
+
 Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
  
 The present internet search engines use a refined mix of network and metadata analysis as well as natural language processing (NLP) to identify the most relevant results to a topic. The World Wide Web also includes large websites like Wikipedia, which, similar to a printed encyclopedia, provide information in natural language. Depending on the topic being discussed, an entry usually shows a certain structure. Entries about individuals typically include their dates of birth and death, while entries about monuments most commonly provide information about their architect, location, and year of construction, among other details. The fundamental idea of _Wikibase_#footnote[https://wikiba.se/, also note that there were similar approaches, such as #link("https://en.wikipedia.org/wiki/Freebase_(database)")[Freebase]] is to enable the user to strictly formalise such semi-structured articles, so that its contents are annotated to be machine-readable.
@@ -189,6 +191,8 @@ This "formalise as you go"-approach allows for maximal flexibility of the data m
 #todo[loop back to "infrastructure of knowledge"]
 
 == Problem
+
+#todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
 
 This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
 
@@ -304,11 +308,7 @@ Visual Interfaces seem to be promising advantages in the research community and 
 
 #set heading(outlined:true)
 
-= Fundamentals <heading:fundamentals>
-
-Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
-
-== Semantic Technologies
+= Preliminaries <heading:fundamentals>
 #todo[
 
 Questions, which I would like to be answered in this chapter:
@@ -317,6 +317,8 @@ Questions, which I would like to be answered in this chapter:
 - What is the advantage of using a strict formal ontology in comparison to an RDF database?
 ]
 
+Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
+
 #todo[
   Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
 ]
@@ -324,7 +326,6 @@ Questions, which I would like to be answered in this chapter:
 The original idea by Tim Berners-Lee was to annotate web pages using a well-defined common vocabulary, so that any computer can, without human assistance, extract the relevant contents of a website. For example, a doctors office might post opening times on their website. Using a well-defined and public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. #todo[insert example code from the book on Semantic Technologies] @Dengel2012_Semantic_Technologies. This concept is not necessarily limited to websites, but can just as well be applied for any data storage. These deliberations waged the establishment of standards for describing meta information, such as:
 
 - Resource Description Framework (see @heading:rdf_standard)
-- Web Ontology Language (@heading:owl)
 - #todo[List more from the book @Dengel2012_Semantic_Technologies]
 
 
@@ -685,17 +686,13 @@ A qVQG is equivalent to a VQG, with the addition of qualifiers. Therefore, it ne
   Let $G_q=(N, E, E_q)$ be a qVQG. Let $e_q$ be a qualifier edge with $e_q in E_q, E_q := {(e, q, n) | e in E, q in Q, n in N}$, $X$ be defined above. Furthermore, let $X'$ be a set of sets of tuples and $b in B$ a blank node. The mapping $f: E_q -> X', f: (e, q, n) arrow.long.bar {(n,b,)}$
 
   #todo[Folgendes formalisieren:
-  Man nimmt einfach das Qualifierkonstrukt hinzu und lässt die VQG Kante stehen. So entsteht das vollständige Qualifierkonstrukt wie in Wikibase.
-
-  Aber: ich brauche irgendwie die Knoten von $e$ im VQG. Ich weiß noch nicht wie ich das schön aufschreiben kann.
+    Man nimmt einfach das Qualifierkonstrukt hinzu und lässt die VQG Kante stehen. So entsteht das vollständige Qualifierkonstrukt wie in Wikibase.
+  
+    Aber: ich brauche irgendwie die Knoten von $e$ im VQG. Ich weiß noch nicht wie ich das schön aufschreiben kann.
   ]
 ]
 
-== Web Ontology Language <heading:owl>
-@Sack2009_OWL_und_OWL_Semantik
-@Lacy2005_OWL
-
-= Developed Architecture, System Design and Implementation <heading:implementation>
+= Results <heading:implementation>
 
 #todo[
 Should contain the following aspects:
@@ -871,8 +868,6 @@ Novel to current work:
   For the convertConnectionsToPrefixedRepresentation to work,
   the item and property prefixes must be prefix-free (one may not be prefix of the other).
 ]
-
-= Measurement results / analysis / discussion
 
 #todo[
 - whatever you have done, you must comment it, compare it to other systems, evaluate it
