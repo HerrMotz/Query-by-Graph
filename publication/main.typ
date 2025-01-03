@@ -211,6 +211,7 @@ I reviewed several visual query helpers @Vargas2019_RDF_Explorer @KnowledgeGraph
 An important example are *qualifiers*, which are widely used in Wikibase instances to further specify a relationship between individuals. For example, a statement such as "Goethe was educated at the University of Leipzig #underline[from 1765 to 1768]" can be modelled as three assertions:
 (1) Goethe was educated at the University of Leipzig, (2) this education started in 1765 and (3) it ended in 1768. The underlined part of above expression form two *qualifiers*. As this structure is commonly used in Wikibase, Olaf Simons proposes a visualisation of such qualifiers, which can not yet be found in current implementations.
 
+
 /*
 Most factual knowledge can easily be written in terms of relations between individuals.
 
@@ -348,6 +349,8 @@ The W3C#sym.trademark.registered recommends a standard for exchange of semantica
 - the Internationalised Resource Identifier (@heading:iri) and
 
 - the query language SPARQL (see @heading:sparql).
+
+This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.#sym.space.punct\e. Wikibase. 
 
 This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.#sym.space.punct\e. Wikibase. 
 
@@ -607,6 +610,7 @@ Having specified such an implicit concept for our concept "educated at for a cer
 
 $
   "Implicit1" &longArrow("field of study") && "Law", \
+
   "Implicit1" &longArrow("graduated") && "True".
 $ <assertions_goethe_education_revised>
 
@@ -622,6 +626,7 @@ $ <assertions_goethe_education_revised>
   $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$ be the property with a statement prefix,#sym.space.med
   $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
   $b in B$ a blank node.
+
   Then, a *qualified statement* is defined as a set containing the triples
   $
       {(s,bold(p),o), (s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
@@ -644,6 +649,7 @@ $ <assertions_goethe_education_revised>
 A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier. Following @def:qualifiers, a qualifier, however, requires a _blank node_, which the VQG does not offer. Secondly, this visualisation is not intuitive.
 
 #figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
+
 
 #definition[
   Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
@@ -824,7 +830,6 @@ Novel to current work:
 + Qualifiers are visualised more intuitively (see Simons Blog @Simons_Blog_Entry_Graphic_query)
 + Multiple data sources and clear prefixes #todo[Check, whether this is actually new]
 + ... more?
-
 
 #todo[
   Explain which shortcomings in addition to the theoretical ones this makes. (If there are any)

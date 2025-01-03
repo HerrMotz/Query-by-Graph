@@ -54,7 +54,6 @@ import {selectedDataSource, dataSources} from './store.ts';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {debounce} from "./lib/utils";
 
-
 interface Editor {
   setVueCallback: (callback: (context: any) => void) => void;
   removeSelectedConnections: () => Promise<void>;
