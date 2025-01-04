@@ -393,39 +393,46 @@ export async function createEditor(container: HTMLElement) {
 
     async function simplifyVQG() {
         const allNodes = editor.getNodes();
+        // traverse all nodes, store them and check for duplicates
         const seen: Map<string, string> = new Map();
     
         for (const node of allNodes) {
             const nodeId = node.entity.id || '';
             // new Node encountered
             if (!seen.has(nodeId)) {
-                console.log("Adding new Node: ", nodeId)
                 seen.set(nodeId, node.id);
             // duplicate Node encountered
             } else {
                 const originalNodeId = seen.get(nodeId);
-                console.log("Duplicate encoutered: ", originalNodeId);
                 for (const conn of editor.getConnections()) {
-                    // source is the duplicate --> redirect connection from original to target
+                    // store old connection for its properties
+                    const oldConn = editor.getConnection(conn.id);
+                    // source is the duplicate --> create connection from original to target
                     if (conn.source === node.id) {
                         await editor.removeConnection(conn.id);
-                        await editor.addConnection({
-                            id: conn.id,
-                            source: originalNodeId!,
-                            sourceOutput: conn.sourceOutput,
-                            target: conn.target,
-                            targetInput: conn.targetInput
-                        });
-                    // target is the duplicate --> redirect connection from source to original
+                        const newConn = new Connection(
+                            editor.getNode(originalNodeId!),
+                            conn.sourceOutput,
+                            editor.getNode(conn.target),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
+                    // target is the duplicate --> create connection from source to original
                     } else if (conn.target === node.id) {
                         await editor.removeConnection(conn.id);
-                        await editor.addConnection({
-                            id: conn.id,
-                            source: conn.source,
-                            sourceOutput: conn.sourceOutput,
-                            target: originalNodeId!,
-                            targetInput: conn.targetInput
-                        });
+                        const newConn = new Connection(
+                            editor.getNode(conn.source),
+                            conn.sourceOutput,
+                            editor.getNode(originalNodeId!),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
                     }
                 }
                 // remove the duplicate node
@@ -434,7 +441,6 @@ export async function createEditor(container: HTMLElement) {
         }
     }
     
-
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
         arrow: () => true
     });
