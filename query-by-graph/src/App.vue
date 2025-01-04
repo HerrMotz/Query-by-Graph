@@ -63,6 +63,7 @@ interface Editor {
   exportConnections: () => ConnectionInterfaceType[];
   layout: (animate: boolean) => void;
   getNode: (nodeId: string) => ClassicPreset.Node | undefined;
+  simplify: () => void;
 }
 
 const editor = ref<Editor | null>();  // Define the type of editor as Promise<Editor> | null
@@ -163,6 +164,16 @@ onMounted(async () => {
     });
   }
 });
+
+// calling simplify and then layout does simplify the graph but arranges it in a weird way
+// this is fixed by clicking the button twice, which is simulated here (the timeout is necessary)
+const simplifyAndArrange = () => {
+  editor.value?.layout(true);
+  editor.value?.simplify();
+  setTimeout(() => {
+    editor.value?.layout(true);
+  }, 10);
+}
 
 const copyToClipboard = () => {
   navigator.clipboard.writeText(code.value);
@@ -291,7 +302,12 @@ const gotoLink = (url?: string) => {
             <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Arrangement</h4>
               <div class="flex gap-4">
-                <Button class="grow" @click="() => {if (editor) {editor.layout(true)}}">
+                <Button class="grow" @click="() => {
+                  if (editor) {
+                    //editor.simplify();
+                    //editor.layout(true);
+                    simplifyAndArrange();
+                    }}">
                   Auto-Arrange the graph
                 </Button>
               </div>

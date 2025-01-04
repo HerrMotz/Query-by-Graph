@@ -391,6 +391,50 @@ export async function createEditor(container: HTMLElement) {
         AreaExtensions.zoomAt(area, editor.getNodes());
     }
 
+    async function simplifyVQG() {
+        const allNodes = editor.getNodes();
+        const seen: Map<string, string> = new Map();
+    
+        for (const node of allNodes) {
+            const nodeId = node.entity.id || '';
+            // new Node encountered
+            if (!seen.has(nodeId)) {
+                console.log("Adding new Node: ", nodeId)
+                seen.set(nodeId, node.id);
+            // duplicate Node encountered
+            } else {
+                const originalNodeId = seen.get(nodeId);
+                console.log("Duplicate encoutered: ", originalNodeId);
+                for (const conn of editor.getConnections()) {
+                    // source is the duplicate --> redirect connection from original to target
+                    if (conn.source === node.id) {
+                        await editor.removeConnection(conn.id);
+                        await editor.addConnection({
+                            id: conn.id,
+                            source: originalNodeId!,
+                            sourceOutput: conn.sourceOutput,
+                            target: conn.target,
+                            targetInput: conn.targetInput
+                        });
+                    // target is the duplicate --> redirect connection from source to original
+                    } else if (conn.target === node.id) {
+                        await editor.removeConnection(conn.id);
+                        await editor.addConnection({
+                            id: conn.id,
+                            source: conn.source,
+                            sourceOutput: conn.sourceOutput,
+                            target: originalNodeId!,
+                            targetInput: conn.targetInput
+                        });
+                    }
+                }
+                // remove the duplicate node
+                await editor.removeNode(node.id);
+            }
+        }
+    }
+    
+
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
         arrow: () => true
     });
@@ -559,6 +603,10 @@ export async function createEditor(container: HTMLElement) {
         exportConnections: (): ConnectionInterfaceType[] => {
             return exportConnectionsHelper(editor)
         },
-        getNode: (id: string) => editor.getNode(id)
+        getNode: (id: string) => editor.getNode(id),
+        simplify: async() => {
+            await simplifyVQG()
+        }
     };
 }
+
