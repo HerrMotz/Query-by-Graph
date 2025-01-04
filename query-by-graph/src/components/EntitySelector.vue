@@ -32,7 +32,7 @@ import {
   ComboboxOption,
   ComboboxOptions,
 } from '@headlessui/vue'
-import EntityType from "../lib/types/EntityType.ts";
+import {EntityType} from "../lib/types/EntityType.ts";
 import {noEntity, variableEntity, variableEntityConstructor} from "../lib/rete/constants.ts";
 import {selectedDataSource} from "../store.ts";
 import {debounce} from "../lib/utils";
