@@ -594,7 +594,7 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 ) <fig:rdf_mapping>
 
 === Qualifiers <heading:qualifiers>
-Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the limited triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". The following triples exemplify a *qualified statement* as seen in Wikibase instances:
+Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". The following triples exemplify a *qualified statement* as seen in Wikibase instances:
 $
   "Goethe" &longArrow("educated at") && "Uni Leipzig", \
   "Goethe" &longArrow("educated at") && "Implicit1", \
@@ -616,9 +616,7 @@ $ <assertions_goethe_education_revised>
 #figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
 
 The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the *qualified edge\/assertion* is displayed hierarchically above the qualifiers. 
-
-#remark[In this work, the term *qualifier* can be used in three ways: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which are asserted in an RDF graph. The third meaning is a qualifier in a qualifiable Visual Query Graph (see @def:qvqg-qualifier).]
-
+In this work, the term *qualifier* can be used in three ways: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which are asserted in an RDF graph. The third meaning is a qualifier in a qualifiable Visual Query Graph (see @def:qvqg-qualifier). Now, using the many special prefixes of the Wikibase RDF data model @fig:rdf_mapping, a qualifier can be unambiguously defined.
 
 #todo[move this somewhere where it makes sense]
 The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase to be able to differentiate the qualifiers from the qualified edge.
@@ -644,7 +642,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
 ] <def:qualifiers>
 
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers.],
+  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers. The `wdt` description is used in analogy to the Wikibase/Wikidata RDF data model. It is to be interpreted as an IRI with the `wdt`],
   image("Qualifier_abstract.svg")
 )
 #todo[Make sure, that this figure is on the same page as the definition above.]
