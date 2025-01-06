@@ -191,7 +191,7 @@ Over its thousands of years in existence, humanity has built an _infrastructure 
 == This Work
 #todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
 
-This thesis aims to lay the ground work for a visual query builder for SPARQL queries. The program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
+This thesis aims to lay the ground work for a visual query builder for SPARQL queries.My developed program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
 
 #figure(
   image("screenshot.png"),
@@ -203,7 +203,7 @@ Main inspiration for this work was a blog entry by Olaf Simons, called *"You sho
 
 The approach by Vargas et al. @Vargas2019_RDF_Explorer called *RDF Explorer* is to build a query for a Wikibase instance, starting from a single entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result. The software is called RDF Explorer#footnote[A demonstration is available at https://rdfexplorer.org.] and works with one Wikibase instance at a time. It offers example queries, which can be dragged to the graph building pane. Their work aims to allow the user to build a query, but also discover what the data source has to offer at the same time.
 
-*Sparnatural* @Sparnatural allows to build queries using an interface similar to block-based visual programming languages. It works for arbitrary RDF data sources, not just Wikibase. However, it requires an OWL ontology to generate the categories and options in the user interface. Anything not covered by the ontology, cannot be asked for in a built query. Still, the implementation is very advanced and offers many of the language features of SPARQL, i.e. `FILTER` statements.
+*Sparnatural* @Sparnatural allows to build queries using an interface similar to block-based visual programming languages. It works for arbitrary RDF data sources, not just Wikibase. However, it requires an ontology to generate the categories and options in the user interface. Anything not covered by the ontology, cannot be asked for in a built query. Still, the implementation is very advanced and offers many of the language features of SPARQL, i.e. `FILTER` statements.
 
 *SPARQLVis* @SPARQLVis proposes a form-based interface and promises features such as a preview of all related entities to an item and the same querying functionalities as the other here mentioned approaches. The work contains screenshots of the program, which show a relatively complicated interface for the same functionality offered by others (e.g. Vargas).
 
@@ -390,8 +390,6 @@ This chapter introduces the parts of the recommendation which are relevant to th
 
 === Graphs and Triples <heading:triples>
 
-#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
-
 #definition[
   Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
   subject $bold("s") in bold("I") union bold("B")$,
@@ -409,10 +407,12 @@ This chapter introduces the parts of the recommendation which are relevant to th
   $
 ] <def:spo>
 
+#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
+
 if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
 
 #example[
-  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was a student at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
+  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was educated at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
   $
     bold("s") := "Johann Wolfgang von Goethe", \
     bold("p") := "educated at", \
@@ -434,11 +434,11 @@ The main advantage of IRIs over URIs are their enhanced character set. However, 
 The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft. Again, the technical specifications are not directly relevant to the matters of this work, therefore I will abstract from the implementation details. 
 
 #definition[
-  A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It can have two elements:
+  A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It can have two to four elements:
   + a *lexical form*, which is a Unicode string,
   + a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
-  + a *language tag*, which allows to add express from which language the *lexical form* stems and
-  + a *base direction tag*, which occurs in combination with the *language tag* to indicate the reading direction (left-to-right or right-to-left).
+  + an optional *language tag*, which allows to add express from which language the *lexical form* stems and
+  + an optional *base direction tag*, which occurs in combination with the *language tag* to indicate the reading direction (either left-to-right or right-to-left).
 
   _Remarks: (1) The necessity of the language and base direction tag are indicated by two separate *special IRIs*. (2) The only difference to RDF v1.1 is, that is does not allow for a base direction tag._ 
 ] <def:literals>
@@ -474,7 +474,7 @@ However, for any structured querying to be possible, the databases ought to be f
 
 === SPARQL Protocol and RDF Query Language <heading:sparql>
 
-The acronym _SPARQL_ is recursive and stands for *S*\PARQL, *P*\rotocol *A*\nd *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This section follows its currently recommended specification v1.1 @W3C_SPARQL_Specification.
+The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This section follows its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
 #blockquote[
   SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. [...] The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
@@ -704,8 +704,8 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 The relevant aspects of the translation from VQG to SPARQL queries are the connected nodes and their edges. Any unconnected nodes are not part of a BGP and therefore irrelevant to the query.
 
-#lemma[
-  A BGP can be constructed from the edge-list of a VQG. 
+#definition[
+  A BGP can be constructed from the edge-list of a VQG using the following mapping: $f: ...$
 ]
 
 #proof[Let $G=(N,E)$ be a VQG. An edge $e$ in the VQG is defined as $e_G in E, E:={(s_G,p_G,o_G) | s,o in N, p in I union V}$. A BGP is a set of triples $X$ with $e_X in X, X:={(s_X,p_X,o_X) | s,o in T union V, p in I union V}$. To translate an $e_B$ to $e_X$ means to interpret $e_B$ as $e_X$. Using $T := I union L union V$ (see @def:graph_pattern), and since $(E subset I union V) subset (T union V)$ and $(N subset I union V) subset (T union V)$ are true, a VQG triple can be interpreted as a BGP triple without information loss. #todo[Lektorat notwendig.]
