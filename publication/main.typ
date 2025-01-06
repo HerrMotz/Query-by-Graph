@@ -485,7 +485,7 @@ The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R
 The following section follows the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
 #definition[
-  A *Basic Graph Pattern (BGP)* is a set of SPARQL triple patterns
+  A *Basic Graph Pattern (BGP)* is a *set* of SPARQL triple patterns
   $(T union V) times (I union V) times (T union V)$.
 ]<def:bgp>
 
@@ -503,7 +503,7 @@ The following section follows the _Formal Definition of the SPARQL query languag
   $G P$ is a graph pattern,
   $D S$ is an RDF Dataset (essentially a set of RDF graphs),
   $S M$ is a set of solution modifiers and
-  $R$ is a result form. A *SPARQL SELECT-query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT-query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
+  $R$ is a result form. A *SPARQL-SELECT query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
 ]<def:sparql_query>
 
 #remark[
@@ -655,7 +655,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
 ] <def:qualifiers>
 
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers. The `wdt:` description is used in analogy to the Wikibase RDF data model. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
+  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers. The `wdt:` description is used in analogy to the Wikibase RDF data model figure. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
   image("Qualifier_abstract.svg")
 )
 #todo[Make sure, that this figure is on the same page as the definition above.]
@@ -685,23 +685,23 @@ A qualifier, as defined in @heading:qualifiers, would now be constructed as show
 ]
 
 #let vql_ops = (
-   [User Interaction], [Inverse User Action],
-    [Adding a variable node], [Removing a node],
-    [Adding a literal node], [Removing a node],
-    [Adding a directed edge], [Removing a directed edge],
-    [*Adding a qualifier*], [*Removing a qualifier*]
+   [User Interaction],
+    [Adding a variable node],
+    [Adding a literal node],
+    [Adding a directed edge],
+    [*Adding a qualifier*]
 )
 
-Following @Vargas2019_RDF_Explorer, the qVQG is _constructed_ using the _qualifiable visual query language (qVQL)_, consisting of #{vql_ops.len()/2-1} algebraic operators, which will correspond to atomic user interactions: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the action of adding and removing an edge qualifier.
+Following @Vargas2019_RDF_Explorer, the qVQG is _constructed_ using the _qualifiable visual query language (qVQL)_, consisting of #{vql_ops.len()/2-1} algebraic operators, which will correspond to atomic user interactions of the VQG: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the actions of adding and removing an edge qualifier.
 
 #figure(
   caption: "Operations in the VQL",
-  table(columns: 2,
+  table(columns: 1,
   ..vql_ops
   )
 )
 
-Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query.
+Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. Now, it needs to be shown, that the qVQG can be losslessly translated to a VQG and in turn to a SPARQL-SELECT query.
 
 #figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
 
@@ -713,6 +713,8 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 #todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
 
+The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. A SELECT query mostly consists of BGPs
+The relevant parts of a VQG are all connected nodes and the edges.
 The relevant aspects of the translation from VQG to SPARQL queries are the connected nodes and their edges. Any unconnected nodes are not part of a BGP and therefore irrelevant to the query.
 
 #definition[
@@ -792,7 +794,7 @@ Since SPARQL is mostly used in the context of a web browser, the choice for a we
 
 #todo[Mention, that I am limited to two prefixes, wdt and wd. Also mention, that there is a configuration file, which contains all Wikibase data sources. ]
 
-The *frontend* was written using the libraries Vite, Vue3, ReteJS and TailwindCSS (all under MIT license). Its purpose is to allow the user to
+The *frontend* was written using the libraries Vite, Vue3, ReteJS and TailwindCSS (all licensed under MIT license). Its purpose is to allow the user to
 + build a VQG, and edit it from the SPARQL code editor,
 + searching for items and properties in arbitrary Wikibase instances,
 + display meta-information on items and properties,
@@ -886,17 +888,17 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 
 
 #figure(
-  caption: [An overview of all features currently implemented.\ Checkmark means implemented and tested, checkmark with bracket means implemented but not bug-free and cross-mark means not implemented. A full feature list can be found in the technical documentation of the repository.],
+  caption: [An overview of all features currently implemented.\ "#sym.checkmark" means implemented and tested, "(#sym.checkmark)" means implemented but not bug-free and "#sym.crossmark" means not implemented. A full feature list can be found in the technical documentation of the repository.],
   table(columns: 2,
     [Feature], [Status],
     [Drawing a VQG with variables and literals], [#sym.checkmark],
     [Searching for entities on multiple Wikibase instances], [#sym.checkmark],
-    [Creating SPARQL-Select-Queries from a VQG], [#sym.checkmark],
+    [Creating SPARQL-SELECT queries from a VQG], [#sym.checkmark],
     [Code editor for SPARQL queries], [#sym.checkmark],
     [Applying changes in the code editor to the VQG], [(#sym.checkmark)],
     [Enriching unseen entities with metadata from the Wikibase API], [(#sym.checkmark)],
     [Literals with standard RDF data types (string, int, date, ...)], [(#sym.checkmark)],
-    [Ability to add multiple Wikibase instances as sources], [#sym.checkmark],
+    [Use multiple Wikibase instances as data sources], [#sym.checkmark],
     [Meta-Info Panel], [#sym.checkmark],
     [Rendering qualifiers with the proposed visualisation], [#sym.crossmark]
   )
@@ -907,7 +909,7 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 The implementation of the mapping between VQGs and BGPs uses two different algorithms for each direction of the mapping.
 
 === VQG to SPARQL
-The mapping is done according to the proofs in @heading:mapping_theory. The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI --- or to use Wikibase terminology, an entity. The BGPs in turn are mapped to a SPARQL SELECT-query with all variables from the VQG added to the projection. #todo[Check if this is still the case when I am finished with the qualifier feature, or whether I leave out the blank-node-placeholder variables.]
+The mapping is done according to the proofs in @heading:mapping_theory. The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI --- or to use Wikibase terminology, an entity. The BGPs in turn are mapped to a SPARQL-SELECT query with all variables from the VQG added to the projection. #todo[Check if this is still the case when I am finished with the qualifier feature, or whether I leave out the blank-node-placeholder variables.]
 
 
 
