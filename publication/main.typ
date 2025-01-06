@@ -580,15 +580,11 @@ or property is added to Wikibase, it is referencable using all of the prefixes o
 PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX pqv: <http://www.wikidata.org/prop/qualifier/value/>
-PREFIX pr: <http://www.wikidata.org/prop/reference/>
-PREFIX prv: <http://www.wikidata.org/prop/reference/value/>
 PREFIX ps: <http://www.wikidata.org/prop/statement/>
-PREFIX psv: <http://www.wikidata.org/prop/statement/value/>
 PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wds: <http://www.wikidata.org/entity/statement/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX wdv: <http://www.wikidata.org/value/>
-PREFIX wikibase: <http://wikiba.se/ontology#>
 ```
 ) <example:prefixes_in_wikidata>
 
@@ -609,7 +605,7 @@ Most real-world relationships might present to be more complex than something on
 
 #figure(
   caption: [Presentation of an implicitly defined relationship in the software Wikibase.],
-  image("screenshot_wikidata.png", width: 220pt)
+  image("screenshot_wikidata.png", width: 320pt)
 )<fig:qualifier_screenshot>
 The following triples exemplify such an implicit relationship, called a *qualified statement*:
 $
@@ -630,9 +626,9 @@ $ <ex:assertions_goethe_education_revised>
 
 #remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
 
-#figure(image("Qualifier_ohne.svg"), caption: [Graphical visualisation of a qualifier using natural language.]) <fig:vqg_no_qualifier>
+#figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualifier using natural language.]) <fig:vqg_no_qualifier>
 
-The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
+The term and concept "qualifier" are *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
 In this work, the term *qualifier* can be used in *three ways*: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which can be *asserted in an RDF graph*. The third meaning is a qualifier in a *qualifiable Visual Query Graph*, which will be defined later on. 
 
 In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to correctly display the qualified edge and the qualifying edges, the property IRI prefixes ought to be discernable. In Wikibase, there is always a direct edge from the subject to the object using the `wdt:` prefix. First, this is necessary, should the database's user not want to query for a qualifier, but just for the "regular" assertion. Then, there are the constructing parts of the qualifier: the statement edge from the subject to the blank node using `p:`, the property statement edge from the blank node to the "main" assertion using `ps:` -- e.g. "educated at" in @ex:assertions_goethe_education -- and lastly the qualifier edges, using the `pq:` prefix. Using these prefixes, the data model allows to point at one and the same item, but from very different contexts. To model qualifiers, they ought to be formally defined.
