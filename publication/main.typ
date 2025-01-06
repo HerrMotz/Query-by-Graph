@@ -20,7 +20,7 @@
 
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
-#show raw.where(lang: "pintora"): it => pintorita.render(it.text)
+// #show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
 
 // set the width of images in the whole document
 #set image(width: 360pt)
@@ -102,7 +102,7 @@
   figure-index: (enabled: true),
   table-index: (enabled: true),
   listing-index: (enabled: true),
-  bibliography: bibliography(title: "Bibliography", style: "institute-of-electrical-and-electronics-engineers", "bib.yaml")
+  bibliography: bibliography(title: "Bibliography", style: "ieee", "bib.yaml")
 )
 
 /* BEGIN Custom Environment */
@@ -191,7 +191,7 @@ Over its thousands of years in existence, humanity has built an _infrastructure 
 == This Work
 #todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
 
-This thesis aims to lay the ground work for a visual query builder for SPARQL queries.My developed program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
+This thesis aims to lay the ground work for a visual query builder for SPARQL queries.My developed program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*. Furthermore, in practical application of RDF, certain constructs occur, which are supposed to interpreted in a certain way. This work shows, that these can also be mapped to a visual query graph. #todo[sollte ich hier nun den Begriff Qualifier erwähnen? Das könnte man übrigens nicht nur für Qualifier machen, sondern analog für ordered lists, references, ...] 
 
 #figure(
   image("screenshot.png"),
@@ -344,13 +344,13 @@ Visual Interfaces seem to be promising advantages in the research community and 
 */
 
 = Preliminaries <heading:fundamentals>
-#todo[
+/*#todo[
 
 Questions, which I would like to be answered in this chapter:
 - How can information about the real world be represented in a computer? #sym.checkmark
-- What are RDF databases in comparison to other semantic technologies?
-- What is the advantage of using a strict formal ontology in comparison to an RDF database?
-]
+- What are RDF databases in comparison to other semantic technologies? #sym.checkmark
+- What is the advantage of using a strict formal ontology in comparison to an RDF database? #sym.checkmark
+]*/
 
 Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
 
@@ -378,6 +378,7 @@ The W3C#sym.trademark.registered recommends a standard for exchange of semantica
 
 This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.e. Wikibase. 
 
+/*
 #todo[
 - What are alternatives to RDF databases?
 - How do RDF databases work?
@@ -387,6 +388,7 @@ This chapter introduces the parts of the recommendation which are relevant to th
 #todo[
   Important resource: https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Prefixes_used
 ]
+*/
 
 === Graphs and Triples <heading:triples>
 
@@ -550,12 +552,13 @@ In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Numb
 
 As can be seen in @example:prefixes_in_wikidata, there are many prefixes apparently for the same things, namely *items* and *properties*. However, their use 
 in Wikibase depends on the context. @fig:rdf_mapping shows how they come into play in the Wikibase data model. It is important to mention, that once an item 
-or property is added to Wikibase, it is referencable using all of the prefixes of the data model. Using the concrete example of Wikidata, an item can be directly addressed using the prefix `wd` and a property directly accessed using `wdt`. For technical and convenience, Wikidata
+or property is added to Wikibase, it is referencable using all of the prefixes of the data model. Using the concrete example of Wikidata, an item can be directly addressed using the prefix `wd` and a property directly accessed using `wdt`.
 
 #todo[
   Ich sollte das Beispiel mit den Prefixes erläutern und auch warum ich es zeige. Das wird noch nicht klar.
   Ich erkläre kurz wie für die Implementation wd wdt pq relevant sind.
 ]
+
 
 /*```turtle
  wd:P22 a wikibase:Property ;
@@ -589,12 +592,26 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 ```
 ) <example:prefixes_in_wikidata>
 
+
+Often in Wikibase, the same local name is used in combination with different IRI prefixes to address different aspects of the same assertion. For further use in this work, I will define sets of prefixes and mappings to prepend a prefix to a local name.
+
+#definition[Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure. Let
+  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements.
+]
+
+
 #figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic.],
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
 === Qualifiers <heading:qualifiers>
-Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". The following triples exemplify a *qualified statement* as seen in Wikibase instances:
+Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". 
+
+#figure(
+  caption: [Presentation of an implicitly defined relationship in the software Wikibase.],
+  image("screenshot_wikidata.png", width: 220pt)
+)<fig:qualifier_screenshot>
+The following triples exemplify such an implicit relationship, called a *qualified statement*:
 $
   "Goethe" &longArrow("educated at") && "Uni Leipzig", \
   "Goethe" &longArrow("educated at") && "Implicit1", \
@@ -603,7 +620,7 @@ $
   "Implicit1" &longArrow("ended at") && 28.08.1768.  #<ex_qualifier_2>
 $ <assertions_goethe_education>
 
-Having specified such an implicit concept for our concept "educated at for a certain time", one is free to add a few extra statements about what he studied and whether he graduated:
+Having specified the qualified statement "educated at for a certain time", one is free to add a few extra statements about what he studied and whether he graduated:
 
 $
   "Implicit1" &longArrow("field of study") && "Law", \
@@ -613,36 +630,32 @@ $ <assertions_goethe_education_revised>
 
 #remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
 
-#figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
+#figure(image("Qualifier_ohne.svg"), caption: [Graphical visualisation of a qualifier using natural language.]) <fig:vqg_no_qualifier>
 
-The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the *qualified edge\/assertion* is displayed hierarchically above the qualifiers. 
-In this work, the term *qualifier* can be used in three ways: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which are asserted in an RDF graph. The third meaning is a qualifier in a qualifiable Visual Query Graph (see @def:qvqg-qualifier). Now, using the many special prefixes of the Wikibase RDF data model @fig:rdf_mapping, a qualifier can be unambiguously defined.
+The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
+In this work, the term *qualifier* can be used in *three ways*: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which can be *asserted in an RDF graph*. The third meaning is a qualifier in a *qualifiable Visual Query Graph*, which will be defined later on. 
 
-#todo[move this somewhere where it makes sense]
+In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to display correctly the qualified edge and the qualifying edges, they ought to be discernable.
+
+/*#todo[move this somewhere where it makes sense]
 The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase to be able to differentiate the qualifiers from the qualified edge.
-
+*/
 
 #definition[
-  Let $G$ be an RDF graph.
-  Let $Sigma$ be a valid alphabet and $Sigma^*$ its Kleene closure. Let
-  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for *p*\roperties, *q*\ualifying properties and property *s*\tatements,
-  $s in I$ be a specific subject,#sym.space.med
-  $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med 
-  $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$,#sym.space.med
-  and the limitation $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let 
-  $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$ be the property with a statement prefix,#sym.space.med
-  $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
-  $b in B$ a blank node.
-
-  Then, a *qualified statement* in $G$ is defined as a set containing the triples
+  Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
+  $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med
+  $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$  
+  and the limitation the first qualifier  $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let $p_s$ and $p$ refer the same local name (or Wikibase property) using different prefixes
+  $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$. Lastly, let $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
+  $b in B$ a blank node. Then, a *qualified statement* in $G$ is defined as a set containing the triples
   $
-      {(s,bold(p),o), (s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
+      {(s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
   $
-  Statements such as $(b, q_i, o_i)$ are called *qualifiers* in $G$ and the triple $(s, bold(p), o)$ is called *qualified edge* in $G$.
+  Statements such as $(b, q_i, o_i)$ are called *qualifiers* in $G$ and the triple $(s, f_t u, o)$ with $u in Sigma^*$ would be called *qualified edge* in the RDF graph $G$.
 ] <def:qualifiers>
 
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers. The `wdt` description is used in analogy to the Wikibase/Wikidata RDF data model. It is to be interpreted as an IRI with the `wdt`],
+  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers. The `wdt:` description is used in analogy to the Wikibase RDF data model. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
   image("Qualifier_abstract.svg")
 )
 #todo[Make sure, that this figure is on the same page as the definition above.]

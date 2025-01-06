@@ -414,12 +414,11 @@ w3c_iri_paper:
 
 wikibase_rdf_mapping_graphic:
   type: repository
-  title: "Wikibase RDF Mapping Graphic"
+  title: "Wikibase RDF Mapping Graphic (CC BY 4.0; no changes)"
   author: Schönitzer, Michael F.
   url:
     value: https://commons.wikimedia.org/w/index.php?curid=63880194
     date: 2024-11-15
-  note: "Licensed under CC BY 4.0, no changes made"
 
 
 wikibase_rdf_mapping_article:
@@ -428,3 +427,28 @@ wikibase_rdf_mapping_article:
   url:
     value: https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format
     date: 2024-11-15
+
+Lehmann2015DBpediaA:
+  type: article
+  title: DBpedia - A large-scale, multilingual knowledge base extracted from Wikipedia
+  author:
+  - Lehmann, Jens
+  - Isele, Robert
+  - Jakob, Max
+  - Jentzsch, Anja
+  - Kontokostas, Dimitris
+  - Mendes, Pablo N.
+  - Hellmann, Sebastian
+  - Morsey, Mohamed
+  - name: Kleef
+    given-name: Patrick
+    prefix: van
+  - Auer, S.
+  - Bizer, Christian
+  date: 2015
+  page-range: 167–195
+  url: https://api.semanticscholar.org/CorpusID:1181640
+  parent:
+    type: periodical
+    title: Semantic Web
+    volume: 6
