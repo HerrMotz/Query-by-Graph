@@ -15,15 +15,19 @@
   )
 ))
 
+// for ER-Diagrams
+#import "@preview/pintorita:0.1.3"
+
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
+#show raw.where(lang: "pintora"): it => pintorita.render(it.text)
 
 // set the width of images in the whole document
 #set image(width: 360pt)
 
 #let spct = sym.space.punct
-//#show "e.g.": [e.#spct\g.] // unsure whether I like this.
-//#show "i.e.": [i.#spct\e.]
+#show "e.g.": [e.#sym.space.thin\g.] // unsure whether I like this.
+#show "i.e.": [i.#sym.space.thin\e.]
 #show "B.Sc.": [B.#spct\Sc.]
 #show "M.Sc.": [M.#spct\Sc.]
 #show "Prof. Dr.": [Prof.#spct\Dr.]
@@ -73,9 +77,7 @@
   
   appendix: [
     #set heading(outlined: false)
-    #todo[This chapter should contain all code listings, figures, tables and so on.]
-    
-    == Use of Generative AI
+    #heading(numbering: none, "Use of Generative AI")
     This bachelor thesis was written in assistance of the OpenAI large language models GPT-4o and GPT-o1 preview. The large language models were used to ease literature research and to point out stylistic, orthographical and grammatical mistakes to the writer.
   ],
   
@@ -191,8 +193,13 @@ Over its thousands of years in existence, humanity has built an _infrastructure 
 
 This thesis aims to lay the ground work for a visual query builder for SPARQL queries. The program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*.
 
+#figure(
+  image("screenshot.png"),
+  caption: [A screenshot of the current state of the program]
+)
+
 == Related Work
-Main inspiration for this work was a blog entry by Olaf Simons, called *"You should be able to graphically search in a graph database"* @Simons_Blog_Entry_Graphic_query, where he describes a visual query interface, which models the structure of the RDF graph it is trying to query. The user can create nodes and draw edges between them, where the edges relate to Wikibase properties and nodes to items. Simons makes an interesting addition to the graphical repertoire, which are qualifiers. A qualifier can add additional information to a property between to items, for example, the relationship `educated-at` could be qualified by the two statements `from 2020` and `to 2023`. In Wikibase, a user can define arbitary properties to be qualifying of a relationship and is not limited to statements about time, like in this example. The RDF graph structure necessary is, however, not intuitive, as it involves implicit nodes. Simons proposes the simple graphical element, to draw additional edges from the qualified property, making querying for qualifiers using a graphical tool manageable in the first place.
+Main inspiration for this work was a blog entry by Olaf Simons, called *"You should be able to graphically search in a graph database"* @Simons_Blog_Entry_Graphic_query, where he describes a visual query interface, which models the structure of the RDF graph it is trying to query. The user can create nodes and draw edges between them, where the edges relate to Wikibase properties and nodes to items. Simons makes an interesting addition to the graphical repertoire, which are qualifiers. A qualifier can add additional information to a property between to items, for example, the relationship `educated-at` could be qualified by the two statements `from 2020` and `to 2023`. In Wikibase, a user can define arbitary properties to be qualifying of a relationship and is not limited to statements about time, like in this example. The RDF graph structure necessary is, however, not intuitive, as it involves implicit nodes. Simons proposes the simple graphical element, to draw additional edges from the qualified edge, making querying for qualifiers using a graphical tool manageable in the first place.
 
 The approach by Vargas et al. @Vargas2019_RDF_Explorer called *RDF Explorer* is to build a query for a Wikibase instance, starting from a single entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result. The software is called RDF Explorer#footnote[A demonstration is available at https://rdfexplorer.org.] and works with one Wikibase instance at a time. It offers example queries, which can be dragged to the graph building pane. Their work aims to allow the user to build a query, but also discover what the data source has to offer at the same time.
 
@@ -340,7 +347,7 @@ Visual Interfaces seem to be promising advantages in the research community and 
 #todo[
 
 Questions, which I would like to be answered in this chapter:
-- How can information about the real world be represented in a computer?
+- How can information about the real world be represented in a computer? #sym.checkmark
 - What are RDF databases in comparison to other semantic technologies?
 - What is the advantage of using a strict formal ontology in comparison to an RDF database?
 ]
@@ -351,11 +358,14 @@ Computers generally lack information about the environment humans live in. For e
   Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
 ]
 
-The original idea by Tim Berners-Lee was to annotate web pages using a well-defined common vocabulary, so that any computer can, without human assistance, extract the relevant contents of a website. For example, a doctors office might post opening times on their website. Using a well-defined and public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. #todo[insert example code from the book on Semantic Technologies] @Dengel2012_Semantic_Technologies. This concept is not necessarily limited to websites, but can just as well be applied for any data storage. These deliberations waged the establishment of standards for describing meta information, such as:
+This motivated the introduction of _Semantic Technologies_ to the web. The original idea by Tim Berners-Lee was to annotate web pages using a well-defined common vocabulary, so that any computer can, without human assistance, extract the relevant contents of a website. For example, a doctors office might post opening times on their website. Using a public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. A program could fetch the HTML source, read the RDFa annotations and use them to present a list of opening times in a list of search results. This approach would not require pattern matching or statistics to come to a definitive result. These deliberations waged the establishment of standards, such as 
+the Resource Description Framework (see @heading:rdf_standard) and Ontology Web Language. Today, these standards are hardly used to annotate websites, but to build semantic networks, such as DBpedia or Wikidata.
 
-- Resource Description Framework (see @heading:rdf_standard)
-- #todo[List more from the book @Dengel2012_Semantic_Technologies]
+The idea of formalising knowledge is not new. The field of *formal ontology* revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
 
+_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
+
+This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
 
 == RDF Standard <heading:rdf_standard>
 The W3C#sym.trademark.registered recommends a standard for exchange of semantically annotated information called the Resource Description Framework (RDF) standard model. The most notable recommendations are
@@ -366,18 +376,12 @@ The W3C#sym.trademark.registered recommends a standard for exchange of semantica
 
 - the query language SPARQL (see @heading:sparql).
 
-This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.#sym.space.punct\e. Wikibase. 
-
-This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.#sym.space.punct\e. Wikibase. 
+This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.e. Wikibase. 
 
 #todo[
 - What are alternatives to RDF databases?
 - How do RDF databases work?
 - Which query languages work / are used on RDF databases?
-]
-
-#todo[
-  What is a reifier good for/used for (irl)?
 ]
 
 #todo[
@@ -421,7 +425,7 @@ if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* desc
 
 === Internationalised Resource Identifier <heading:iri>
 
-Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]]. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
+Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
 
 The main advantage of IRIs over URIs are their enhanced character set. However, the details are not directly relevant to this work, therefore I will simply refer to the quoted RFCs for further reading.
 
@@ -447,28 +451,13 @@ The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.
     [Literal Type], [Literal Value],
     [language-tagged], [(lexical form, language tag)],
     [direction-tagged], [(lexical form, language tag, base direction tag)],
-    [has IRI stated in the\ #link("https://www.w3.org/TR/rdf12-concepts/#dfn-recognized-datatype-iri")[list of recognized data type IRIs]], [the literal value interpreted\ as the indicated data type]
+    [has IRI stated in the\ #link("https://www.w3.org/TR/rdf12-concepts/#dfn-recognized-datatype-iri")[list of recognised data type IRIs]], [the literal value interpreted\ as the indicated data type]
   )))
 ]
 
 === Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
 It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
-
-#figure(caption: [*Turtle syntax*#footnote[https://www.w3.org/TR/turtle/] example showing the use of a *blank node* $bold(b)$. Usually, a blank node is indicated by a _special prefix_, followed by a *local name*. In the case of Turtle, the underline character, followed by a local name, which can essentially be alphanumerical (see @def:prefixes_and_bases for more on prefixes). Example taken from @Dengel2012_Semantic_Technologies.],
-```TURTLE
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix carfs: <http://www.carfs-ag.de/Personen#> .
-@prefix carfin: <http://www.carfs-ag.de/Finanzen#> .
-@prefix ex: <http://www.dfki.de/example/#> .
-
-carfs:baispilov ex:Briefwechsel _:b .
-_:b rdf:type rdf:Seq .
-_:b rdf:_1 carfin:Anfrage-2010-153 .
-_:b rdf:_2 carfin:Anfrage-2010-632 .
-_:b rdf:_3 carfin:Anfrage-2010-632b .
-```
-)
 
 /*=== Modelling Information using Triples
 
@@ -492,13 +481,11 @@ The acronym _SPARQL_ is recursive and stands for *S*\PARQL, *P*\rotocol *A*\nd *
 ]
 
 The following section follows the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
+
 #definition[
-  A *SPARQL query* is defined as a tuple $(G P, D S, S M, R)$ where:
-  $G P$ is a graph pattern (defined below),
-  $D S$ is an RDF Dataset (essentially a set of RDF graphs),
-  $S M$ is a set of solution modifiers and
-  $R$ is a result form. A *SPARQL SELECT-query* is a SPARQL query, where $R$ indicates a projection statement. A SELECT-query consists of a set of projection variables, which will be returned as results and a selection-clause (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
-]<def:sparql_query>
+  A *Basic Graph Pattern (BGP)* is a set of SPARQL triple patterns
+  $(T union V) times (I union V) times (T union V)$.
+]<def:bgp>
 
 #definition[
   A *Graph Pattern* is one of: *Basic Graph Pattern*,
@@ -510,9 +497,12 @@ The following section follows the _Formal Definition of the SPARQL query languag
 ]<def:graph_pattern>
 
 #definition[
-  A *Basic Graph Pattern (BGP)* is a set of SPARQL triple patterns
-  $(T union V) times (I union V) times (T union V)$.
-]<def:bgp>
+  A *SPARQL query* is defined as a tuple $(G P, D S, S M, R)$ where:
+  $G P$ is a graph pattern,
+  $D S$ is an RDF Dataset (essentially a set of RDF graphs),
+  $S M$ is a set of solution modifiers and
+  $R$ is a result form. A *SPARQL SELECT-query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT-query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
+]<def:sparql_query>
 
 #remark[
   This implies, that a SPARQL query can query for a triple, which has a literal as its subject. #todo[How does this make sense?]
@@ -553,28 +543,19 @@ A *base* works similarly, only that it is prefixed to any IRI in the document. I
   ```
 ) <example:arbitrary_position_of_base_and_prefix>
 
-#todo[
-  Which features does SPARQL offer?
-
-  - How does "describe" work? (because it might be interesting as a graph exploring method)
-
-  - Define prefix
-
-  Maybe introduce this syntax here, but somewhere at least:
-  https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QSynBlankNodes
-]
-
 === RDF Data Model in Wikibase
-*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. (See @fig:rdf_mapping for an impression.) This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers.
+*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers and @heading:implementation. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
 
-#remark[This specific data model is interesting, because of its wide use, it defines a de facto standard in the semantic web community.]
-
-==== Wikibase terminology
-A thing is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any predicate is called *property* and assigned a unique *P-Number*.
+In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. Both items and properties are *entities* and have their own IRI.
 
 As can be seen in @example:prefixes_in_wikidata, there are many prefixes apparently for the same things, namely *items* and *properties*. However, their use 
 in Wikibase depends on the context. @fig:rdf_mapping shows how they come into play in the Wikibase data model. It is important to mention, that once an item 
-or property is added to Wikibase, it is referencable using all of the prefixes of the data model.
+or property is added to Wikibase, it is referencable using all of the prefixes of the data model. Using the concrete example of Wikidata, an item can be directly addressed using the prefix `wd` and a property directly accessed using `wdt`. For technical and convenience, Wikidata
+
+#todo[
+  Ich sollte das Beispiel mit den Prefixes erläutern und auch warum ich es zeige. Das wird noch nicht klar.
+  Ich erkläre kurz wie für die Implementation wd wdt pq relevant sind.
+]
 
 /*```turtle
  wd:P22 a wikibase:Property ;
@@ -591,7 +572,7 @@ or property is added to Wikibase, it is referencable using all of the prefixes o
      wikibase:novalue wdno:P22 .
 ```*/
 
-#figure(caption: [An excerpt of customary IRI prefixes defined by Wikidata],
+#figure(caption: [An excerpt of customary IRI prefixes defined by Wikidata.],
 ```HTML
 PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
@@ -608,7 +589,7 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 ```
 ) <example:prefixes_in_wikidata>
 
-#figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic],
+#figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic.],
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
@@ -632,7 +613,19 @@ $ <assertions_goethe_education_revised>
 
 #remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
 
+#figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
+
+The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the *qualified edge\/assertion* is displayed hierarchically above the qualifiers. 
+
+#remark[In this work, the term *qualifier* can be used in three ways: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which are asserted in an RDF graph. The third meaning is a qualifier in a qualifiable Visual Query Graph (see @def:qvqg-qualifier).]
+
+
+#todo[move this somewhere where it makes sense]
+The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase to be able to differentiate the qualifiers from the qualified edge.
+
+
 #definition[
+  Let $G$ be an RDF graph.
   Let $Sigma$ be a valid alphabet and $Sigma^*$ its Kleene closure. Let
   $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for *p*\roperties, *q*\ualifying properties and property *s*\tatements,
   $s in I$ be a specific subject,#sym.space.med
@@ -643,15 +636,18 @@ $ <assertions_goethe_education_revised>
   $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
   $b in B$ a blank node.
 
-  Then, a *qualified statement* is defined as a set containing the triples
+  Then, a *qualified statement* in $G$ is defined as a set containing the triples
   $
       {(s,bold(p),o), (s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
   $
-  Statements such as $(b, q_i, o_i)$ are called *qualifiers* and $(s, bold(p), o)$ is called *qualified property*.
+  Statements such as $(b, q_i, o_i)$ are called *qualifiers* in $G$ and the triple $(s, bold(p), o)$ is called *qualified edge* in $G$.
 ] <def:qualifiers>
 
-#remark[
-  The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. This definition follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the *qualified property* is displayed hierarchically above the qualifiers. The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase and added for convenience.]
+#figure(
+  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers.],
+  image("Qualifier_abstract.svg")
+)
+#todo[Make sure, that this figure is on the same page as the definition above.]
 
 // This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
 
@@ -659,12 +655,10 @@ $ <assertions_goethe_education_revised>
 == Visual Query Graph
 #definition[
   Following @Vargas2019_RDF_Explorer, a *visual query graph* (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
-  The edges of the VQG are a finite set of triples, where each triple indicated a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
+  The edges of the VQG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
 ] <def:vqg>
 
 A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier. Following @def:qualifiers, a qualifier, however, requires a _blank node_, which the VQG does not offer. Secondly, this visualisation is not intuitive.
-
-#figure(image("Qualifier_ohne.svg"), caption: [A qualifier would require a blank node]) <fig:vqg_no_qualifier>
 
 
 #definition[
@@ -672,8 +666,8 @@ A qualifier, as defined in @heading:qualifiers, would now be constructed as show
 ] <def:qvqg>
 
 #definition[
-  A *qualifier* is a special directed, labelled edge $bold(e_q) in E_q$ in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying property* and $n in N$ is called *qualifying value*.
-]
+  A *qualifier* in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ is a special directed, labelled edge $bold(e_q) in E_q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying edge* and $n in N$ is called *qualifying value*.
+] <def:qvqg-qualifier>
 
 #todo[
   This is probably still unclear.
@@ -708,20 +702,26 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 #todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
 
-A VQG is primarily defined by its edges, which can be directly translated to BGPs of a SPARQL query, as the edge list of a VQG forms a BGP (see @def:bgp).
+The relevant aspects of the translation from VQG to SPARQL queries are the connected nodes and their edges. Any unconnected nodes are not part of a BGP and therefore irrelevant to the query.
+
+#lemma[
+  A BGP can be constructed from the edge-list of a VQG. 
+]
 
 #proof[Let $G=(N,E)$ be a VQG. An edge $e$ in the VQG is defined as $e_G in E, E:={(s_G,p_G,o_G) | s,o in N, p in I union V}$. A BGP is a set of triples $X$ with $e_X in X, X:={(s_X,p_X,o_X) | s,o in T union V, p in I union V}$. To translate an $e_B$ to $e_X$ means to interpret $e_B$ as $e_X$. Using $T := I union L union V$ (see @def:graph_pattern), and since $(E subset I union V) subset (T union V)$ and $(N subset I union V) subset (T union V)$ are true, a VQG triple can be interpreted as a BGP triple without information loss. #todo[Lektorat notwendig.]
 ]
 
-A qVQG is equivalent to a VQG, with the addition of qualifiers. Therefore, it needs to be shown that a qualifier triple can be translated and interpreted into a BGP. Secondly, together with the above shown VQG translation, it needs to form a qualifier from @def:qualifiers.
+#lemma[A qVQG is equivalent to a VQG, with the addition of qualifiers. Therefore, it needs to be shown that a qualifier triple can be translated and interpreted into a BGP. Secondly, together with the above shown VQG translation, it needs to form a qualifier from @def:qualifiers.]
 
 #proof[
-  Let $G_q=(N, E, E_q)$ be a qVQG. Let $e_q$ be a qualifier edge with $e_q in E_q, E_q := {(e, q, n) | e in E, q in Q, n in N}$, $X$ be defined above. Furthermore, let $X'$ be a set of sets of tuples and $b in B$ a blank node. The mapping $f: E_q -> X', f: (e, q, n) arrow.long.bar {(n,b,)}$
+  Let $G_q=(N, E, E_q)$ be a qVQG. Let $e_q$ be a qualifier edge with $e_q in E_q, E_q := {(e, q, n) | e in E, q in Q, n in N}$, $X$ be defined above. Furthermore, let $X'$ be a set of sets of tuples and $b in B$ a blank node. The mapping $f: E_q -> X', f: ((n_1, p, n_2), q, n_q) arrow.long.bar {(n_1, p, b), (b, p, )}$
 
   #todo[Folgendes formalisieren:
     Man nimmt einfach das Qualifierkonstrukt hinzu und lässt die VQG Kante stehen. So entsteht das vollständige Qualifierkonstrukt wie in Wikibase.
   
     Aber: ich brauche irgendwie die Knoten von $e$ im VQG. Ich weiß noch nicht wie ich das schön aufschreiben kann.
+
+    Brauche ich vielleicht eine Hilfsfunktion die mir das richtige Prefix ranfügt?
   ]
 ]
 
@@ -750,7 +750,7 @@ The most important aspects for the choice of software and UX design were usabili
 As motivated in the introduction in order to answer a question, the questioner needs to know enough to ask the question. Query by Graph _does not assist this step_. Secondly, the questioner needs to formalise the question into a BGP. This involves finding the appropriate items and properties in the Wikibase instance. Query by Graph aids this step by offering a direct access to the fuzzy search API. I should add, that the search _does not avert the studying of conventions of a Wikibase_. 
 
 #todo[probably remove the following paragraph]
-The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using an ontology. It is cumbersome to the user to have to remember such conventions, especially, when they could be automatically enforced.
+The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using a _partial_ ontology. It is cumbersome to the user to remember every conventions, especially, when they could be automatically enforced using a partially defined ontology.
 
 #todo[put this idea in future work as well]
 
@@ -761,8 +761,7 @@ PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 SELECT ?prize ?student ?winner WHERE {
      ?winner wdt:P166 ?prize .
-    # Variable -- [award received] -> Variable
-     ?student wdt:P802 ?winner .
+    # Variable -- [award received] -> Variable     ?student wdt:P802 ?winner .
     # Variable -- [student] -> Variable
      ?student wdt:P166 ?prize .
     # Variable -- [award received] -> Variable
@@ -776,30 +775,94 @@ SELECT ?prize ?student ?winner WHERE {
 
 #todo[Wie formuliere ich hier freundlich, dass obwohl ein Werkzeug verwendet wurde das die möglichen Ergebnisse einer Abfrage im Voraus anzeigt, die produzierte Abfrage trotzdem keine Ergebnisse liefert, der Sinn und die Nutzbarkeit des Tools also fragwürdig scheint.]
 
-Lastly, a major shortcoming of the tools I encountered @vanDam2015_RDF2Graph @Vargas2019_RDF_Explorer could not to switch between multiple data sources within the same session. As a result, writing federated queries is not possible. My approach allows to configure new data sources while using the program.
 
 == Architecture
 Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious. The backend was designed to be explainable and traceable. For this, there are several good choices, especially functional programming language, but since Rust#footnote[http://www.rust-lang.org] can be compiled to Web Assembly#footnote[http://webassembly.org] and therefore executed natively in a browser, the choice fell well in its favour over a server-client architecture. This combination of architectures proves to be extendable, quick and still formally precise.
 
 #todo[Mention, that I am limited to two prefixes, wdt and wd. Also mention, that there is a configuration file, which contains all Wikibase data sources. ]
 
-==== Considerations
-
-- everything that has to do with metadata is handled in the frontend
-- this is fine for now, as it uses typescript
-- but this could be moved to the rust backend
-- this was done to ease the development. 
-
 The *frontend* was written using the libraries Vite, Vue3, ReteJS and TailwindCSS (all under MIT license). Its purpose is to allow the user to
 + build a VQG, and edit it from the SPARQL code editor,
 + searching for items and properties in arbitrary Wikibase instances,
-+ display meta-information on items and properties and
-+ configure data sources.
++ display meta-information on items and properties,
++ configure Wikibase data sources and
++ handle all data source specific tasks (such as enriching entities with information from a Wikibase instance).
 
-The Wikibase *data sources* are configured by the user and stored in the browser's local storage, allowing them to resume their work. Following the conventions of Wikibase, the choice was made to only allow one prefix for items and one for properties. The program assumes, that the item prefixes point directly to the item, e.g. `wd`, and the property prefixes to the property value, e.g. `wdt` (see @fig:rdf_mapping). This assumption is based on the premise that users writing queries involving more than this level of abstraction, typically have a deeper understanding of the underlying mechanics and are likely capable of composing an adequate SPARQL query.
+The *Wikibase data sources* are configured by the user and stored in the browser's local storage. Following the conventions of Wikibase, the choice was made to only allow one prefix for items and one for properties. The program assumes, that the item prefixes point directly to the item, e.g. `wd` for Wikidata, and the property prefixes to the property value, e.g. `wdt` (for reference on the data model see @fig:rdf_mapping). This assumption is based on the premise that users writing queries involving more than this level of abstraction, typically have a deeper understanding of the underlying mechanics and are likely capable of composing an adequate SPARQL query.
 
-The *backend's* purpose is to handle the algebraic parts of the mapping between SPARQL queries and VQGs.
+The *backend's* purpose is to handle the algebraic parts of the mapping between SPARQL queries and VQGs. 
 
+To ensure compatibility between the backend and frontend, both use the same type definitions. They are exchanged using JSON serialisation and deserialisation.
+An entity is considered to have the properties shown in the listing below. #todo[change the reference, if the bug is fixed or I rendered it externally.] 
+
+#figure(caption: [Key Data Types for the translation between VQG and SPARQL.],
+```pintora
+classDiagram
+  class PREFIX {
+    string iri
+    string abbreviation
+  }
+  class WIKIBASEDATASOURCE {
+    string name
+    PREFIX propertyPrefix
+    PREFIX itemPrefix
+    string[] preferredLanguages
+  }
+  class ITEM {}
+  class PROPERTY {}
+  class ENTITY {
+    string id
+    string label
+    PREFIX prefix
+    WIKIBASEDATASOURCE dataSource
+  }
+  ENTITY <|-- ITEM
+  ENTITY <|-- PROPERTY
+  
+  class CONNECTION {
+    PROPERTY property
+    ITEM source
+    ITEM target
+  }
+  PREFIX "1" o-- "*" ENTITY
+  PREFIX "2" o-- "*" WIKIBASEDATASOURCE
+
+  ENTITY "*" --o "1" WIKIBASEDATASOURCE
+  
+  CONNECTION "2" o-- "*" ITEM
+  CONNECTION "1" o-- "*" PROPERTY
+```
+)
+
+#figure(caption: [Restructured data types for qVQGs.],
+```pintora
+classDiagram
+  class WIKIBASEDATASOURCE {
+    string name
+    PREFIX propertyPrefix
+    PREFIX itemPrefix
+    PREFIX qualifierPrefix
+  }
+  class ITEM {}
+  class PROPERTY {}
+  class QUALIFIER {
+    PROPERTY property
+    ITEM target
+  }
+  class ENTITY {
+    string id
+    string label
+    PREFIX prefix
+    WIKIBASEDATASOURCE dataSource
+    QUALIFIER[] qualifiers?
+  }
+  ENTITY "*" --o "1" WIKIBASEDATASOURCE
+  ENTITY <|-- ITEM
+  ENTITY <|-- PROPERTY
+  PROPERTY "1" *-- "*" QUALIFIER
+  ITEM "1" *-- "*" QUALIFIER
+```
+)
 
 #todo[
 - mention which tools I used (spargebra)
@@ -812,17 +875,19 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 
 
 #figure(
-  caption: [An overview of all features currently implemented.\ A full feature list can be found in the technical documentation of the repository.],
+  caption: [An overview of all features currently implemented.\ Checkmark means implemented and tested, checkmark with bracket means implemented but not bug-free and cross-mark means not implemented. A full feature list can be found in the technical documentation of the repository.],
   table(columns: 2,
-  [Feature], [Status],
-  [Drawing a VQG with variables and literals], [#sym.checkmark],
-  [Searching for entities on multiple Wikibase instances], [#sym.checkmark],
-  [Creating SPARQL-Select-Queries from a VQG], [#sym.checkmark],
-  [Code editor for SPARQL queries], [#sym.checkmark],
-  [Applying changes in the code editor to the VQG], [#sym.checkmark],
-  [Enriching unseen entities with metadata from the Wikibase API], [#sym.checkmark],
-  [Ability to add multiple Wikibase instances as sources], [#sym.checkmark],
-  [Meta-Info Panel], [#sym.checkmark],
+    [Feature], [Status],
+    [Drawing a VQG with variables and literals], [#sym.checkmark],
+    [Searching for entities on multiple Wikibase instances], [#sym.checkmark],
+    [Creating SPARQL-Select-Queries from a VQG], [#sym.checkmark],
+    [Code editor for SPARQL queries], [#sym.checkmark],
+    [Applying changes in the code editor to the VQG], [(#sym.checkmark)],
+    [Enriching unseen entities with metadata from the Wikibase API], [(#sym.checkmark)],
+    [Literals with standard RDF data types (string, int, date, ...)], [(#sym.checkmark)],
+    [Ability to add multiple Wikibase instances as sources], [#sym.checkmark],
+    [Meta-Info Panel], [#sym.checkmark],
+    [Rendering qualifiers with the proposed visualisation], [#sym.crossmark]
   )
 )
 
