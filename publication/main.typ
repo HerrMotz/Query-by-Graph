@@ -485,7 +485,7 @@ The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R
 The following section follows the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
 #definition[
-  A *Basic Graph Pattern (BGP)* is a *set* of SPARQL triple patterns
+  A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns
   $(T union V) times (I union V) times (T union V)$.
 ]<def:bgp>
 
@@ -596,8 +596,8 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 Often in Wikibase, the same local name is used in combination with different IRI prefixes to address different aspects of the same assertion. For further use in this work, I will define sets of prefixes and mappings to prepend a prefix to a local name.
 
 #definition[Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure. Let
-  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements.
-]
+  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements. Any IRI $i in I$ with a prefix $f_x in I$ can be written as $i = f_x u$ and $u in Sigma^*$#footnote[Technically, a valid prefix could be written e.g. without a trailing slash. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.].
+] <def:prefix_formally>
 
 
 #figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic.],
@@ -618,7 +618,7 @@ $
   "Implicit1" &longArrow("educated at") && "Uni Leipzig", \
   "Implicit1" &longArrow("started at") && 3.10.1765, #<ex_qualifier_1> \
   "Implicit1" &longArrow("ended at") && 28.08.1768.  #<ex_qualifier_2>
-$ <assertions_goethe_education>
+$ <ex:assertions_goethe_education>
 
 Having specified the qualified statement "educated at for a certain time", one is free to add a few extra statements about what he studied and whether he graduated:
 
@@ -626,7 +626,7 @@ $
   "Implicit1" &longArrow("field of study") && "Law", \
 
   "Implicit1" &longArrow("graduated") && "True".
-$ <assertions_goethe_education_revised>
+$ <ex:assertions_goethe_education_revised>
 
 #remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
 
@@ -635,7 +635,7 @@ $ <assertions_goethe_education_revised>
 The term and concept "qualifier" is *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
 In this work, the term *qualifier* can be used in *three ways*: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which can be *asserted in an RDF graph*. The third meaning is a qualifier in a *qualifiable Visual Query Graph*, which will be defined later on. 
 
-In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to display correctly the qualified edge and the qualifying edges, they ought to be discernable.
+In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to correctly display the qualified edge and the qualifying edges, the property IRI prefixes ought to be discernable. In Wikibase, there is always a direct edge from the subject to the object using the `wdt:` prefix. First, this is necessary, should the database's user not want to query for a qualifier, but just for the "regular" assertion. Then, there are the constructing parts of the qualifier: the statement edge from the subject to the blank node using `p:`, the property statement edge from the blank node to the "main" assertion using `ps:` -- e.g. "educated at" in @ex:assertions_goethe_education -- and lastly the qualifier edges, using the `pq:` prefix. Using these prefixes, the data model allows to point at one and the same item, but from very different contexts. To model qualifiers, they ought to be formally defined.
 
 /*#todo[move this somewhere where it makes sense]
 The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase to be able to differentiate the qualifiers from the qualified edge.
@@ -669,7 +669,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
   The edges of the VQG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
 ] <def:vqg>
 
-A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier. Following @def:qualifiers, a qualifier, however, requires a _blank node_, which the VQG does not offer. Secondly, this visualisation is not intuitive.
+A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier.
 
 
 #definition[
@@ -713,30 +713,44 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 #todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
 
-The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. A SELECT query mostly consists of BGPs
-The relevant parts of a VQG are all connected nodes and the edges.
-The relevant aspects of the translation from VQG to SPARQL queries are the connected nodes and their edges. Any unconnected nodes are not part of a BGP and therefore irrelevant to the query.
+The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. Much of the SPARQL query language's expressability is covered by BGPs. Further components, such as value constraints with the keyword `FILTER` could possibly also be visualised in the VQG, but are currently not defined. First, the goal is to show, that a VQG and qVQG can be converted to BGPs and the second step is to show how a SPARQL-SELECT query can be constructed from this.
 
-#definition[
-  A BGP can be constructed from the edge-list of a VQG using the following mapping: $f: ...$
+#lemma[
+  Let $E':= (I union L union V) times (I union V) times (I union L union V)$ be the set of all possible edges in a VQG. Let Y be the set of all possible triples $Y:=(T union V) times (I union V) times (T union V)$ (a finite subset of which is a BGP). A BGP is now constructed using the mapping
+  $
+    f: E' &-> Y, \
+    (s, p, o) &arrow.bar (s, p, o).
+  $
 ]
-
-#proof[Let $G=(N,E)$ be a VQG. An edge $e$ in the VQG is defined as $e_G in E, E:={(s_G,p_G,o_G) | s,o in N, p in I union V}$. A BGP is a set of triples $X$ with $e_X in X, X:={(s_X,p_X,o_X) | s,o in T union V, p in I union V}$. To translate an $e_B$ to $e_X$ means to interpret $e_B$ as $e_X$. Using $T := I union L union V$ (see @def:graph_pattern), and since $(E subset I union V) subset (T union V)$ and $(N subset I union V) subset (T union V)$ are true, a VQG triple can be interpreted as a BGP triple without information loss. #todo[Lektorat notwendig.]
-]
-
-#lemma[A qVQG is equivalent to a VQG, with the addition of qualifiers. Therefore, it needs to be shown that a qualifier triple can be translated and interpreted into a BGP. Secondly, together with the above shown VQG translation, it needs to form a qualifier from @def:qualifiers.]
 
 #proof[
-  Let $G_q=(N, E, E_q)$ be a qVQG. Let $e_q$ be a qualifier edge with $e_q in E_q, E_q := {(e, q, n) | e in E, q in Q, n in N}$, $X$ be defined above. Furthermore, let $X'$ be a set of sets of tuples and $b in B$ a blank node. The mapping $f: E_q -> X', f: ((n_1, p, n_2), q, n_q) arrow.long.bar {(n_1, p, b), (b, p, )}$
+  For the mapping to be accurate, $E$ needs to be a subset or equal to $X$. Since both VQGs and BGPs allow variables at any position in the triple, it now only needs to be shown, that for $T: = I union L union B$ it holds true that $I union L subset.eq T$, which is trivially true from the definition of $T$.
+   #todo[Lektorat notwendig.]
+]
 
-  #todo[Folgendes formalisieren:
-    Man nimmt einfach das Qualifierkonstrukt hinzu und lässt die VQG Kante stehen. So entsteht das vollständige Qualifierkonstrukt wie in Wikibase.
-  
-    Aber: ich brauche irgendwie die Knoten von $e$ im VQG. Ich weiß noch nicht wie ich das schön aufschreiben kann.
+In order to convert a SPARQL SELECT-query to a VQG, this translation needs to be invertible. Since a valid query can have blank node specifiers for subjects and objects, but the VQG is defined without blank nodes, some replacement needs to be found. The SPARQL specification#footnote[in section 4.1.4 Syntax for Blank Nodes] however concludes, that a blank node can be written as a variable in a query @W3C_SPARQL_Specification. Therefore, in order to create a VQG from a BGP, the mapping is inverted and for any blank node a variable is inserted. If a blank node occurs multiple times in a query, the same variable will be used for all occurences.
 
-    Brauche ich vielleicht eine Hilfsfunktion die mir das richtige Prefix ranfügt?
+#todo[Sollte ich das noch einmal lemmatisieren und beweisen?]
+
+Using the above lemma, a VQG can already construct a qualifier. The blank node can be replaced by a variable and the only other obligation is to use the correct prefixes.
+
+#lemma[
+  Let again $E':= (I union L union V) times (I union V) times (I union L union V)$ be the set of all possible edges in a VQG. Let $E'_q := E times Q times N$ be the set of all possible qualifier edges with elements of the form $(e_q, q, n)$. Let $E$ be the set of valid edges in a VQG with elements of the form $(s_e, p_e, o_e)$. Let $v in V$ be a unique variable for each triple in $E_q$ and $w in Sigma^*$. Qualifiers can now be converted to valid VQG triples using the mapping
+  $
+    g: E_q &-> E', \
+    ((s_e, (f_t p_e), o_e), q, n) & arrow.bar {(s_e, f_p p_e, v), (v, f_s p_e, o_e), (b, q, n)}
+  $
+]
+#todo[Ist es in Ordnung das so aufzuschreiben? Vielleicht "hash"funktion für Variablenbezeichner abhängig von qualified edge.]
+
+#proof[
+  Poof! #emoji.explosion
+  #todo[
+    Mehrere unterschiedliche Variablen zu verwenden ist in Ordnung, weil das bei einer Abfrage keine Rolle spielt. Die unterschiedlichen Variablen würden auf die gleichen Strukturen im RDF graph matchen. Es wäre allerdings schön, dass man die Variablen wiederverwenden kann, wenn es sich auf die gleiche qualified edge bezieht. Ich könnte eine "Hash"funktion definieren, die die qualified edge auf eine Variablenbezeichnung abbildet.
   ]
 ]
+
+#todo[Ist die Abbildung invertierbar?]
 
 = Results <heading:implementation>
 
@@ -1017,6 +1031,15 @@ Novel to current work:
 
 + Formulating queries from natural language using Large Language Models
 
+```XML
+xsd:integer
+xsd:decimal
+xsd:float
+xsd:double
+xsd:string
+xsd:boolean
+xsd:dateTime
+```
 
 = Declaration of Academic Integrity
 
