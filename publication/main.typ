@@ -62,7 +62,7 @@
   ),
   
   abstract: [
-    I propose a collection of tools for building and running SPARQL queries for complex RDF databases with the support of formal ontologies, which are neatly composed into one and given the name Query by Graph. #todo[Rephrase and add]
+    I propose a collection of tools for building SPARQL queries for Wikibase RDF triplestores.
   ],
   
   preface: align(left)[
@@ -171,214 +171,26 @@
 /* END Custom Environment */
 
 = Introduction <heading:introduction>
-/*#todo[
 
-Contents of Aim and Relevance
-- Context: make sure to link where your work fits in
-- Problem: gap in knowledge, too expensive, too slow, a deficiency, superseded technology
-- Strategy: the way you will address the problem  
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary consisting of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. 
 
-I should also state some general information:
-- comment on employed hardware and software
-- describe methods and techniques that build the basis of your work
-]*/
+$
+  "Johann Wolfgang von Goethe (subject)" xarrow("educated at (predicate)") "Leipzig (object)"
+$
 
-Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines -- for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata. Its aim is to rewrite Wikipedia articles in a form, which can be handled semantically useful by computer programs. Wikidata is therefore become a library, in which knowledge is written in a set of simple sentences in a special vocabulary. Programs interacting with this information will in turn have set rules on how to interact with the data.
+These assertions are also referred to as triples. Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases. Triplestores pose the key advantage, that they require no data model, e.g. tables in relational databases -- anything can be put into relation with something else. In semantic data modeling, the only necessary task is specifying a vocabulary and determining how annotated data should be utilised.
 
-Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, can represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the rules on how this is supposed to be interpreted would have prevented the misunderstanding.
+Such Triplestores can be implemented using a framework called Resource Description Framework (RDF). A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
 
-This motivated the introduction of _Semantic Technologies_ to the _web_. For example, a doctors office might post opening times on their website. Using a public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. A program could fetch the websites source and interpret them in accordance to the vocabulary. This approach avoid pattern matching and statistics. These deliberations waged the establishment of standards, which define syntax and methods to enable this kind of annotation. They are wrapped in a recommendation by the W3C#sym.trademark.registered called _Resource Description Framework_ (RDF). Resources refer to objects of our intuition and can be described using the syntax of said framework. These standards can be used to create semantic networks, which act like databases, such as DBpedia and Wikidata, and to annotate e.g. websites.
-
-Very similarly to grammars for natural language, the RDF standard defines that any statement consists of three parts: a _subject_ (the thing something is said about), a _predicate_ (which specifies the relationship) and an _object_ (which is being put into relation to the subject by the predicate). All three parts can refer to objects of our intuition. This triple syntax, can be used to make arbitrary statements. A collection of such statements forms a triplestore, also called RDF database. 
+The maximal flexibility in the data model is what made triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
 == Problem
-Even though the names used for describing subjects, predicates and objects use terminology from the natural language, to find the answer to a question still involves many steps. First, the query a user poses in natural language ought to be translated to a query language, which is capable of querying RDF databases.
+Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation is therefore being put into the hands of historians. Secondly, to adequately query a database, the user is forced to use the query language of the database, which requires technical knowledge. Lastly, the user needs to be able to interpret the results of the query, which again involves extensive knowledge of the inner workings of the database. Since the users should be able to focus on their actual work, this should not be a necessity.
 
-The idea of formalising knowledge is not new. The field of *formal ontology* revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
+== Proposal
 
-_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
 
-This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
-
-// verschieben
-
-This formalised form of information poses the advantage, that it can be e.g. indexed by search engines, which we so often consult. But if the question can not be answered by the search engine, the only way for a human is to make use of the same special vocabulary and structure of simple sentences a computer program would. This involves a very different skillset from what is currently asked for and involves the study of technical aspects of Wikidata.
-
- The clear disadvantage is, however, that the only way for a human to retrieve knowledge from Wikidata, is using these same technical expressions as a computer program would use. This is a new form of retrieving information using very different skills to what is the current standard.
-
-Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
-
-#todo[
-  Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
-]
-// end verschieben
-
-== This Work
-#todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
-
-This thesis aims to lay the ground work for a visual query builder for SPARQL queries.My developed program _Query by Graph_#footnote[A demonstration is available at https://quebyg.danielmotz.de/.] allows the user to build queries for Wikibase instances (e.g. Wikidata) without the necessity to write code. The idea is, that the contents of a Wikibase instance and the query for the same can be visualised as a graph, consisting of nodes and edges between them. Using _Query by Graph_, the user can build a graph of a desired structure, fill in variables for unknown structures and retrieve the query's result from any Wikibase instance. Novel to current work, it can *import a previously built query* and *apply changes from the generated SPARQL query to the visual query graph*. Furthermore, the user can work with _multiple Wikibase instances_ in one session, allowing for *federated queries*. Furthermore, in practical application of RDF, certain constructs occur, which are supposed to interpreted in a certain way. This work shows, that these can also be mapped to a visual query graph. #todo[sollte ich hier nun den Begriff Qualifier erwähnen? Das könnte man übrigens nicht nur für Qualifier machen, sondern analog für ordered lists, references, ...] 
-
-#figure(
-  image("screenshot.png"),
-  caption: [A screenshot of the current state of the program]
-)
-
-== Related Work
-Main inspiration for this work was a blog entry by Olaf Simons, called *"You should be able to graphically search in a graph database"* @Simons_Blog_Entry_Graphic_query, where he describes a visual query interface, which models the structure of the RDF graph it is trying to query. The user can create nodes and draw edges between them, where the edges relate to Wikibase properties and nodes to items. Simons makes an interesting addition to the graphical repertoire, which are qualifiers. A qualifier can add additional information to a property between to items, for example, the relationship `educated-at` could be qualified by the two statements `from 2020` and `to 2023`. In Wikibase, a user can define arbitary properties to be qualifying of a relationship and is not limited to statements about time, like in this example. The RDF graph structure necessary is, however, not intuitive, as it involves implicit nodes. Simons proposes the simple graphical element, to draw additional edges from the qualified edge, making querying for qualifiers using a graphical tool manageable in the first place.
-
-The approach by Vargas et al. @Vargas2019_RDF_Explorer called *RDF Explorer* is to build a query for a Wikibase instance, starting from a single entry/item. It shows all possible assertions for this item to build the query. The goal is to guide the formulation of the user's question from a known starting point to the wanted result. The software is called RDF Explorer#footnote[A demonstration is available at https://rdfexplorer.org.] and works with one Wikibase instance at a time. It offers example queries, which can be dragged to the graph building pane. Their work aims to allow the user to build a query, but also discover what the data source has to offer at the same time.
-
-*Sparnatural* @Sparnatural allows to build queries using an interface similar to block-based visual programming languages. It works for arbitrary RDF data sources, not just Wikibase. However, it requires an ontology to generate the categories and options in the user interface. Anything not covered by the ontology, cannot be asked for in a built query. Still, the implementation is very advanced and offers many of the language features of SPARQL, i.e. `FILTER` statements.
-
-*SPARQLVis* @SPARQLVis proposes a form-based interface and promises features such as a preview of all related entities to an item and the same querying functionalities as the other here mentioned approaches. The work contains screenshots of the program, which show a relatively complicated interface for the same functionality offered by others (e.g. Vargas).
-
-#todo[irgendwo anders unterbringen:]
-Query by Graph lays the to focus on graph-based query building, like RDF Explorer, because the user can discover the data offered in a Wikibase instance by using the already existing web-interfaces. They are by design adequate to the modeled data. The advantage to have a discovery function integrated with the query builder is obvious, however, only small. The possible assertions for an elaborated item are large and their suggestion can lead to confusion. A query builder's main tasks are to enable the user to quickly find entities the user knows of, write potent queries using an intuitive visualisation and to generate a SPARQL query.
-
-
-/*Much of the mankind's knowledge is stored in the format of natural language, which can not be accessed without following these steps: 1. rough research on a topic, 2. formulate a question, 3. finding relevant literature to the question, 4. reading the literature, 5. extracting the relevant facts, (optional: 6. rephrasing the question because you now know what you were actually asking for) and, finally, 7. inferring an answer from the retrieved facts. This process can be tedious, but, gladly, many of these steps have been facilitated by generations before us. May it be in the form of letterpress, libraries, a librarian, the world wide web (WWW), a search engine and so forth --- we can rely on an _infrastructure for knowledge_.
- 
-The present internet search engines use a refined mix of network and metadata analysis as well as natural language processing (NLP) to identify the most relevant results to a topic. The World Wide Web also includes large websites like Wikipedia, which, similar to a printed encyclopedia, provide information in natural language. Depending on the topic being discussed, an entry usually shows a certain structure. Entries about individuals typically include their dates of birth and death, while entries about monuments most commonly provide information about their architect, location, and year of construction, among other details. The fundamental idea of _Wikibase_#footnote[https://wikiba.se/, also note that there were similar approaches, such as #link("https://en.wikipedia.org/wiki/Freebase_(database)")[Freebase]] is to enable the user to strictly formalise such semi-structured articles, so that its contents are annotated to be machine-readable.
-
-The idea of formalising knowledge is not new. The field of formal ontology revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
-
-_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
-
-This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.*/
-
-/*
-== Problem
-
-
-This directly leads to the relevance of this work: Wikibase is a popular software for community knowledge bases and is RDF compatible. Such RDF databases#footnote[Technically, Wikibase uses a different internal representation and only maps to the RDF standard. @fig:rdf_mapping gives an overlook over the mapping.], however, can only be potently queried using a query language called SPARQL. Most researchers in the humanities will not find the time to study such arbitrary technicalities in-depth. The idea for this thesis comes from a blog post by Olaf Simons @Simons_Blog_Entry_Graphic_query on the allure of a visual query interface. The user should be 
-
-I reviewed several visual query helpers @Vargas2019_RDF_Explorer @KnowledgeGraphExplorationForLaypeople @Sparnatural and found them to have room for improvement in routine use and expressiveness. The aim of this work is to lay the groundwork for a visual query builder, which enables a previously unintroduced user to create complex SPARQL queries on Wikibase instances in daily use.
-
-An important example are *qualifiers*, which are widely used in Wikibase instances to further specify a relationship between individuals. For example, a statement such as "Goethe was educated at the University of Leipzig #underline[from 1765 to 1768]" can be modelled as three assertions:
-(1) Goethe was educated at the University of Leipzig, (2) this education started in 1765 and (3) it ended in 1768. The underlined part of above expression form two *qualifiers*. As this structure is commonly used in Wikibase, Olaf Simons proposes a visualisation of such qualifiers, which can not yet be found in current implementations.
-
-
-/*
-Most factual knowledge can easily be written in terms of relations between individuals.
-
-#todo[
-  Therefore challenges are:
-  - Making information in an RDF databases understandable and not so abstract for a human interpreter (for example visualising the result in a graph)
-]
-
-#todo[Connect the following to somewhere:]
-
-RDF databases store large amounts of validated data and are freely available, however, they:
-- can only be potently queried using SPARQL, which is not intuitive for non-programmers,
-- can be looked at using several interfaces, which however lack inference capabilities,
-- usually contain no formal ontology to inference on their data,
-- can hardly automatically be made consistent with a formal ontology and
-- allow for no systemic consistency checks (i.e. those have to be ran as post-hoc batch jobs).*/
-*/
-/*
-== Proposed Solution
-This thesis aims to explore methods and concrete implementation, which guides the user through the process of finding an answer to a given question in a Wikibase knowledge base. This includes:
-
-- enabling a layman to create complex SPARQL SELECT-queries using a visual interface and
-
-- allow changes to the SPARQL SELECT-query, which will in turn change the graph in the visual interface.
-
-It will use Wikibase-specific features and conventions, such as:
-- the fuzzy search API,
-
-- the meta-info API and
-
-- RDF constructs, i.e. Qualifiers (see @heading:qualifiers).
-
-The concrete enhancements over other approaches are: #todo[Move this to the Results section?]
-
-- *higher user-satisfaction* compared to similar visual query builders, such as @Vargas2019_RDF_Explorer, as #todo[write limited user study and name more query builders]
-
-- the ability to create queries over *multiple Wikibase data sources*,
-
-- *importing* existing SPARQL queries,
-
-- *editing* the query and associated graph using an *integrated code editor*
-
-- #todo[list more :-)]
-
-For this, I decided to develop a lightweight web application, which at its heart has Rust-code to translate visually built queries to SPARQL queries and vice versa#footnote[The code is publicly available at #link("https://github.com/HerrMotz/bachelor-thesis/")[`http://github.com/HerrMotz/bachelor-thesis`].] (see @heading:implementation). The program is already in practical application at the time of writing. Changes to the code have been made by a team from the digital humanities at the Friedrich Schiller University Jena under my lead, where a hands-on session with students was conducted. Any changes which do not originate from my work are clearly marked in the code repository. #todo[lasse ich das wirklich so stehen?]
-
-
-#todo[Why should a user be able to edit the query? What sense does this make?
-- can be used to import an existing query
-- some users can maybe write some parts of a SPARQL query and should have the possibility to do so.
-- pasting parts from another query is also very useful
-]*/
-
-/*
-== Related Work
-
-#set heading(outlined:false)
-=== RDF Explorer <heading:rdf_explorer>
-
-The approach by Vargas et al. @Vargas2019_RDF_Explorer is to show all possible assertions about an item already while building the query. The goal is to guide the formulation of the user's question from a known starting point. This approach uses a fuzzy search prompt for an RDF resource as a starting point. After adding an object from the prompt results to the drawing board, the user can select from a list of all relations to other objects to augment the prompt. The user may also leave the relation unspecified, add a new object and select from a list of all assertions between these two objects. A user may just as well choose to let any object or property be a variable.
-
-#example[
-  The _Wikidata_ object `wd:Q5879`, also known as _Johann Wolfgang von Goethe_, offers several possible assertions, such as that he is "instance of" human and that he was "educated at" the University of Leipzig. This approach shows these in a sidebar, implying that those might be sensible next steps to specify a question.
-]
-
-Compared to writing a complex query manually, this approach offers feedback on which queries may yield a result. The user does not even need to run the generated SPARQL query, because the result is already clear from the explorer interaction.
-
-#todo[Olaf Simons was puzzled, which sense it makes to run the SPARQL query afterwards, because the result is already clear from the interaction.]
-
-A demonstration is available at https://rdfexplorer.org.
-
-=== Exploring KGs (also Vargas)
-@Vargas2020_UI_for_Exploring_KGs
-#todo[
-  Summarise
-]
-
-=== RDF2Graph
-This approach by van Dam et al. @vanDam2015_RDF2Graph conceptualises special RDF resources, which contain _class_ and _subclass_ assertions for its objects. From this information a network of classes can be extracted, which can be used to visualise the possible relations between instances of classes in the resource. This approach was proven to be useful for resources on biology, e.g. #link("https://www.ebi.ac.uk/chebi/")[ChEBI] and #link("https://sapp.gitlab.io/docs/index.html")[SAPP]. Unfortunately, the approach does not discuss the modelling challenges for resources with incomplete, inconsistent or missing class relations.
-
-=== NLQxform
-https://www.semanticscholar.org/paper/NLQxform%3A-A-Language-Model-based-Question-to-SPARQL-Wang-Zhang/159ee26c0c2666b3e18814857b4a4d4182ed8246
-
-=== Smeagol: A "Specific-to-General" Query Interface Paradigm
-
-=== Obi-Wan: Ontology-Based RDF Integration of Heterogeneous Data
-
-
-=== Knowledge Graph Exploration for Laypeople
-@KnowledgeGraphExplorationForLaypeople
-#todo[Summarise]
-
-
-=== Conceptual Navigation in Large Knowledge Graphs 
-@ConceptualNavigationInLargeKnowledgeGraphs
-#todo[Summarise]
-
-=== Connecting Ontologies and RDF Databases 
-@Arakawa2023_SugarBindRDFOntology
-#todo[Summarise]
-
-=== Relevant Takeaways
-Visual Interfaces seem to be promising advantages in the research community and are relevant.
-#todo[Build a bridge between related work and my work]
-
-#todo[Make the summaries of other papers more concise, so that it can be put into one running text]
-
-#set heading(outlined:true)
-*/
-
-= Preliminaries <heading:fundamentals>
-/*#todo[
-
-Questions, which I would like to be answered in this chapter:
-- How can information about the real world be represented in a computer? #sym.checkmark
-- What are RDF databases in comparison to other semantic technologies? #sym.checkmark
-- What is the advantage of using a strict formal ontology in comparison to an RDF database? #sym.checkmark
-]*/
-
-
-
+= Preliminaries
 == RDF Standard <heading:rdf_standard>
 The W3C#sym.trademark.registered recommends a standard for exchange of semantically annotated information called the Resource Description Framework (RDF) standard model. The most notable recommendations are
 
