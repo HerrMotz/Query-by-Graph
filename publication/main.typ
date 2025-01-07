@@ -170,7 +170,7 @@
 
 /* END Custom Environment */
 
-= Aim and Relevance <heading:introduction>
+= Introduction <heading:introduction>
 /*#todo[
 
 Contents of Aim and Relevance
@@ -183,10 +183,35 @@ I should also state some general information:
 - describe methods and techniques that build the basis of your work
 ]*/
 
-== Background <problem_heading>
-#todo[Die 10 Sätze, die ich gestern Nacht zu Felix gesagt habe.]
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines -- for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata. Its aim is to rewrite Wikipedia articles in a form, which can be handled semantically useful by computer programs. Wikidata is therefore become a library, in which knowledge is written in a set of simple sentences in a special vocabulary. Programs interacting with this information will in turn have set rules on how to interact with the data.
 
-Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and most recently computers and the internet. Instead of using a library or asking a colleague, we usually consult search engines, for even small questions. With them, the need to supply data in a computer interpretable format arose. This lead to the inception of a platform called Wikidata, which arose as a "machine-readable" version of Wikipedia. Wikidata has become a form of library, in which the knowledge is not written in human, but machine language. Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
+Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, can represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the rules on how this is supposed to be interpreted would have prevented the misunderstanding.
+
+This motivated the introduction of _Semantic Technologies_ to the _web_. For example, a doctors office might post opening times on their website. Using a public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. A program could fetch the websites source and interpret them in accordance to the vocabulary. This approach avoid pattern matching and statistics. These deliberations waged the establishment of standards, which define syntax and methods to enable this kind of annotation. They are wrapped in a recommendation by the W3C#sym.trademark.registered called _Resource Description Framework_ (RDF). Resources refer to objects of our intuition and can be described using the syntax of said framework. These standards can be used to create semantic networks, which act like databases, such as DBpedia and Wikidata, and to annotate e.g. websites.
+
+Very similarly to grammars for natural language, the RDF standard defines that any statement consists of three parts: a _subject_ (the thing something is said about), a _predicate_ (which specifies the relationship) and an _object_ (which is being put into relation to the subject by the predicate). All three parts can refer to objects of our intuition. This triple syntax, can be used to make arbitrary statements. A collection of such statements forms a triplestore, also called RDF database. 
+
+== Problem
+Even though the names used for describing subjects, predicates and objects use terminology from the natural language, to find the answer to a question still involves many steps. First, the query a user poses in natural language ought to be translated to a query language, which is capable of querying RDF databases.
+
+The idea of formalising knowledge is not new. The field of *formal ontology* revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
+
+_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
+
+This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
+
+// verschieben
+
+This formalised form of information poses the advantage, that it can be e.g. indexed by search engines, which we so often consult. But if the question can not be answered by the search engine, the only way for a human is to make use of the same special vocabulary and structure of simple sentences a computer program would. This involves a very different skillset from what is currently asked for and involves the study of technical aspects of Wikidata.
+
+ The clear disadvantage is, however, that the only way for a human to retrieve knowledge from Wikidata, is using these same technical expressions as a computer program would use. This is a new form of retrieving information using very different skills to what is the current standard.
+
+Now, the new challenge has become to retrieve information from this new library. Our librarian can only help us to find certain entries. To find the connection between information snippets from these entries is still the readers task. For this, users can write database queries in a special query language.
+
+#todo[
+  Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
+]
+// end verschieben
 
 == This Work
 #todo[Dieses Kapitel sollte kontextfrei verständlich sein.]
@@ -352,20 +377,7 @@ Questions, which I would like to be answered in this chapter:
 - What is the advantage of using a strict formal ontology in comparison to an RDF database? #sym.checkmark
 ]*/
 
-Computers generally lack information about the environment humans live in. For example, unless formalised, a computer is unaware of the fact, that an arbitrary arrangement of numerals separated by lines, such as `8/7/2000`, is supposed to represent a date within a calendar based on the birth of a religious figure. How would a human even know of this convention, if it were not taught to him? And even with this knowledge, one can easily stumble upon a false friend: Here, I picture a European fellow confronted with an American booking confirmation. The American interprets the above date as August 7th in the year 2000. In the worst case, the European confidently interprets it as July 8th and would probably be wrong. Explicating the date format would have prevented this disaster.
 
-#todo[
-  Hier wir noch nicht deutlich, was der eigentliche Grundgedanke hinter semantischen Technologien eigentlich ist. Diese Sektion sollte ich gründlich überarbeiten, da Prof. B. sie genau lesen wird.
-]
-
-This motivated the introduction of _Semantic Technologies_ to the web. The original idea by Tim Berners-Lee was to annotate web pages using a well-defined common vocabulary, so that any computer can, without human assistance, extract the relevant contents of a website. For example, a doctors office might post opening times on their website. Using a public vocabulary, the website describes a table as "opening times" and the strings of weekdays and times as entries of the opening times. A program could fetch the HTML source, read the RDFa annotations and use them to present a list of opening times in a list of search results. This approach would not require pattern matching or statistics to come to a definitive result. These deliberations waged the establishment of standards, such as 
-the Resource Description Framework (see @heading:rdf_standard) and Ontology Web Language. Today, these standards are hardly used to annotate websites, but to build semantic networks, such as DBpedia or Wikidata.
-
-The idea of formalising knowledge is not new. The field of *formal ontology* revolves around the creation of theories on how to model an arbitrary domain, such as the world we live in. One concrete formal ontology defines a theory about the workings of a concrete domain. It allows for the definition of i.e. names, categories, properties and relationships between any of those. The use of ontologies presents a two-fold advantage: Any statement within an ontology is expressed in clearly interpretable terms, because it can be viewed independently of any natural language constructs. The difficulty with formal ontologies, however, is anticipating all (or at least most) things and relations that need to be represented in advance. Therefore, ontologies require careful deliberation and their genesis usually goes by the saying: "Many cooks spoil the broth". In contradiction, collaboration between domain experts and ontology engineers is an existential necessity.
-
-_So, how could this resource-consuming process be in parts avoided or supported, whilst not giving up the advantages of computer-processability?_ Originally conceptualised by Tim Berners-Lee, the W3C#sym.trademark.registered standardised the Resource Description Framework (RDF). While an ontology consists of a theory (T-Box) and assertions (A-Box, which are statements compliant with the theory), an RDF knowledge base can consist solely of an A-Box -- the T-Box is quietly implicit. Using an RDF schema, a taxonomy can be added (at any time), usually using an "instance-of" assertion, but consistency is no inherent obligation of an RDF database#footnote[although it is obviously good practice to be consistent with the RDF schema].
-
-This "formalise as you go"-approach allows for maximal flexibility of the data model and proves advantageous, e.g. in the digital humanities. Recently, historians, among others, started to use centralised knowledge bases, allowing for collaboration on research questions and finding connections between the results from different researchers. A grand initiative called FactGrid#footnote[http://factgrid.de] hosts a free-to-use Wikibase instance tailored for the digital humanities, in the hope of creating synergy effects for future research.
 
 == RDF Standard <heading:rdf_standard>
 The W3C#sym.trademark.registered recommends a standard for exchange of semantically annotated information called the Resource Description Framework (RDF) standard model. The most notable recommendations are
@@ -401,11 +413,7 @@ This chapter introduces the parts of the recommendation which are relevant to th
   Then, following @W3C_RDF_1.1_Reference, any three-tuple or triple in an RDF graph is of the form
 
   $
-    (bold("s"), bold("p"), bold("o"))
-  $
-  #align(center)[or equivalently]
-  $ 
-    bold("s") xarrow(bold("p")) bold("o"),
+    (bold("s"), bold("p"), bold("o")).
   $
 ] <def:spo>
 
