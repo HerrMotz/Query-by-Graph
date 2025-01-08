@@ -191,16 +191,49 @@ Now, Wikidata contains a very big set of such triples, posing the new opportunit
 The maximally flexible data model is what lead triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore, specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
 == Problem
-Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation is therefore being put into the hands of historians. Secondly, to adequately query a database, the user is forced to use the query language of the database, which requires technical knowledge. Lastly, the user needs to be able to interpret the results of the query, which again involves extensive knowledge of the inner workings of the database. Since the users should be able to focus on their actual work, this should not be a necessity.
+Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation is therefore being put into the hands of e.g. historians. Secondly, to adequately query a database, the user is forced to use the query language _SPARQL_, which requires technical knowledge.
+
+#figure(caption: [The process of getting a result from an RDF triplestore.],
+  image("methodology_pipeline_without_proposal.svg", width: 100%)
+)
+
+For example, a researcher might ask: 'Which societies focused on advances in the natural sciences existed in Altenburg during the 1800s?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? Are we looking for clubs _founded_ between 1800 and 1900 or for any clubs _active_ in that time? When can a club be considered to be active? Before even beginning to write a SPARQL query, the second step is to think of a query formalism using the limited "subject, predicate, object" syntax, which adequately describes the question. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
+
+We want to reach a broader user base, than these hurdles would invite to participate.
+One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modeled and extensive knoowledge of the SPARQL language features. 
+
+#figure(caption: [A possible SPARQL query to retrieve all societies for natural sciences founded in the 1800s from the database FactGrid.],
+```HTML
+PREFIX fg: <https://database.factgrid.de/entity/>
+PREFIX fgt: <https://database.factgrid.de/prop/direct/>
+
+SELECT DISTINCT ?society ?societyLabel WHERE {
+  # Find entities that are societies for natural sciences
+  ?society fgt:P2  fg:Q266832;  # Instance of society for natural sciences
+           fgt:P83 fg:Q10297.   # Located in Altenburg
+
+  # Check for "begin date" within the 1800s
+  ?society fgt:P49 ?foundingDate.  # Founded date property
+  FILTER(YEAR(?foundingDate) >= 1800 && YEAR(?foundingDate) <= 1900).  # Limit to 19th century
+
+  # Retrieve labels for societies
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+}
+```
+)
 
 == Proposal
-This work aims to lay the groundwork for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language, the user employs a visual query builder, which in turn generates the equivalent query to run against the database. A query engine sweeps the RDF triplestore and returns the results to the user.
+This work aims to lay the groundwork for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query. A query engine sweeps the RDF triplestore and returns the results to the user. The grand advantage is, that the user is guided by the user interface in writing queries and does not need to know about technical details of the query language.
+
+
+Building a VQG supports the step of the formalisation before writing the SPARQL query, because it guides the user to think in a triple structure. Furthermore, the graphical representation acts as a sketch to the SPARQL query.
 
 #figure(caption: [Methodology pipeline: How to get from a question in natural language to the result  in an RDF database.],
   image("methodology_pipeline.svg", width: 100%)
 )
 
 This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specification of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a visual query graph.
+
 
 = Preliminaries
 This chapter treats technicalities around Wikibase conventions and how they are implemented in the RDF standard.
@@ -382,10 +415,15 @@ PREFIX wdv: <http://www.wikidata.org/value/>
 
 Often in Wikibase, the same local name is used in combination with different IRI prefixes to address different aspects of the same assertion. For further use in this work, I will define sets of prefixes and mappings to prepend a prefix to a local name.
 
-#definition[Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure. Then
-  $f_bold(p), f_bold(q), f_bold(s) in I$ are forthon used to describe _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements, in analogy to the Wikibase data model. Any IRI $i in I$ with a prefix $f_x in I$ can be written as $i = f_x u$ and $u in Sigma^*$#footnote[Technically, a valid prefix could be written e.g. without a trailing slash. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.].
+#definition[
+  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
+  Let
+  $f_bold(p), f_bold(q), f_bold(s) in I$, then they are forthon used to describe _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements, in analogy to the Wikibase data model. 
 ] <def:prefix_formally>
 
+#remark[
+  May $f_x in I$, then any IRI $i in I$ with a prefix can be written as $i = f_x u$ and $u in Sigma^*$#footnote[Technically, a valid prefix could be written e.g. without a trailing slash. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.].
+]
 
 #figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic.],
   image("rdf_mapping.svg", width: 87%)
@@ -431,10 +469,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
 #definition[
   Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
   $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med
-  $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$  
-  and the limitation $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let $p_s$ and $p$ refer the same local name (or Wikibase property) using different prefixes
-  $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$. Lastly, let $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
-  $b in B$ a blank node. Then, a *qualified statement* in $G$ is defined as a set containing the triples
+  $p := f_p u, u in Sigma^*$. Additionally, let $p_s$ and $p$ refer the same local name $u$ (or Wikibase property) using different prefixes $p_s := f_s u$. Lastly, let $o in L union I, o_j in O subset.eq L union I$ and $b in B$ a blank node. Then, a *qualified statement* in $G$ is defined as a set containing the triples
   $
       {(s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
   $
@@ -826,6 +861,8 @@ xsd:string
 xsd:boolean
 xsd:dateTime
 ```
+
+- "what are possible relations between a variable and an item" und man gibt noch mit was man modellieren will
 
 = Declaration of Academic Integrity
 
