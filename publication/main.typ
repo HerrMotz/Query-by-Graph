@@ -63,6 +63,7 @@
   
   abstract: [
     I propose a collection of tools for building SPARQL queries for Wikibase RDF triplestores.
+    #todo[extend.]
   ],
   
   preface: align(left)[
@@ -172,35 +173,41 @@
 
 = Introduction <heading:introduction>
 
-Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary consisting of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. 
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary consisting of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. These assertions are also referred to as *triples*.
 
+#let lalalalalala = 90pt
 $
-  "Johann Wolfgang von Goethe (subject)" xarrow("educated at (predicate)") "Leipzig (object)"
+  "Goethe (subject)"& xarrow("educated at (property)", width: lalalalalala)& "Leipzig (object)" \
+  "Goethe"& xarrow("place of birth", width: lalalalalala) &"Frankfurt am Main"
 $
 
-These assertions are also referred to as triples. Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases. Triplestores pose the key advantage, that they require no data model, e.g. tables in relational databases -- anything can be put into relation with something else. In semantic data modeling, the only necessary task is specifying a vocabulary and determining how annotated data should be utilised.
+#figure(
+  caption: [A graphical visualisation of the triples as a graph. Subjects and objects are represented as nodes and properties are represented as edges between these nodes.],
+  image("example_triple_graph.svg", width: 230pt)
+)
 
-Such Triplestores can be implemented using a framework called Resource Description Framework (RDF). A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
+Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases.  Such databases for triples are called triplestores, and can be implemented using a framework called Resource Description Framework (RDF). A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
 
-The maximal flexibility in the data model is what made triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
+The maximal flexibility in the data model is what made triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore, specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
 == Problem
 Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation is therefore being put into the hands of historians. Secondly, to adequately query a database, the user is forced to use the query language of the database, which requires technical knowledge. Lastly, the user needs to be able to interpret the results of the query, which again involves extensive knowledge of the inner workings of the database. Since the users should be able to focus on their actual work, this should not be a necessity.
 
 == Proposal
+This work aims to lay the groundwork for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language, the user employs a visual query builder, which in turn generates the equivalent query to run against the database. The RDF triplestore is sweeped using a query engine and returns the results to the user.
 
+#figure(caption: [Methodology pipeline: How to get from a question in natural language to the result  in an RDF database.],
+  image("methodology_pipeline.svg", width: 100%)
+)
+
+This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specification of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a visual query graph.
 
 = Preliminaries
-== RDF Standard <heading:rdf_standard>
 The W3C#sym.trademark.registered recommends a standard for exchange of semantically annotated information called the Resource Description Framework (RDF) standard model. The most notable recommendations are
 
-- the RDF graph format and triples (see @heading:triples),
+- the RDF graph format and triples and
 
-- the Internationalised Resource Identifier (@heading:iri) and
-
-- the query language SPARQL (see @heading:sparql).
-
-This chapter introduces the parts of the recommendation which are relevant to this work and builds a bridge to concrete conventions around RDF, i.e. Wikibase. 
+- the corresponding query language, SPARQL.
 
 /*
 #todo[
@@ -214,7 +221,7 @@ This chapter introduces the parts of the recommendation which are relevant to th
 ]
 */
 
-=== Graphs and Triples <heading:triples>
+== Graphs and Triples <heading:triples>
 
 #definition[
   Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
@@ -245,13 +252,13 @@ if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* desc
   $ <ex_spo_goethe>
 ]
 
-=== Internationalised Resource Identifier <heading:iri>
+== Internationalised Resource Identifier <heading:iri>
 
 Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
 
 The main advantage of IRIs over URIs are their enhanced character set. However, the details are not directly relevant to this work, therefore I will simply refer to the quoted RFCs for further reading.
 
-=== Literals <heading:literals>
+== Literals <heading:literals>
 
 The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft. Again, the technical specifications are not directly relevant to the matters of this work, therefore I will abstract from the implementation details. 
 
@@ -277,7 +284,7 @@ The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.
   )))
 ]
 
-=== Blank nodes
+== Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
 It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
 
@@ -294,7 +301,7 @@ A computer still does not understand what it means to be educated at some place 
 
 However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
 
-=== SPARQL Protocol and RDF Query Language <heading:sparql>
+== SPARQL Protocol and RDF Query Language <heading:sparql>
 
 The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This section follows its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
@@ -365,7 +372,7 @@ A *base* works similarly, only that it is prefixed to any IRI in the document. I
   ```
 ) <example:arbitrary_position_of_base_and_prefix>
 
-=== RDF Data Model in Wikibase
+== RDF Data Model in Wikibase
 *Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers and @heading:implementation. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
 
 In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. Both items and properties are *entities* and have their own IRI.
@@ -420,7 +427,7 @@ Often in Wikibase, the same local name is used in combination with different IRI
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
-=== Qualifiers <heading:qualifiers>
+== Qualifiers <heading:qualifiers>
 Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". 
 
 #figure(
@@ -479,7 +486,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
 // This method of describing information allows us to implicitly define new concepts. Any program dealing with qualifiers merely handles the explicit assertions for an anonymous concept. But, this anonymity poses a challenge to a human interpreter; implicit concepts usually remain unnamed (#todo[below (how does it work)]).
 
 
-== Visual Query Graph
+= Visual Query Graph
 #definition[
   Following @Vargas2019_RDF_Explorer, a *visual query graph* (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
   The edges of the VQG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (bold("I") union bold("V")) times N$.
@@ -531,18 +538,15 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. Much of the SPARQL query language's expressability is covered by BGPs. Further components, such as value constraints with the keyword `FILTER` could possibly also be visualised in the VQG, but are currently not defined. First, the goal is to show, that a VQG and qVQG can be converted to BGPs and the second step is to show how a SPARQL-SELECT query can be constructed from this.
 
-#lemma[
+#definition[
   Let $E':= (I union L union V) times (I union V) times (I union L union V)$ be the set of all possible edges in a VQG. Let Y be the set of all possible triples $Y:=(T union V) times (I union V) times (T union V)$ (a finite subset of which is a BGP). A BGP is now constructed using the mapping
   $
     f: E' &-> Y, \
     (s, p, o) &arrow.bar (s, p, o).
   $
+  For the mapping to be accurate, $E$ needs to be a subset or equal to $X$. Since both VQGs and BGPs allow variables at any position in the triple, it now only needs to be shown, that for $T: = I union L union B$ it holds true that $I union L subset.eq T$, which is trivially true from the definition of $T$.
 ]
 
-#proof[
-  For the mapping to be accurate, $E$ needs to be a subset or equal to $X$. Since both VQGs and BGPs allow variables at any position in the triple, it now only needs to be shown, that for $T: = I union L union B$ it holds true that $I union L subset.eq T$, which is trivially true from the definition of $T$.
-   #todo[Lektorat notwendig.]
-]
 
 In order to convert a SPARQL SELECT-query to a VQG, this translation needs to be invertible. Since a valid query can have blank node specifiers for subjects and objects, but the VQG is defined without blank nodes, some replacement needs to be found. The SPARQL specification#footnote[in section 4.1.4 Syntax for Blank Nodes] however concludes, that a blank node can be written as a variable in a query @W3C_SPARQL_Specification. Therefore, in order to create a VQG from a BGP, the mapping is inverted and for any blank node a variable is inserted. If a blank node occurs multiple times in a query, the same variable will be used for all occurences.
 
@@ -568,7 +572,7 @@ Using the above lemma, a VQG can already construct a qualifier. The blank node c
 
 #todo[Ist die Abbildung invertierbar?]
 
-= Results <heading:implementation>
+= Implementation <heading:implementation>
 
 #todo[
 Should contain the following aspects:
@@ -825,6 +829,8 @@ Novel to current work:
 #todo[
   Why does it make sense, that a user can edit a SPARQL query?
 ]
+
+= Comparison
 
 = Further Work <heading:further_work>
 
