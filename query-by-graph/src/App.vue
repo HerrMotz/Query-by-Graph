@@ -77,6 +77,7 @@ function codeChangeEvent() {
     // if the code value is not empty but the returned connection array is,
     // then there is probably a syntax error.
     // in this case, do not import the connections
+    console.log("code.value", code.value)
     const graph = JSON.parse(query_to_graph_wasm(code.value));
     if (!!code.value && !!graph && graph?.length > 0) {
       console.log("graph", graph)

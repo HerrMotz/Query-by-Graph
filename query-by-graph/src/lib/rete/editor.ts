@@ -381,14 +381,55 @@ export async function createEditor(container: HTMLElement) {
     }));
 
     async function _layout_helper(animate?: boolean) {
-        await arrange.layout({
-            applier: animate ? applier : undefined,
-            options: {
-                'elk.spacing.nodeNode': "100",
-                'elk.layered.spacing.nodeNodeBetweenLayers': "240"
-            }
-        });
+        console.log("Layout start");
+        const nodes = editor.getNodes();
+        console.log("Nodes for layout:", nodes);
+        
+        // Error: org.eclipse.elk.graph.json.JsonImportException: Referenced shape does not exist: 7861588051d9c26d_o0_output
+        // Debug shape references
+        const elkGraph = {
+            id: "root",
+            children: nodes.map(node => ({
+                id: node.id,
+                width: node.width,
+                height: node.height,
+                ports: [
+                    {
+                        id: `${node.id}_o0_output`,
+                        properties: { side: 'EAST' }
+                    },
+                    {
+                        id: `${node.id}_i0_input`,
+                        properties: { side: 'WEST' }
+                    }
+                ]
+            })),
+            edges: editor.getConnections().map(conn => ({
+                id: conn.id,
+                sources: [`${conn.source}_o0_output`],
+                targets: [`${conn.target}_i0_input`]
+            }))
+        };
+        
+        console.log("ELK Graph structure:", elkGraph);
+        
+        try {
+            await arrange.layout({
+                applier: animate ? applier : undefined,
+                options: {
+                    'elk.spacing.nodeNode': "100",
+                    'elk.layered.spacing.nodeNodeBetweenLayers': "240"
+                }
+            });
         AreaExtensions.zoomAt(area, editor.getNodes());
+        console.log("Layout done")
+        } catch (error) {
+            console.error("ELK Layout error details:", {
+                error,
+                nodes: nodes.map(n => ({id: n.id, connections: editor.getConnections().filter(c => c.source === n.id || c.target === n.id)}))
+            });
+            throw error;
+        }
     }
 
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
@@ -516,6 +557,7 @@ export async function createEditor(container: HTMLElement) {
                 // I do not know why typescript gives me an error without the default noEntity, but there should be no
                 // case where this comes up, especially with the filter statement.
             );
+            console.log("convertedConnectionsPromise: ", convertedConnectionsPromise)
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
             //  Leaving this for the future :)
@@ -525,32 +567,47 @@ export async function createEditor(container: HTMLElement) {
                     console.log("Converted Connections")
                     console.log(convertedConnections);
 
+                    // clear existing graph
                     editor.getConnections().forEach(e => editor.removeConnection(e.id));
                     editor.getNodes().forEach(n => editor.removeNode(n.id));
+                    console.log("Graph deleted")
+
 
                     return convertedConnections.map(c => {
                         const subject = createNode(socket, highestIdCount, editor, area);
                         subject.setEntity(c.source);
+                        console.log("created subject: ", subject);
 
                         const object = createNode(socket, highestIdCount, editor, area);
                         object.setEntity(c.target);
+                        console.log("created object: ", object);
 
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
                         )
                         predicate.property = c.property;
                         predicate.selected = false;
-
+                        console.log("created predicate: ", predicate);
 
                         return new Promise<true>(async function (resolve) {
-                            await editor.addNode(object);
-                            await editor.addNode(subject);
-
-                            await editor.addConnection(
-                                predicate
-                            );
-                            await _layout_helper(true);
-                            resolve(true);
+                            try {
+                                await editor.addNode(object);
+                                await editor.addNode(subject);
+                                await editor.addConnection(predicate);
+                                // Add small delay to ensure nodes are fully initialized
+                                setTimeout(async () => {
+                                    try {
+                                        await _layout_helper(true);
+                                        resolve(true);
+                                    } catch (error) {
+                                        console.error("Layout error:", error);
+                                        resolve(true); // Still resolve to prevent blocking
+                                    }
+                                }, 100);
+                            } catch (error) {
+                                console.error("Node/Connection error:", error);
+                                resolve(true);
+                            }
                         });
                     });
                 }
