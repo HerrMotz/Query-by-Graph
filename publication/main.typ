@@ -203,60 +203,21 @@ This work aims to lay the groundwork for a program, which allows to build querie
 This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specification of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a visual query graph.
 
 = Preliminaries
-The W3C#sym.trademark.registered recommends a standard for exchange of semantically annotated information called the Resource Description Framework (RDF) standard model. The most notable recommendations are
+This chapter treats technicalities around Wikibase conventions and how they are implemented in the RDF standard.
 
-- the RDF graph format and triples and
+== Data Model in Wikibase
+*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
 
-- the corresponding query language, SPARQL.
-
-/*
-#todo[
-- What are alternatives to RDF databases?
-- How do RDF databases work?
-- Which query languages work / are used on RDF databases?
-]
-
-#todo[
-  Important resource: https://www.mediawiki.org/wiki/Wikibase/Indexing/RDF_Dump_Format#Prefixes_used
-]
-*/
-
-== Graphs and Triples <heading:triples>
-
-#definition[
-  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
-  subject $bold("s") in bold("I") union bold("B")$,
-  predicate $bold("p") in bold("I")$ and
-  object $bold("o") in bold("T")$.
-
-  Then, following @W3C_RDF_1.1_Reference, any three-tuple or triple in an RDF graph is of the form
-
-  $
-    (bold("s"), bold("p"), bold("o")).
-  $
-] <def:spo>
-
-#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
-
-if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
-
-#example[
-  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was educated at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
-  $
-    bold("s") := "Johann Wolfgang von Goethe", \
-    bold("p") := "educated at", \
-    bold("o") := "University of Leipzig",
-  $
-  $
-    "Johann Wolfgang von Goethe" xarrow("educated at") "University of Leipzig."
-  $ <ex_spo_goethe>
-]
+In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. Both items and properties are *entities* and have their own IRI.
 
 == Internationalised Resource Identifier <heading:iri>
 
 Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
 
 The main advantage of IRIs over URIs are their enhanced character set. However, the details are not directly relevant to this work, therefore I will simply refer to the quoted RFCs for further reading.
+
+<def:prefixes_and_bases>
+RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For example, let `wd` be a prefix with the value `http://www.wikidata.org/entity/`. Then, the IRI `http://www.wikidata.org/entity/Q5879` can be rewritten using this prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
 
 == Literals <heading:literals>
 
@@ -301,28 +262,54 @@ A computer still does not understand what it means to be educated at some place 
 
 However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
 
+== Graphs and Triples <heading:triples>
+
+#definition[
+  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
+  subject $bold("s") in bold("I") union bold("B")$,
+  predicate $bold("p") in bold("I")$ and
+  object $bold("o") in bold("T")$.
+
+  Then, following @W3C_RDF_1.1_Reference, any three-tuple or triple in an RDF graph is of the form
+
+  $
+    (bold("s"), bold("p"), bold("o")).
+  $
+] <def:spo>
+
+#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
+
+if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
+
+#example[
+  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was educated at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
+  $
+    bold("s") := "Johann Wolfgang von Goethe", \
+    bold("p") := "educated at", \
+    bold("o") := "University of Leipzig",
+  $
+  $
+    "Johann Wolfgang von Goethe" xarrow("educated at") "University of Leipzig."
+  $ <ex_spo_goethe>
+]
+
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
-The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This section follows its currently recommended specification v1.1 @W3C_SPARQL_Specification.
+The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This definitions in this section follow its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
 #blockquote[
   SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. [...] The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
 ]
 
-The following section follows the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
+The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
 #definition[
   A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns
-  $(T union V) times (I union V) times (T union V)$.
+  $(T union V) times (I union V) times (T union V)$ @W3C_SPARQL_Formal_Definition.
 ]<def:bgp>
 
 #definition[
-  A *Graph Pattern* is one of: *Basic Graph Pattern*,
-  _Group Graph Pattern_,
-  _Value Constraints_,
-  _Optional Graph Pattern_,
-  _Union Graph Pattern_ and
-  _RDF Dataset Graph Pattern_.
+  A *Graph Pattern* can take many forms, but most notably it can be a *Basic Graph Pattern*. All other possible graph patterns are specified in the formal definition @W3C_SPARQL_Formal_Definition.
 ]<def:graph_pattern>
 
 #definition[
@@ -330,15 +317,15 @@ The following section follows the _Formal Definition of the SPARQL query languag
   $G P$ is a graph pattern,
   $D S$ is an RDF Dataset (essentially a set of RDF graphs),
   $S M$ is a set of solution modifiers and
-  $R$ is a result form. A *SPARQL-SELECT query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns (see @def:bgp).
+  $R$ is a result form. A *SPARQL-SELECT query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns @W3C_SPARQL_Formal_Definition.
 ]<def:sparql_query>
 
 #remark[
-  This implies, that a SPARQL query can query for a triple, which has a literal as its subject. #todo[How does this make sense?]
+  This implies, that a SPARQL query can query for a triple, which has a literal as its subject.
 ]
 
 Writing SPARQL queries is pretty straight-forward: The wanted structure
-is expressed in terms of the query language, and the unknown parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query.
+is expressed in terms of the query language, and the unknown parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query. IRIs are enclosed within angle brackets.
 #figure(caption: "A SPARQL query to determine which educational institutions Goethe visited.",
   ```HTML
   PREFIX wd: <http://www.wikidata.org/entity/>
@@ -350,33 +337,10 @@ is expressed in terms of the query language, and the unknown parts are replaced 
   ```
 ) <example:goethe_query>
 
-==== Results of a SPARQL query
-The result can either be a set of possible value combinations
+The result set of a SPARQL query can either be a set of possible value combinations
 #todo[Finish section]
 
-==== Expressing IRIs
-An IRI in SPARQL is indicated by the delimiters `<` and `>` (in that order). 
-
-==== Prefixes and bases <def:prefixes_and_bases>
-SPARQL allows to define a *prefix*, which acts as an *abbreviation of an IRI*. The IRI `http://www.wikidata.org/entity/Q5879` can be abbreviated using the above defined prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
-A *base* works similarly, only that it is prefixed to any IRI in the document. It is also prefixed to `PREFIX` statements, as you can see in @example:arbitrary_position_of_base_and_prefix.
-
-#figure(caption: [The position of a statement in a SPARQL query\ does not have an effect on the result.],
-  ```HTML
-  PREFIX wd: </entity/>
-  BASE <http://www.wikidata.org/>
-  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-  SELECT ?1 WHERE {
-      wd:Q5879 wdt:P69 ?1 .
-  }
-  ```
-) <example:arbitrary_position_of_base_and_prefix>
-
-== RDF Data Model in Wikibase
-*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. Also relevant to this work are the prefix conventions of Wikibase, which will come to play in @heading:qualifiers and @heading:implementation. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
-
-In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. Both items and properties are *entities* and have their own IRI.
-
+== Mapping the Wikibase Data Model to RDF
 As can be seen in @example:prefixes_in_wikidata, there are many prefixes apparently for the same things, namely *items* and *properties*. However, their use 
 in Wikibase depends on the context. @fig:rdf_mapping shows how they come into play in the Wikibase data model. It is important to mention, that once an item 
 or property is added to Wikibase, it is referencable using all of the prefixes of the data model. Using the concrete example of Wikidata, an item can be directly addressed using the prefix `wd` and a property directly accessed using `wdt`.
@@ -418,8 +382,8 @@ PREFIX wdv: <http://www.wikidata.org/value/>
 
 Often in Wikibase, the same local name is used in combination with different IRI prefixes to address different aspects of the same assertion. For further use in this work, I will define sets of prefixes and mappings to prepend a prefix to a local name.
 
-#definition[Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure. Let
-  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements. Any IRI $i in I$ with a prefix $f_x in I$ can be written as $i = f_x u$ and $u in Sigma^*$#footnote[Technically, a valid prefix could be written e.g. without a trailing slash. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.].
+#definition[Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure. Then
+  $f_bold(p), f_bold(q), f_bold(s) in I$ are forthon used to describe _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements, in analogy to the Wikibase data model. Any IRI $i in I$ with a prefix $f_x in I$ can be written as $i = f_x u$ and $u in Sigma^*$#footnote[Technically, a valid prefix could be written e.g. without a trailing slash. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.].
 ] <def:prefix_formally>
 
 
@@ -451,14 +415,14 @@ $
   "Implicit1" &longArrow("graduated") && "True".
 $ <ex:assertions_goethe_education_revised>
 
-#remark[Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.]
+Statements, which specify an existing relationship, such as @ex_qualifier_1 and @ex_qualifier_2, are referred to as *qualifiers*. Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.
 
 #figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualifier using natural language.]) <fig:vqg_no_qualifier>
 
 The term and concept "qualifier" are *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
 In this work, the term *qualifier* can be used in *three ways*: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which can be *asserted in an RDF graph*. The third meaning is a qualifier in a *qualifiable Visual Query Graph*, which will be defined later on. 
 
-In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to correctly display the qualified edge and the qualifying edges, the property IRI prefixes ought to be discernable. In Wikibase, there is always a direct edge from the subject to the object using the `wdt:` prefix. First, this is necessary, should the database's user not want to query for a qualifier, but just for the "regular" assertion. Then, there are the constructing parts of the qualifier: the statement edge from the subject to the blank node using `p:`, the property statement edge from the blank node to the "main" assertion using `ps:` -- e.g. "educated at" in @ex:assertions_goethe_education -- and lastly the qualifier edges, using the `pq:` prefix. Using these prefixes, the data model allows to point at one and the same item, but from very different contexts. To model qualifiers, they ought to be formally defined.
+In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to correctly display the qualified edge and the qualifying edges, the property IRI prefixes ought to be discernable. In Wikibase, there is always a direct edge from the subject to the object using the `wdt:` prefix. First, this is necessary, should the database's user not want to query for a qualifier, but just for the "regular" assertion. Then, there are the constructing parts of the qualifier: the statement edge from the subject to the blank node using `p:`, the property statement edge from the blank node to the "main" assertion using `ps:` -- e.g. "educated at" in @ex:assertions_goethe_education -- and lastly the qualifier edges, using the `pq:` prefix. Using these prefixes, the data model allows to point at one and the same item, but from very different contexts. In order to handle qualifiers, they need to be formally defined.
 
 /*#todo[move this somewhere where it makes sense]
 The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneous, but an implementation detail of Wikibase to be able to differentiate the qualifiers from the qualified edge.
@@ -468,7 +432,7 @@ The semantically similar assertions $(s,p,o)$ and $(b, p_s, o)$ are not erroneou
   Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
   $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med
   $P:= { f_bold(p) u | u in Sigma^*}, P subset I$ a set of predicate IRIs, with $p in P$  
-  and the limitation the first qualifier  $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let $p_s$ and $p$ refer the same local name (or Wikibase property) using different prefixes
+  and the limitation $u in Sigma^*$, $q_1 = f_q u <=> p = f_p u$. Additionally, let $p_s$ and $p$ refer the same local name (or Wikibase property) using different prefixes
   $p_bold(s) := f_bold(s) u <=> p := f_bold(p) u$. Lastly, let $o in L union I, o_j in O subset.eq L union I$ an arbitrary set of objects and
   $b in B$ a blank node. Then, a *qualified statement* in $G$ is defined as a set containing the triples
   $
@@ -830,7 +794,7 @@ Novel to current work:
   Why does it make sense, that a user can edit a SPARQL query?
 ]
 
-= Comparison
+= Discussion
 
 = Further Work <heading:further_work>
 
