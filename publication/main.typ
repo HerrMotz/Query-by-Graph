@@ -200,7 +200,7 @@ Making use of a triplestore in a broader audience poses the challenge, that the 
 For example, a researcher might ask: 'Which professions did members of societies focused on advances in the natural sciences existed in Jena have?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the occupation or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, which adequately captures its essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
 
 We want to reach a broader user base, than these hurdles would invite to participate.
-One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modeled and extensive knoowledge of the SPARQL language features. 
+One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modelled and extensive knowledge of the SPARQL language features. 
 
 #figure(caption: [A possible SPARQL query to the professions of members of societies for natural sciences in Jena from the database FactGrid.],
 ```HTML
@@ -222,13 +222,13 @@ SELECT DISTINCT ?careerStatement WHERE {
 == Proposal
 This work aims to lay the _fundamentals_ for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query. A query engine sweeps the RDF triplestore and returns the results to the user. The grand advantage is, that the user is guided by the user interface in writing queries and does not need to know about technical details of the query language.
 
-Creating a Visual Query Graph supports the pre-formalization step that occurs before writing a SPARQL query by guiding the user to think in terms of a triple structure. Rather than focusing on syntactical details, the user can form a mental image of the database structure and translate it into a Visual Query Graph. From this graph, a SPARQL query adhering to all technical specifications is automatically generated.
+Creating a Visual Query Graph supports the pre-formalisation step that occurs before writing a SPARQL query by guiding the user to think in terms of a triple structure. Rather than focusing on syntactical details, the user can form a mental image of the database structure and translate it into a Visual Query Graph. From this graph, a SPARQL query adhering to all technical specifications is automatically generated.
 
 #figure(caption: [Methodology pipeline: How to get from a question in natural language to the result  in an RDF database.],
   image("methodology_pipeline.svg", width: 100%)
 )
 
-This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specifications of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a Visual Query Graph.
+This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is widely adopted#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, e.g. further specifications of a property, which in Wikibase are called qualifiers. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a Visual Query Graph. For this, the work has to introduce the conventions of data modelling in Wikibase and also how they are mapped to the RDF syntax.
 
 #figure(
   caption: [The visual query graph which generates the above posted query],
