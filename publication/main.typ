@@ -22,9 +22,6 @@
 #show: great-theorems-init
 // #show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
 
-// set the width of images in the whole document
-#set image(width: 360pt)
-
 #let spct = sym.space.punct
 #show "e.g.": [e.#sym.space.thin\g.] // unsure whether I like this.
 #show "i.e.": [i.#sym.space.thin\e.]
@@ -242,11 +239,45 @@ Query by Graph cannot fully eliminate the need for users to learn the convention
 To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF) and the syntax of SPARQL queries to the triplestore. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work, with attention limited to a specific subset. SPARQL-SELECT function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same pattern as the SPARQL-SELECT query, while complex constructs of RDF implementations, such as those used in Wikibase, will receive an intuitive representation within the Visual Query Graph.
 
 == Data Model in Wikibase
-*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
+*Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase has its own internal structure and conventions for naming and modeling entities and concepts. These internals are in turn mapped to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_ and most notably _the use of the SPARQL query language for information retrieval_. This specific data model of Wikibase is particularly noteworthy due to its widespread use and substantial influence on other initiatives, driven by its sheer scale. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
 
-In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. Both items and properties are *entities* and have their own IRI.
+In Wikibase, a *thing* is referred to as an *item* and assigned a unique *Q-Number* within a Wikibase instance. Any *predicate* is called *property* and assigned a unique *P-Number*. A statement in Wikibase puts an item in relation to another item using a property.
 
-== Internationalised Resource Identifier <heading:iri>
+
+#let lala2 = lalalalalala/2
+
+#example[
+  Suppose a user wants to enhance an entry in Wikidata for a person called "Johann Wolfgang von Goethe". Goethe is modeled as an item with the Q-number `Q5879` and wants to add the statement, that Goethe was "educated at" (P-number `P69`) the "University of Leipzig" (Q-number `Q154804`). Using the user interface, the user edits the entry for Goethe and fills the fields "property" and "object" with `P69` and `Q154804`.
+  The triple representation in an RDF graph would be very similar:
+  $
+    "Johann Wolfgang von Goethe" &xarrow("educated at",width:lala2) "University of Leipzig", quad "or" \
+    "Q5879" &xarrow("P69", width:lala2) "Q154804."
+  $ <ex_spo_goethe>
+]
+
+Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. Wikibase represents it as a hierarchical structure, with "educated at" as the primary property and the others arranged beneath it. In the Wikibase context, a statement specifying another relationship is called a *qualifier*.
+
+#figure(
+  caption: [Presentation of an qualified relationship in the software Wikibase.],
+  image("screenshot_wikidata.png", width: 320pt)
+)<fig:qualifier_screenshot>
+
+One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing RDF triple syntax is to create an implicit object, that assists in modelling the relationship using an *implicit* or *blank node* to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". 
+The following triples exemplify such an implicit relationship, called a *qualified statement*:
+$
+  "Goethe" &longArrow("educated at") && "Uni Leipzig", \
+  "Goethe" &longArrow("educated at") && "Implicit1", \
+  "Implicit1" &longArrow("location") && "Uni Leipzig", \
+  "Implicit1" &longArrow("started at") && 3.10.1765, #<ex_qualifier_1> \
+  "Implicit1" &longArrow("ended at") && 28.08.1768.  #<ex_qualifier_2>
+$ <ex:assertions_goethe_education>
+
+#figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualified statement using natural language descriptors.]) <fig:vqg_no_qualifier>
+
+Since qualifiers are widely used in most Wikibase instances, this work aims to develop a representation in the Visual Query Graph that enables their effective querying.
+
+== Resource Description Framework
+=== Internationalised Resource Identifier <heading:iri>
 
 Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
 
@@ -255,7 +286,7 @@ The main advantage of IRIs over URIs are their enhanced character set. However, 
 <def:prefixes_and_bases>
 RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For example, let `wd` be a prefix with the value `http://www.wikidata.org/entity/`. Then, the IRI `http://www.wikidata.org/entity/Q5879` can be rewritten using this prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
 
-== Literals <heading:literals>
+=== Literals <heading:literals>
 
 The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft. Again, the technical specifications are not directly relevant to the matters of this work, therefore I will abstract from the implementation details. 
 
@@ -265,7 +296,7 @@ The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.
   + a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
 ] <def:literals>
 
-== Blank nodes
+=== Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
 It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
 
@@ -282,7 +313,7 @@ A computer still does not understand what it means to be educated at some place 
 
 However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
 
-== Graphs and Triples <heading:triples>
+=== RDF Graph and RDF Triple <heading:triples>
 
 #definition[
   Let *$I$* denote the set of IRIs, *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals, *$T := I union L union B$* the set of all RDF-Terms and for further use *$V$* the set of all variables. Let
@@ -300,26 +331,16 @@ However, for any structured querying to be possible, the databases ought to be f
 
 if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
 
-#example[
-  Suppose a subject is given the name "Johann Wolfgang von Goethe", which relates to an object of the name "University of Leipzig", in the way, that the subject was educated at the object. Using the formalism from @def:spo, one might be inclined to produce something like:
-  $
-    bold("s") := "Johann Wolfgang von Goethe", \
-    bold("p") := "educated at", \
-    bold("o") := "University of Leipzig",
-  $
-  $
-    "Johann Wolfgang von Goethe" xarrow("educated at") "University of Leipzig."
-  $ <ex_spo_goethe>
-]
 
+= Querying
 == SPARQL Protocol and RDF Query Language <heading:sparql>
-
-This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
 
 The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This definitions in this section follow its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
+This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
+
 #todo[richtig einfügen:]
- Alternative query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification).
+Alternative query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification).
 
 #remark[
 The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.]
@@ -422,34 +443,7 @@ Often in Wikibase, the same local name is used in combination with different IRI
 ) <fig:rdf_mapping>
 
 == Qualifiers <heading:qualifiers>
-Most real-world relationships might present to be more complex than something one would want to model in a single triple. For example, one may want to express that "Goethe" was educated at the "University of Leipzig" from 3 October 1765 to 28 August 1768. One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing triple syntax is to create an implicit object, that assists in modelling the relationship. We use it to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". 
-
-#figure(
-  caption: [Presentation of an implicitly defined relationship in the software Wikibase.],
-  image("screenshot_wikidata.png", width: 320pt)
-)<fig:qualifier_screenshot>
-The following triples exemplify such an implicit relationship, called a *qualified statement*:
-$
-  "Goethe" &longArrow("educated at") && "Uni Leipzig", \
-  "Goethe" &longArrow("educated at") && "Implicit1", \
-  "Implicit1" &longArrow("educated at") && "Uni Leipzig", \
-  "Implicit1" &longArrow("started at") && 3.10.1765, #<ex_qualifier_1> \
-  "Implicit1" &longArrow("ended at") && 28.08.1768.  #<ex_qualifier_2>
-$ <ex:assertions_goethe_education>
-
-Having specified the qualified statement "educated at for a certain time", one is free to add a few extra statements about what he studied and whether he graduated:
-
-$
-  "Implicit1" &longArrow("field of study") && "Law", \
-
-  "Implicit1" &longArrow("graduated") && "True".
-$ <ex:assertions_goethe_education_revised>
-
-Statements, which specify an existing relationship, such as @ex_qualifier_1 and @ex_qualifier_2, are referred to as *qualifiers*. Would the above example be formalised in RDF syntax, _Goethe_ and _Uni Leipzig_ would be IRIs, _Implicit1_ a blank node, and the dates and booleans literals.
-
-#figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualifier using natural language.]) <fig:vqg_no_qualifier>
-
-The term and concept "qualifier" are *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definition below follows the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
+To query qualifiers using a Visual Query Graph, they must first be clearly defined. The term and concept "qualifier" are *not* used or specified in the RDF reference @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal. The definitions below follow the Wikibase conventions @wikibooks_sparql_qualifiers @wikidata_sparql_qualifiers, where the property and value of the *qualified edge\/assertion* are displayed hierarchically above the qualifiers, as seen in @fig:qualifier_screenshot. 
 In this work, the term *qualifier* can be used in *three ways*: The *concept* of a qualifier, is that a relationship between items can be further specified using them. The now following definition refers to qualifiers, which can be *asserted in an RDF graph*. The third meaning is a qualifier in a *qualifiable Visual Query Graph*, which will be defined later on. 
 
 In order to model and query a qualifier in an RDF database, distinct prefixes for statements and qualifiers are necessary. In SPARQL queries a variable is used to match a blank node, such as "Implicit1". Now, the Wikibase data model allows for many more constructs involving a blank node connected to an item. Furthermore, to correctly display the qualified edge and the qualifying edges, the property IRI prefixes ought to be discernable. In Wikibase, there is always a direct edge from the subject to the object using the `wdt:` prefix. First, this is necessary, should the database's user not want to query for a qualifier, but just for the "regular" assertion. Then, there are the constructing parts of the qualifier: the statement edge from the subject to the blank node using `p:`, the property statement edge from the blank node to the "main" assertion using `ps:` -- e.g. "educated at" in @ex:assertions_goethe_education -- and lastly the qualifier edges, using the `pq:` prefix. Using these prefixes, the data model allows to point at one and the same item, but from very different contexts. In order to handle qualifiers, they need to be formally defined.
