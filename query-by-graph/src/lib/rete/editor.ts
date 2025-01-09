@@ -561,26 +561,49 @@ export async function createEditor(container: HTMLElement) {
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
             //  Leaving this for the future :)
-            return Promise.allSettled(convertedConnectionsPromise).then(values => {
+            return Promise.allSettled(convertedConnectionsPromise).then(async values => {
                 if (values.every((result) => result.status === "fulfilled")) {
                     const convertedConnections = values.map(v => v.value)
                     console.log("Converted Connections")
                     console.log(convertedConnections);
 
-                    // clear existing graph
-                    editor.getConnections().forEach(e => editor.removeConnection(e.id));
-                    editor.getNodes().forEach(n => editor.removeNode(n.id));
-                    console.log("Graph deleted")
+                    // the connections and nodes have to be deleted sequentially instead of in parallel
+                    // otherwise the editor gets in a state where connections reference already deleted nodes
+                    // which leads to the "source is undefined" error
+                    for (const conn of editor.getConnections()) {
+                        await editor.removeConnection(conn.id);
+                    }
+                    for (const node of editor.getNodes()) {
+                        await editor.removeNode(node.id);
+                    }
+
+                    // track nodes in a map to avoid duplicates
+                    const nodeMap = new Map();
+                    const promises= [];
+
+                    for (const c of convertedConnections){
+                        if(!nodeMap.has(c.source.id)){
+                            const subject = createNode(socket, highestIdCount, editor, area);
+                            subject.setEntity(c.source);
+                            console.log("created subject: ", subject);
+                            nodeMap.set(c.source.id, subject);
+                            promises.push(editor.addNode(subject));
+                        }
+                        if(!nodeMap.has(c.target.id)){
+                            const object = createNode(socket, highestIdCount, editor, area);
+                            object.setEntity(c.target);
+                            nodeMap.set(c.target.id, object);
+                            console.log("created object: ", object);
+                            promises.push(editor.addNode(object));
+                        }
+                    }
+
+                    await Promise.all(promises);
 
 
                     return convertedConnections.map(c => {
-                        const subject = createNode(socket, highestIdCount, editor, area);
-                        subject.setEntity(c.source);
-                        console.log("created subject: ", subject);
-
-                        const object = createNode(socket, highestIdCount, editor, area);
-                        object.setEntity(c.target);
-                        console.log("created object: ", object);
+                        const subject = nodeMap.get(c.source.id);
+                        const object = nodeMap.get(c.target.id);
 
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
@@ -590,24 +613,9 @@ export async function createEditor(container: HTMLElement) {
                         console.log("created predicate: ", predicate);
 
                         return new Promise<true>(async function (resolve) {
-                            try {
-                                await editor.addNode(object);
-                                await editor.addNode(subject);
-                                await editor.addConnection(predicate);
-                                // Add small delay to ensure nodes are fully initialized
-                                setTimeout(async () => {
-                                    try {
-                                        await _layout_helper(true);
-                                        resolve(true);
-                                    } catch (error) {
-                                        console.error("Layout error:", error);
-                                        resolve(true); // Still resolve to prevent blocking
-                                    }
-                                }, 100);
-                            } catch (error) {
-                                console.error("Node/Connection error:", error);
-                                resolve(true);
-                            }
+                            await editor.addConnection(predicate);
+                            await _layout_helper(true);
+                            resolve(true);
                         });
                     });
                 }
