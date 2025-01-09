@@ -20,7 +20,7 @@
 
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
-// #show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
+#show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
 
 // set the width of images in the whole document
 #set image(width: 360pt)
@@ -173,7 +173,7 @@
 
 = Introduction <heading:introduction>
 
-Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary consisting of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. These assertions are also referred to as *triples*.
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary. These assertions consist of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. These assertions are also referred to as *triples*. Another benefit of these triples is their ability to be represented as a graph (see @fig:rdf_graph_fragment), where nodes represent subjects and objects, and edges represent relationships. This allows to easily visualise the database relationships.
 
 #let lalalalalala = 90pt
 $
@@ -182,9 +182,9 @@ $
 $
 
 #figure(
-  caption: [A graphical visualisation of the triples as a graph. Subjects and objects are represented as nodes and properties are represented as edges between these nodes.],
+  caption: [A graphical visualisation of the triple $("Goethe", "educated at", "Leipzig")$ as a graph. Subjects and objects are represented as nodes and properties are represented as edges between these nodes.],
   image("example_triple_graph.svg", width: 230pt)
-)
+) <fig:rdf_graph_fragment>
 
 Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases.  Such databases for triples are called triplestores, and can be implemented using a framework called Resource Description Framework (RDF). A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
 
@@ -197,42 +197,43 @@ Making use of a triplestore in a broader audience poses the challenge, that the 
   image("methodology_pipeline_without_proposal.svg", width: 100%)
 )
 
-For example, a researcher might ask: 'Which societies focused on advances in the natural sciences existed in Altenburg during the 1800s?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? Are we looking for clubs _founded_ between 1800 and 1900 or for any clubs _active_ in that time? When can a club be considered to be active? Before even beginning to write a SPARQL query, the second step is to think of a query formalism using the limited "subject, predicate, object" syntax, which adequately describes the question. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
+For example, a researcher might ask: 'Which professions did members of societies focused on advances in the natural sciences existed in Jena have?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the occupation or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, which adequately captures its essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
 
 We want to reach a broader user base, than these hurdles would invite to participate.
 One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modeled and extensive knoowledge of the SPARQL language features. 
 
-#figure(caption: [A possible SPARQL query to retrieve all societies for natural sciences founded in the 1800s from the database FactGrid.],
+#figure(caption: [A possible SPARQL query to the professions of members of societies for natural sciences in Jena from the database FactGrid.],
 ```HTML
 PREFIX fg: <https://database.factgrid.de/entity/>
 PREFIX fgt: <https://database.factgrid.de/prop/direct/>
-
-SELECT DISTINCT ?society ?societyLabel WHERE {
-  # Find entities that are societies for natural sciences
-  ?society fgt:P2  fg:Q266832;  # Instance of society for natural sciences
-           fgt:P83 fg:Q10297.   # Located in Altenburg
-
-  # Check for "begin date" within the 1800s
-  ?society fgt:P49 ?foundingDate.  # Founded date property
-  FILTER(YEAR(?foundingDate) >= 1800 && YEAR(?foundingDate) <= 1900).  # Limit to 19th century
-
-  # Retrieve labels for societies
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+SELECT DISTINCT ?careerStatement WHERE {
+     ?society fgt:P2 fg:Q266832 .
+    # Variable -- [Ist ein(e)] -> Naturforschender Verein
+     ?society fgt:P83 fg:Q10391 .
+    # Variable -- [Ortsansässig in] -> Jena
+     ?people fgt:P91 ?society .
+    # Variable -- [Mitglied in] -> Variable
+     ?people fgt:P165 ?careerStatement .
+    # Variable -- [Karriere-Aussage] -> Variable
 }
 ```
 )
 
 == Proposal
-This work aims to lay the groundwork for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query. A query engine sweeps the RDF triplestore and returns the results to the user. The grand advantage is, that the user is guided by the user interface in writing queries and does not need to know about technical details of the query language.
+This work aims to lay the _fundamentals_ for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query. A query engine sweeps the RDF triplestore and returns the results to the user. The grand advantage is, that the user is guided by the user interface in writing queries and does not need to know about technical details of the query language.
 
-
-Building a VQG supports the step of the formalisation before writing the SPARQL query, because it guides the user to think in a triple structure. Furthermore, the graphical representation acts as a sketch to the SPARQL query.
+Creating a Visual Query Graph supports the pre-formalization step that occurs before writing a SPARQL query by guiding the user to think in terms of a triple structure. Rather than focusing on syntactical details, the user can form a mental image of the database structure and translate it into a Visual Query Graph. From this graph, a SPARQL query adhering to all technical specifications is automatically generated.
 
 #figure(caption: [Methodology pipeline: How to get from a question in natural language to the result  in an RDF database.],
   image("methodology_pipeline.svg", width: 100%)
 )
 
-This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specification of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a visual query graph.
+This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is commonly used#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, i.e. further specifications of a property. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a Visual Query Graph.
+
+#figure(
+  caption: [The visual query graph which generates the above posted query],
+  image("screenshot_queybg_example.png", width: 100%)
+)
 
 
 = Preliminaries
@@ -575,17 +576,13 @@ Using the above lemma, a VQG can already construct a qualifier. The blank node c
 
 #todo[
 Should contain the following aspects:
-- start with a theoretical approach
 - describe the developed system/algorithm/method from a high-level point of view
-- go ahead in presenting your developments in more detail
 ]
 
 #todo[
   My work also has the advantage, that all conventions are regulated in a configuration file specifically for data sources. A user (in the future) can add
   new conventions at a central place and will know, which effects changes have. 
 ]
-
-== Approach and Considerations
 
 The goal of this work is to create two mostly separate programs:
 + the _visual query building interface_ (forthon called *frontend*) and
@@ -597,8 +594,6 @@ As motivated in the introduction in order to answer a question, the questioner n
 
 #todo[probably remove the following paragraph]
 The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using a _partial_ ontology. It is cumbersome to the user to remember every conventions, especially, when they could be automatically enforced using a partially defined ontology.
-
-#todo[put this idea in future work as well]
 
 #figure(
   caption: [SPARQL query: Find all Nobel prize winners with a student who won the same Nobel prize. @Vargas2019_RDF_Explorer],
@@ -721,7 +716,7 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
 
 
 #figure(
-  caption: [An overview of all features currently implemented.\ "#sym.checkmark" means implemented and tested, "(#sym.checkmark)" means implemented but not bug-free and "#sym.crossmark" means not implemented. A full feature list can be found in the technical documentation of the repository.],
+  caption: [An overview of all features currently implemented.\ #text(size:.8em)["#sym.checkmark" means implemented and tested, "(#sym.checkmark)" means implemented but not bug-free and "#sym.crossmark" means not implemented. A full feature list can be found in the technical documentation of the repository.]],
   table(columns: 2,
     [Feature], [Status],
     [Drawing a VQG with variables and literals], [#sym.checkmark],
@@ -822,14 +817,10 @@ Novel to current work:
 - Patrick Stahl developed for Clemens Beck
 - Changes / contributions by patrick are clearly marked in Version Control
 
-== User Feedback
-// 100% of female users reported that the user interface looked very nice.
-
-#todo[
-  Why does it make sense, that a user can edit a SPARQL query?
-]
-
 = Discussion
+- Enthält alles was nicht erfüllt wurde
+- und vergleicht zu anderen Arbeiten
+
 
 = Further Work <heading:further_work>
 
