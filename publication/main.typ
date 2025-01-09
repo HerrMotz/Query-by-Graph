@@ -20,7 +20,7 @@
 
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
-#show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
+// #show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
 
 // set the width of images in the whole document
 #set image(width: 360pt)
@@ -186,7 +186,7 @@ $
   image("example_triple_graph.svg", width: 230pt)
 ) <fig:rdf_graph_fragment>
 
-Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases.  Such databases for triples are called triplestores, and can be implemented using a framework called Resource Description Framework (RDF). A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
+Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases. Such databases can be implemented using a framework called Resource Description Framework (RDF) and are called *triplestore* or *RDF graph*. A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
 
 The maximally flexible data model is what lead triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore, specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
@@ -197,7 +197,7 @@ Making use of a triplestore in a broader audience poses the challenge, that the 
   image("methodology_pipeline_without_proposal.svg", width: 100%)
 )
 
-For example, a researcher might ask: 'Which professions did members of societies focused on advances in the natural sciences existed in Jena have?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the occupation or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, which adequately captures its essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
+For example, a researcher might ask: 'What professions did members of societies dedicated to advancements in the natural sciences in Jena hold?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the current _occupation_ or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, which adequately captures its essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
 
 We want to reach a broader user base, than these hurdles would invite to participate.
 One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modelled and extensive knowledge of the SPARQL language features. 
@@ -220,24 +220,26 @@ SELECT DISTINCT ?careerStatement WHERE {
 )
 
 == Proposal
-This work aims to lay the _fundamentals_ for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the contents of the RDF triplestore can be visualised as a graph, so could the query @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query. A query engine sweeps the RDF triplestore and returns the results to the user. The grand advantage is, that the user is guided by the user interface in writing queries and does not need to know about technical details of the query language.
+This work aims to lay the fundamentals for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the _contents_ of the RDF triplestore can be _visualised as a graph_, _so could the query_ @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query.
 
-Creating a Visual Query Graph supports the pre-formalisation step that occurs before writing a SPARQL query by guiding the user to think in terms of a triple structure. Rather than focusing on syntactical details, the user can form a mental image of the database structure and translate it into a Visual Query Graph. From this graph, a SPARQL query adhering to all technical specifications is automatically generated.
+Creating a Visual Query Graph is similar to sketching: the user outlines the desired database structure, adds variables for the required results, and focuses on visualising the database rather than syntax. The graph is then automatically converted into a SPARQL query that adheres to all technical requirements.
 
 #figure(caption: [Methodology pipeline: How to get from a question in natural language to the result  in an RDF database.],
   image("methodology_pipeline.svg", width: 100%)
 )
 
-This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is widely adopted#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triplestore syntax, e.g. further specifications of a property, which in Wikibase are called qualifiers. This work will show, that such constructs can be represented as mundane structures in and subsequently be queried using a Visual Query Graph. For this, the work has to introduce the conventions of data modelling in Wikibase and also how they are mapped to the RDF syntax.
+This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is widely adopted#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triple syntax, e.g. further specifications of a property (which in Wikibase are called qualifiers). This work demonstrates that, beyond the standard triple syntax, such complex constructs can be represented as intuitive structures and queried using a Visual Query Graph. To achieve this, it introduces the conventions of data modelling in Wikibase and explains their mapping to RDF syntax.
 
 #figure(
   caption: [The visual query graph which generates the above posted query],
   image("screenshot_queybg_example.png", width: 100%)
 )
 
+Query by Graph cannot fully eliminate the need for users to learn the conventions of an RDF triplestore. For instance, determining which subjects are available and what to expect is entirely dependent on the database's users and engineers, as is the naming of properties. However, with the editor's search fields, users can quickly adjust the meanings of nodes and edges, creating a workflow that feels more intuitive and similar to sketching.
+
 
 = Preliminaries
-This chapter treats technicalities around Wikibase conventions and how they are implemented in the RDF standard.
+To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF) and the syntax of SPARQL queries to the triplestore. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work, with attention limited to a specific subset. SPARQL-SELECT function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same pattern as the SPARQL-SELECT query, while complex constructs of RDF implementations, such as those used in Wikibase, will receive an intuitive representation within the Visual Query Graph.
 
 == Data Model in Wikibase
 *Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase instances allow for a mapping from their internal storage to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_. This specific data model is interesting, because of its wide use, it influences other initiatives due to its sheer size. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
@@ -258,26 +260,10 @@ RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For 
 The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft. Again, the technical specifications are not directly relevant to the matters of this work, therefore I will abstract from the implementation details. 
 
 #definition[
-  A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It can have two to four elements:
+  A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements:
   + a *lexical form*, which is a Unicode string,
   + a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
-  + an optional *language tag*, which allows to add express from which language the *lexical form* stems and
-  + an optional *base direction tag*, which occurs in combination with the *language tag* to indicate the reading direction (either left-to-right or right-to-left).
-
-  _Remarks: (1) The necessity of the language and base direction tag are indicated by two separate *special IRIs*. (2) The only difference to RDF v1.1 is, that is does not allow for a base direction tag._ 
 ] <def:literals>
-
-#definition[
-  The *literal value* of a *literal* in an RDF graph is defined in dependence of the fields available in the *literal*. The availability of a tuple entry is characterising for the *literal type*. The literal value is a tuple. #todo[mention, whether this is supported in the implementation]
-
-  #figure(caption: [Mapping from literal to literal value],
-  align(center, table(columns: 2, align: horizon,
-    [Literal Type], [Literal Value],
-    [language-tagged], [(lexical form, language tag)],
-    [direction-tagged], [(lexical form, language tag, base direction tag)],
-    [has IRI stated in the\ #link("https://www.w3.org/TR/rdf12-concepts/#dfn-recognized-datatype-iri")[list of recognised data type IRIs]], [the literal value interpreted\ as the indicated data type]
-  )))
-]
 
 == Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
@@ -299,13 +285,12 @@ However, for any structured querying to be possible, the databases ought to be f
 == Graphs and Triples <heading:triples>
 
 #definition[
-  Let *$I$* denote the set of IRIs (see @heading:iri), *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals (see @heading:literals), *$T := I union L union B$* the set of all RDF Terms and for further use *$V$* the set of all variables. Let
+  Let *$I$* denote the set of IRIs, *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals, *$T := I union L union B$* the set of all RDF-Terms and for further use *$V$* the set of all variables. Let
   subject $bold("s") in bold("I") union bold("B")$,
   predicate $bold("p") in bold("I")$ and
   object $bold("o") in bold("T")$.
 
-  Then, following @W3C_RDF_1.1_Reference, any three-tuple or triple in an RDF graph is of the form
-
+  Then, following @W3C_RDF_1.1_Reference, an *RDF triple* or simply a *triple*, takes the form:
   $
     (bold("s"), bold("p"), bold("o")).
   $
@@ -329,13 +314,15 @@ if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* desc
 
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
+This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
+
 The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This definitions in this section follow its currently recommended specification v1.1 @W3C_SPARQL_Specification.
 
-#blockquote[
-  SPARQL can be used to express queries across diverse data sources, whether the data is stored natively as RDF or viewed as RDF via middleware. SPARQL contains capabilities for querying required and optional graph patterns along with their conjunctions and disjunctions. [...] The results of SPARQL queries can be results sets or RDF graphs. @W3C_SPARQL_Specification
-]
+#todo[richtig einfügen:]
+ Alternative query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification).
 
-The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
+#remark[
+The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.]
 
 #definition[
   A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns
@@ -343,8 +330,12 @@ The definitions of the following section are an excerpt from the _Formal Definit
 ]<def:bgp>
 
 #definition[
-  A *Graph Pattern* can take many forms, but most notably it can be a *Basic Graph Pattern*. All other possible graph patterns are specified in the formal definition @W3C_SPARQL_Formal_Definition.
+  A *Graph Pattern* defines the pattern to be matched within an RDF graph. Most relevant to this work are *Basic Graph Patterns*. Additionally, `FILTER` statements are considered part of this category. Other types of graph patterns are detailed in the formal definition provided by @W3C_SPARQL_Formal_Definition.
 ]<def:graph_pattern>
+
+#definition[
+  A *SPARQL-SELECT query* is a special SPARQL query, which allows for 
+]
 
 #definition[
   A *SPARQL query* is defined as a tuple $(G P, D S, S M, R)$ where:
@@ -590,7 +581,7 @@ The goal of this work is to create two mostly separate programs:
 
 The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day use as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, this work's focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature.
 
-As motivated in the introduction in order to answer a question, the questioner needs to know enough to ask the question. Query by Graph _does not assist this step_. Secondly, the questioner needs to formalise the question into a BGP. This involves finding the appropriate items and properties in the Wikibase instance. Query by Graph aids this step by offering a direct access to the fuzzy search API. I should add, that the search _does not avert the studying of conventions of a Wikibase_. 
+
 
 #todo[probably remove the following paragraph]
 The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using a _partial_ ontology. It is cumbersome to the user to remember every conventions, especially, when they could be automatically enforced using a partially defined ontology.
@@ -732,11 +723,10 @@ The pipeline from VQG to SPARQL query and vice versa needs to be made clear:
   )
 )
 
-== VQG-SPARQL Mapping Algorithm
+== Visual Query Graph-SPARQL Mapping Algorithm
 
-The implementation of the mapping between VQGs and BGPs uses two different algorithms for each direction of the mapping.
+For technical reasons
 
-=== VQG to SPARQL
 The mapping is done according to the proofs in @heading:mapping_theory. The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI --- or to use Wikibase terminology, an entity. The BGPs in turn are mapped to a SPARQL-SELECT query with all variables from the VQG added to the projection. #todo[Check if this is still the case when I am finished with the qualifier feature, or whether I leave out the blank-node-placeholder variables.]
 
 
@@ -854,6 +844,8 @@ xsd:dateTime
 ```
 
 - "what are possible relations between a variable and an item" und man gibt noch mit was man modellieren will
+
+- use describe queries to illustrate rdf graph structures (https://www.w3.org/TR/sparql11-query/#describe)
 
 = Declaration of Academic Integrity
 
