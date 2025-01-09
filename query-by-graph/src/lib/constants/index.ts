@@ -45,4 +45,4 @@ const noDataSource: WikibaseDataSource = {
     queryService: "",
 }
 
-export {wikiDataDataSource,factGridDataSource,testinstanceSource,noDataSource}
+export {wikiDataDataSource,factGridDataSource,noDataSource}
