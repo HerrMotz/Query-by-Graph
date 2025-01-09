@@ -64,13 +64,19 @@
   ],
   
   preface: align(left)[
-    #todo[
-      Write a heartwarming preface.
-      - mention Olaf Simons for the idea in his blog post
-      - mention Lucas Werkmeister for his assistance on technical details on Wikibase
-      - mention C. B. and J. M. for their mentoring
-      - mention Patrick Stahl for his work on the thesis
-    ] 
+    This bachelor thesis represents the culmination of a journey fueled by my commitment to making complex things more accessible. Along the way, I have been fortunate to receive invaluable support, guidance, and inspiration from several remarkable individuals.  
+
+    First and foremost, I owe the genesis of this work to Olaf Simons. His blog post and the initiative FactGrid sparked my interest in exploring Visual Query Graphs and Wikibase, laying the foundation for this thesis.  
+
+    I am deeply grateful to Lucas Werkmeister, whose expertise in the technical intricacies of Wikibase was indispensable. His guidance helped me navigate complexities I could not have overcome alone.  
+
+    I would also like to express my profound thanks to Clemens Beckstein and Johannes Mitschunas for their exceptional mentorship. Their wisdom, encouragement, and thoughtful feedback were instrumental in shaping this project and pushing it to its full potential.  
+
+    Special thanks go to Patrick Stahl for his contributions to implementing UI features. His creativity and technical skill transformed abstract ideas into clear, functional designs, enriching the practical aspects of this work.  
+
+    Each of these individuals has played a vital role in bringing this thesis to fruition. Their support has made this journey not only intellectually rewarding but also personally meaningful.  
+
+    To all of you, I extend my heartfelt gratitude.  
   ],
   
   appendix: [

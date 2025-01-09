@@ -246,7 +246,9 @@
   if preface != none {
     pagebreak()
     heading(numbering: none, level: 1)[Preface]
-    preface
+    box(width:50%, text(size: .8em)[
+      #preface
+    ])
   }
 
   // Configure heading numbering.
