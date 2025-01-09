@@ -195,6 +195,7 @@
     cover-page-helper(cover-english, english-language-specific-text)
   }
 
+  page[]
 
   page(align(horizon+center, block(width:90%, if abstract != none {
     smallcaps[Abstract]
@@ -238,6 +239,8 @@
   if table-of-contents != none {
     table-of-contents
   }
+
+  page[]
 
   // Display preface as the second page.
   if preface != none {
