@@ -59,8 +59,7 @@
   ),
   
   abstract: [
-    I propose a collection of tools for building SPARQL queries for Wikibase RDF triplestores.
-    #todo[extend.]
+    This thesis establishes the foundation for a visual query builder for SPARQL queries, called *Query by Graph*. The developed program enables users to construct queries for Wikibase instances without the need for coding. Since RDF triplestore contents can be represented as graphs, queries can too. With Query by Graph, users can visually sketch the desired graph structure and insert variables to retrieve results. Additionally, Query by Graph introduces an intuitive representation for querying special Wikibase constructs directly, enhancing usability and functionality.
   ],
   
   preface: align(left)[
@@ -74,7 +73,7 @@
 
     Special thanks go to Patrick Stahl for his contributions to implementing UI features. His creativity and technical skill transformed abstract ideas into clear, functional designs, enriching the practical aspects of this work.  
 
-    Each of these individuals has played a vital role in bringing this thesis to fruition. Their support has made this journey not only intellectually rewarding but also personally meaningful.  
+    Each of these individuals has played a vital role in bringing this thesis to fruition. Their support has made this journey not only intellectually rewarding but also personally meaningful.
 
     To all of you, I extend my heartfelt gratitude.  
   ],
@@ -334,9 +333,6 @@ However, for any structured querying to be possible, the databases ought to be f
 ] <def:spo>
 
 #definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
-
-if subject *$s$* relates to object *$o$* in a way which the predicate *$p$* describes.
-
 
 = Querying
 == SPARQL Protocol and RDF Query Language <heading:sparql>
