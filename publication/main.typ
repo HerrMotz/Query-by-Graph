@@ -513,10 +513,6 @@ Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (se
 
 #figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
 
-#todo[How could a blank node in a qVQG look like? #sym.arrow they are currently just ignored by the Rust code.
-- To represent a blank node I simply use a variable. The query will match the blank node and the variable is left out in the projection statement.
-]
-
 == Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
 
 #todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
