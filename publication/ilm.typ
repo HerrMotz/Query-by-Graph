@@ -179,7 +179,7 @@
       "geboren am",
       "Betreuer"
     )
-    // page("") // empty page for printing
+    page("") // empty page for printing
     cover-page-helper(cover-german, german-language-specific-text)
   }
 
@@ -191,7 +191,7 @@
       "born on",
       "assessed by"
     )
-    // page("") // empty page for printing
+    page("") // empty page for printing
     cover-page-helper(cover-english, english-language-specific-text)
   }
 
@@ -327,8 +327,18 @@
     inset: (x: 5pt),
   )
 
+  let image_width = 360pt
+
   // Break large tables across pages.
   // show figure.where(kind: table): set block(breakable: true) // DM 02.01.2025
+  set figure.caption(position: bottom)
+  show figure.caption: it => box(width: image_width, text(size: .8em, [
+
+    #it
+  ]))
+
+  // set the width of images in the whole document
+  set image(width: image_width)
   
   set table(
     // Increase the table cell's padding
