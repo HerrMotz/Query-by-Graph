@@ -239,11 +239,13 @@ This work aims to closely integrate with the triplestore software suite called W
 
 Query by Graph cannot fully eliminate the need for users to learn the conventions of an RDF triplestore. For instance, determining which subjects are available and what to expect is entirely dependent on the database's users and engineers, as is the naming of properties. However, with the editor's search fields, users can quickly adjust the meanings of nodes and edges, creating a workflow that feels more intuitive and similar to sketching.
 
-The program can be found under https://quebyg.danielmotz.de.
+A demonstration of the program is available at https://quebyg.danielmotz.de.
 
 
 = Preliminaries
-To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF) and the syntax of SPARQL queries to the triplestore. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work, with attention limited to a specific subset. SPARQL-SELECT function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same pattern as the SPARQL-SELECT query, while complex constructs of RDF implementations, such as those used in Wikibase, will receive an intuitive representation within the Visual Query Graph.
+To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF) and the syntax of SPARQL queries to the triplestore. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work. SPARQL-SELECT queries function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same stencil as the SPARQL-SELECT query.
+
+Certain patterns in the RDF graph of Wikibase exist solely for technical reasons and are not immediately intuitive to users without a deeper understanding of the underlying technical necessities. For example, this includes relationships involving multiple objects. These patterns are limited in scope and are defined within the Wikibase data model, providing an opportunity to develop an intuitive representation for them in the Visual Query Graph. During query generation from the Visual Query Graph, these intuitive representations are translated into technically accurate constructs, ensuring they can be queried successfully.
 
 == Data Model in Wikibase
 *Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase has its own internal structure and conventions for naming and modeling entities and concepts. These internals are in turn mapped to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_ and most notably _the use of the SPARQL query language for information retrieval_. This specific data model of Wikibase is particularly noteworthy due to its widespread use and substantial influence on other initiatives, driven by its sheer scale. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
@@ -269,7 +271,9 @@ Most real-world relationships might present to be more complex than something on
   image("screenshot_wikidata.png", width: 320pt)
 )<fig:qualifier_screenshot>
 
-One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the already existing RDF triple syntax is to create an implicit object, that assists in modelling the relationship using an *implicit* or *blank node* to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". 
+// TODO: bei diesem Beispiel jurisprudence rausnehmen.
+
+One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the triple syntax is to create an implicit object, that assists in modelling the relationship using an *implicit* or *blank node* to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time".
 The following triples exemplify such an implicit relationship, called a *qualified statement*:
 $
   "Goethe" &longArrow("educated at") && "Uni Leipzig", \
@@ -281,27 +285,27 @@ $ <ex:assertions_goethe_education>
 
 #figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualified statement using natural language descriptors.]) <fig:vqg_no_qualifier>
 
-Since qualifiers are widely used in most Wikibase instances, this work aims to develop a representation in the Visual Query Graph that enables their effective querying.
+Building on these necessities within the data model, the fundamentals of RDF are now introduced to provide a foundation for mapping the Wikibase data model to RDF syntax.
 
 == Resource Description Framework
+The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft.
+
 === Internationalised Resource Identifier <heading:iri>
 
-Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*. 
+Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409` and `https://database.factgrid.de/prop/direct/P160`. Their purpose is to *refer to a resource*. The resource an IRI points at is called *referent*.
 
-The main advantage of IRIs over URIs are their enhanced character set. However, the details are not directly relevant to this work, therefore I will simply refer to the quoted RFCs for further reading.
 
-<def:prefixes_and_bases>
+#remark[IRIs can largely be treated as URIs, as they are interchangeable through conversion. Their primary purpose is to *identify the entity being referenced within a specific triplestore or Wikibase instance*. Since the technical details are not directly relevant to this work, I will refer readers to the referenced RFCs for further information.]
+
+
+=== Prefixing <def:prefixes_and_bases>
 RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For example, let `wd` be a prefix with the value `http://www.wikidata.org/entity/`. Then, the IRI `http://www.wikidata.org/entity/Q5879` can be rewritten using this prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters.
 
 === Literals <heading:literals>
 
-The definitions in this section follow the *RDF v1.2* specifications @W3C_RDF_1.2_Proposal, which, at the time of writing, is a working draft. Again, the technical specifications are not directly relevant to the matters of this work, therefore I will abstract from the implementation details. 
-
-#definition[
-  A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements:
-  + a *lexical form*, which is a Unicode string,
-  + a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
-] <def:literals>
+A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements:
++ a *lexical form*, which is a Unicode string,
++ a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
 
 === Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
@@ -320,7 +324,7 @@ A computer still does not understand what it means to be educated at some place 
 
 However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
 
-=== RDF Graph and RDF Triple <heading:triples>
+=== RDF Triple and RDF Graph <heading:triples>
 
 #definition[
   Let *$I$* denote the set of IRIs, *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals, *$T := I union L union B$* the set of all RDF-Terms and for further use *$V$* the set of all variables. Let
@@ -339,19 +343,15 @@ However, for any structured querying to be possible, the databases ought to be f
 = Querying
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
-The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. This definitions in this section follow its currently recommended specification v1.1 @W3C_SPARQL_Specification.
+The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
-This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
+This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that e.g. an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
 
-#todo[richtig einfügen:]
-Alternative query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification).
-
-#remark[
-The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.]
+Alternative SARPQL query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification). These queries and the data manipulation language for triplestores will not be dealt with in this work.
 
 #definition[
-  A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns
-  $(T union V) times (I union V) times (T union V)$ @W3C_SPARQL_Formal_Definition.
+  A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns @W3C_SPARQL_Formal_Definition
+  $ (T union V) times (I union V) times (T union V). $
 ]<def:bgp>
 
 #definition[
@@ -359,36 +359,28 @@ The definitions of the following section are an excerpt from the _Formal Definit
 ]<def:graph_pattern>
 
 #definition[
-  A *SPARQL-SELECT query* is a special SPARQL query, which allows for 
+  A *SPARQL-SELECT query* is a special SPARQL query, which consists of a Graph Pattern, a target RDF graph and a result form. The so-called result form specifies how the result of a SPARQL query looks like. Here it is a projection to the valid variable assignments for the given Graph Pattern. Alternative result forms include `ASK` and `DESCRIBE`. The query results can be ordered and projected using solution modifiers e.g. `DISTINCT`, `LIMIT` or `ORDER` (in analogy to SQL) and also projected to a subset of the variables occuring in the Graph Pattern.
 ]
 
-#definition[
-  A *SPARQL query* is defined as a tuple $(G P, D S, S M, R)$ where:
-  $G P$ is a graph pattern,
-  $D S$ is an RDF Dataset (essentially a set of RDF graphs),
-  $S M$ is a set of solution modifiers and
-  $R$ is a result form. A *SPARQL-SELECT query* is a SPARQL query, where $R$ is a _projection statement_. Furthermore, a SELECT query has requires a _projection variables_, which will be returned as results and a _selection-clause_ (indicated by the keyword `WHERE`), which contains Basic Graph Patterns @W3C_SPARQL_Formal_Definition.
-]<def:sparql_query>
-
 #remark[
-  This implies, that a SPARQL query can query for a triple, which has a literal as its subject.
+  Since a basic graph pattern can have any RDF Term as a subject, this implies, that a SPARQL query can query for a triple, which has a literal as its subject. An RDF graph however cannot have a triple with a literal as a subject.
 ]
 
 Writing SPARQL queries is pretty straight-forward: The wanted structure
 is expressed in terms of the query language, and the unknown parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query. IRIs are enclosed within angle brackets.
 #figure(caption: "A SPARQL query to determine which educational institutions Goethe visited.",
   ```HTML
-  PREFIX wd: <http://www.wikidata.org/entity/>
-  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-  SELECT ?1 WHERE {
-      wd:Q5879 wdt:P69 ?1 .
+  PREFIX wd: <http://www.wikidata.org/entity/> # for brevity
+  PREFIX wdt: <http://www.wikidata.org/prop/direct/> # for brevity
+
+  SELECT # result form
+    ?institution # projection
+  WHERE { # graph pattern
+      wd:Q5879 wdt:P69 ?institution .
       # Johann Wolfgang von Goethe -- [educated at] -> Variable
   }
   ```
 ) <example:goethe_query>
-
-The result set of a SPARQL query can either be a set of possible value combinations
-#todo[Finish section]
 
 == Mapping the Wikibase Data Model to RDF
 As can be seen in @example:prefixes_in_wikidata, there are many prefixes apparently for the same things, namely *items* and *properties*. However, their use 
