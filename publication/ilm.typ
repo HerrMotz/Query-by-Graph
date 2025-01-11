@@ -179,7 +179,6 @@
       "geboren am",
       "Betreuer"
     )
-    page("") // empty page for printing
     cover-page-helper(cover-german, german-language-specific-text)
   }
 
@@ -191,7 +190,6 @@
       "born on",
       "assessed by"
     )
-    page("") // empty page for printing
     cover-page-helper(cover-english, english-language-specific-text)
   }
 
@@ -244,13 +242,9 @@
 
   // Display preface as the second page.
   if preface != none {
-    page(align(horizon+center, block(width:90%, if abstract != none {
-    smallcaps[Preface]
-        block(width: 80%)[
-          // Default leading is 0.65em.
-          #par(leading: 0.78em, justify: true, linebreaks: "optimized", preface)
-        ]
-      })))
+    pagebreak()
+    heading(numbering: none, level: 1)[Preface]
+    preface
   }
 
   // Configure heading numbering.
