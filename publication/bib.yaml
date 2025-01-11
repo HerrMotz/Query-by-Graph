@@ -452,3 +452,35 @@ Lehmann2015DBpediaA:
     type: periodical
     title: Semantic Web
     volume: 6
+
+
+Erxleben2014_Wikidata_LOD:
+  type: article
+  title: Introducing Wikidata to the Linked Data Web
+  author:
+  - Erxleben, Fredo
+  - Günther, Michael
+  - Krötzsch, Markus
+  - Mendez, Julian
+  - Vrandečić, Denny
+  date: 2014
+  editor:
+  - Mika, Peter
+  - Tudorache, Tania
+  - Bernstein, Abraham
+  - Welty, Chris
+  - Knoblock, Craig
+  - Vrandečić, Denny
+  - Groth, Paul
+  - Noy, Natasha
+  - Janowicz, Krzysztof
+  - Goble, Carole
+  page-range: "50-65"
+  serial-number:
+    isbn: 978-3-319-11964-9
+  abstract: Wikidata is the central data management platform of Wikipedia. By the efforts of thousands of volunteers, the project has produced a large, open knowledge base with many interesting applications. The data is highly interlinked and connected to many other datasets, but it is also very rich, complex, and not available in RDF. To address this issue, we introduce new RDF exports that connect Wikidata to the Linked Data Web. We explain the data model of Wikidata and discuss its encoding in RDF. Moreover, we introduce several partial exports that provide more selective or simplified views on the data. This includes a class hierarchy and several other types of ontological axioms that we extract from the site. All datasets we discuss here are freely available online and updated regularly.
+  parent:
+    type: proceedings
+    title: "The Semantic Web - ISWC 2014"
+    publisher: Springer International Publishing
+    location: Cham
