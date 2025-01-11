@@ -481,7 +481,7 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   $
     G_"QE" := {(s, f_p u'', b), (b, f_s u'', o'')}
   $
-  Qualified Statement,
+  Qualified Statement #todo[Ich habe nur abgeschrieben, was wir gestern Abend notiert haben. Dafür brauche ich noch eine Lösung],
   wobei $u, u', u'' in Sigma^*$.
 
   Ein qualified statement ist die Vereinigung aller qualifier zu diesem blank node.
@@ -498,10 +498,10 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   $
     G_"QR" := {(s, f_p u', b), (b, f_s u', o')}
   $
-  *Qualified Statement*, $G_Q$ heißt *Qualifier*, $G_"QR"$ heißt *Qualified Relationship* und $o'$ heißt *Qualifier Value* #todo[darf ich hier $o'$ schreiben? Ich könnte es auch einfach natürlichsprachlich erklären.],
+  *Qualified Statement part* #todo[oder so etwas ähnliches müsste hier eigentlich stehen.], $G_Q$ heißt *Qualifier*, $G_"QR"$ heißt *Qualified Relationship* und $o'$ heißt *Qualifier Value* #todo[darf ich hier $o'$ schreiben? Ich könnte es auch einfach natürlichsprachlich erklären.],
   wobei $u, u' in Sigma^*$.
 
-  Ein qualified statement ist die Vereinigung aller qualifier zu einem beliebigen blank node.
+  Ein *Qualified Statement* ist die Vereinigung aller qualifier zu einem beliebigen blank node.
 ] <def:qualifiers_alt>
 
 #todo[Die Beschriftung in der Abbildung muss noch korrigiert werden, aber das mache ich, wenn ich weiß welche der Definitionen ich nehme.]
@@ -570,10 +570,14 @@ Using this new VQG and VQL, we can now create an intuitive visualisation (see @f
 === Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
 
 #todo[
-  VQG -> QG=BGP -> SPARQL query mit dem richtigen Projection Statement (den blank node wollen wir nicht in der Ausgabe sehen)
+  VQG -> QG=BGP -> SPARQL query mit dem richtigen Projection Statement (den blank node wollen wir nicht in der Ausgabe sehen) and vice versa.
 ]
 
-The idea is to map a Visual Query Graph with its special qualifier edges to a Basic Graph Pattern from which a SPARQL SELECT-query can be constructed.
+The idea is to map a Visual Query Graph with its special qualifier edges to a Basic Graph Pattern from which a SPARQL SELECT-query can be constructed and vice versa. However, the key step is to translate between BGPs and VQGs.
+
+Translating from a BGP to a VQG is very intuitive: For each qualified statement in the BGP, the blank node in the qualified relationship is removed and the missing connection between the subject and object is reestablished using a regular edge. The loose ends of the qualifiers are connected to this edge.
+
+Translating from a VQG to a BGP is a bit more complex to denote, but this is only due to the prefixes of the Wikibase data model. For each qualified statement in the VQG
 
 #definition[
   Let $E':= (I union L union V) times (I union V) times (I union L union V)$ be the set of all possible edges in a VQG. Let Y be the set of all possible triples $Y:=(T union V) times (I union V) times (T union V)$ (a finite subset of which is a BGP). A BGP is now constructed using the mapping
@@ -786,7 +790,7 @@ Novel to current work:
 = Discussion
 
 == Evaluation
-- und vergleicht zu anderen Arbeiten
+Query by Graph enables users 
 
 == Limitations
 - Enthält alles was nicht erfüllt wurde
