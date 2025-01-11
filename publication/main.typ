@@ -346,7 +346,7 @@ Constructing a query for an RDF graph can be viewed as creating a subgraph — a
 
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
-The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
+The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage and is part of the Resource Description Framework recommendation. It is considered to be a _graph based_ query language. The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
 This work focuses on a specific subset of SPARQL queries, specifically SPARQL-SELECT queries. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that e.g. an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`. Such language features are not yet specified in the Visual Query Graph.
 
@@ -405,9 +405,9 @@ is expressed in terms of the query language, and the unknown parts are replaced 
 In order to query a BGP containing a blank node, the query will specify a variable at the blank node's position. There are other syntactical structures to express blank nodes, which are however semantically equal @W3C_SPARQL_Formal_Definition.
 
 == Qualifiers <heading:qualifiers>
-The naming, addressing, and definition of qualifiers in Wikibase is ambiguous (@wikibooks_sparql_qualifiers @Erxleben2014_Wikidata_LOD). The term "qualifier" is used both for the syntactic structure and for the asserted RDF triple of an RDF graph. An achievement of this work is the clear differentiation between these terms and the introduction of new terminology to enable unambiguous communication of the intended meaning.
+The naming, addressing, and definition of qualifiers in Wikibase is ambiguous (@wikibooks_sparql_qualifiers @Erxleben2014_Wikidata_LOD). The term "qualifier" is used both for the syntactic structure and for the asserted RDF triple of an RDF graph. An achievement of this work is the dissemination of the terminology.
 
-@fig:query_for_qualifier shows how a Wikibase qualifier can be queried. It is worth noting that different prefixes are used to refer to the Wikibase property `P69`, while yet another prefix is used for `P580`. Although the qualifier structure could be queried unambiguously with a sufficiently large query, these specialized prefixes allow to pinpoint the relevant aspects. The specifics of the different prefixes and the contexts they define will be explained and formalised in this section.
+@fig:query_for_qualifier shows how a Wikibase qualifier can be queried. It is worth noting that different prefixes are used to refer to the Wikibase property `P69`, while yet another prefix is used for `P580`.
 
 #figure(
   caption: [A query to fetch the start date of Goethe's education at the University of Leipzig],
@@ -427,8 +427,7 @@ The naming, addressing, and definition of qualifiers in Wikibase is ambiguous (@
   }
 ```) <fig:query_for_qualifier>
 
-In order to differentiate qualifier assertions from "regular" property assertions, Wikibase introduces special prefixes. Any Wikibase property can be addresses with any of the property prefixes (`p`, `pq`, ...) in @example:prefixes_in_wikidata. The main idea is to uniquely prefix every edge of the reified structure (see @fig:vqg_no_qualifier). For example, the edge from the subject to the blank node has the prefix `p:`.
-@fig:rdf_mapping serves as a visual reference for the prefix contexts.
+Wikibase instances define IRI-prefixes for things of the same kind. This allows to think of them as namespaces for categories defined within the Wikibase data model. Since this work treats the set of all possible Wikibase instances where the IRIs use different domain names from e.g. `wikidata.org`, they can be thought of as variables for the instance-specific prefix. For convenience, these variables will be denoted by the prefix names followed by a colon (`wd:`, `p:`, `pq:`, `wdt:` and so on) defined by Wikidata (see @example:prefixes_in_wikidata). For the matters of this work, only IRIs which can be written as the concatenation of the prefix with a local name (an alphanumerical string) are considered to be an _element of the namespace_, e.g. `http://www.wikidata.org/prop/P1234` is an element of the namespace `p:` but `http://www.wikidata.org/prop/something/else/P1234` is not an element. Furthermore, the mapping of the Wikibase data model to RDF syntax specifies that these namespaces can only be used in triples (or edges, for that matter) that connect specific namespaces. _The use of these namespaces is therefore restricted._ For example, an edge with a referent in the namespace `p:` can only have sources in the namespace `wd:` and only targets in the namespace `wds:`. @fig:rdf_mapping is an illustration taken from the Wikibase documentation on RDF mapping, which gives an overview of these restrictions.
 
 /*```turtle
  wd:P22 a wikibase:Property ;
@@ -458,24 +457,19 @@ PREFIX wdv: <http://www.wikidata.org/value/>
 ```
 ) <example:prefixes_in_wikidata>
 
-#figure(caption: [Informal overview of Wikibase conventions for\ mapping information about an Item to the RDF standard @wikibase_rdf_mapping_graphic.],
+Obeying this modeling, a *qualifier edge* is an edge pointing from an element of the namespace `wds:` to an element of any namespace using a predicate in the `pq:` namespace.  The *value of a qualifier* is the target node of this edge. 
+#todo[Es ist unklar, ob es ein wds an sich geben kann, ohne dass es ein wd gibt von dem aus auf es gezeigt wird. Daher kann ich nicht genau sagen, ob es eine qualifier edge an sich geben kann.]
+
+#figure(caption: [An overview of restrictions for the use of namespaces in Wikibase @wikibase_rdf_mapping_graphic. The labels of the nodes and edges act as placeholders for specific IRIs, whose  referents are within the namespace indicated.],
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
 
-#definition[
+For further use a subset of these namespaces will be denoted by abbreviations.
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
   Let
-  $f_bold(p), f_bold(q), f_bold(s) in I$, then they are forthon used to describe _distinct_ IRI prefixes for so called *p*\roperties, *q*\ualifying properties and property *s*\tatements, in analogy to the Wikibase data model. 
-] <def:prefix_formally>
-
-#remark[
-  May $f_x in I$, then any IRI $i in I$ with a prefix can be written as $i = f_x u$ and $u in Sigma^*$. Technically, a valid RDF prefix could, for example, be written without a trailing slash, causing basic concatenation to produce an invalid IRI. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.
-]
-
-#todo[
-Note that the same property can be used in multiple qualifiers on the same statement
-]
+  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRIs.
+  In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
 
 #definition[
   Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
