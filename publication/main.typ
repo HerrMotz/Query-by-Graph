@@ -498,7 +498,7 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   $
     G_"QR" := {(s, f_p u', b), (b, f_s u', o')}
   $
-  *Qualified Statement*, $G_Q$ heißt *Qualifier* und $G_"QR"$ heißt *Qualified Relationship*,
+  *Qualified Statement*, $G_Q$ heißt *Qualifier*, $G_"QR"$ heißt *Qualified Relationship* und $o'$ heißt *Qualifier Value* #todo[darf ich hier $o'$ schreiben? Ich könnte es auch einfach natürlichsprachlich erklären.],
   wobei $u, u' in Sigma^*$.
 
   Ein qualified statement ist die Vereinigung aller qualifier zu einem beliebigen blank node.
@@ -565,7 +565,7 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using the _Visual Q
 
 Using this new VQG and VQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. Now, it needs to be shown, that the VQG can be losslessly translated to a VQG and in turn to a SPARQL-SELECT query.
 
-#figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the VQG]) <fig:vqg_with_qualifier>
+#figure(image("Qualifier_mit.svg"), caption: [Visual Query Graph with two Qualifiers. The equivalent SPARQL query should return two qualifier values. The qualifiers are highlighted using a violet and a green box.]) <fig:vqg_with_qualifier>
 
 === Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
 
@@ -573,7 +573,7 @@ Using this new VQG and VQL, we can now create an intuitive visualisation (see @f
   VQG -> QG=BGP -> SPARQL query mit dem richtigen Projection Statement (den blank node wollen wir nicht in der Ausgabe sehen)
 ]
 
-The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. Much of the SPARQL query language's expressability is covered by BGPs. Further components, such as value constraints with the keyword `FILTER` could possibly also be visualised in the VQG, but are currently not defined. First, the goal is to show, that a VQG and qVQG can be converted to BGPs and the second step is to show how a SPARQL-SELECT query can be constructed from this.
+The idea is to map a Visual Query Graph with its special qualifier edges to a Basic Graph Pattern from which a SPARQL SELECT-query can be constructed.
 
 #definition[
   Let $E':= (I union L union V) times (I union V) times (I union L union V)$ be the set of all possible edges in a VQG. Let Y be the set of all possible triples $Y:=(T union V) times (I union V) times (T union V)$ (a finite subset of which is a BGP). A BGP is now constructed using the mapping
@@ -621,12 +621,6 @@ The goal of this work is to create two mostly separate programs:
 + the _translator between VGQ and SPARQL_ (forthon called *backend*).
 
 The most important aspects for the choice of software and UX design were usability and maintability. The aim is to lay the basis for a software, which can be applied in day-to-day use as an "almost-no-code" query builder. The development of Query by Graph will be continued in the project _HisQu_ by the #link("https://www.mephisto.uni-jena.de/")[MEPHisto group] funded by #link("https://4memory.de")[NFDI4Memory]. Therefore, this work's focus lay on building an extensible, future-proof platform, rather than implementing every thought-of feature.
-
-
-
-#todo[probably remove the following paragraph]
-
-
 
 === Architecture
 Since SPARQL is mostly used in the context of a web browser, the choice for a web app seemed obvious. The backend was designed to be explainable and traceable. For this, there are several good choices, especially functional programming language, but since Rust#footnote[http://www.rust-lang.org] can be compiled to Web Assembly#footnote[http://webassembly.org] and therefore executed natively in a browser, the choice fell well in its favour over a server-client architecture. This combination of architectures proves to be extendable, quick and still formally precise.
@@ -879,6 +873,8 @@ xsd:dateTime
 - "what are possible relations between a variable and an item" und man gibt noch mit was man modellieren will
 
 - use describe queries to illustrate rdf graph structures (https://www.w3.org/TR/sparql11-query/#describe)
+
+- The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. Much of the SPARQL query language's expressability is covered by BGPs. Further components, such as value constraints with the keyword `FILTER` could possibly also be visualised in the VQG, but are currently not defined.
 
 #todo[
   How could I implement something like the same-time highlighting of code and node in the graph?
