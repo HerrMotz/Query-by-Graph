@@ -490,20 +490,21 @@ For further use a subset of these namespaces will be denoted by abbreviations.
 #todo[ALTERNATIVE von mir:]
 #definition[
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
-  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o', o'' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"Q" union G_"QR" subset G$ mit
+  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"Q" union G_"QR" subset G$ mit
   $ 
-    G_"Q" := {(b, f_q u', o')}
+    G_"Q" := {(b, f_q u, o)}
   $
   und außerdem
   $
-    G_"QR" := {(s, f_p u'', b), (b, f_s u'', o'')}
+    G_"QR" := {(s, f_p u', b), (b, f_s u', o')}
   $
   *Qualified Statement*, $G_Q$ heißt *Qualifier* und $G_"QR"$ heißt *Qualified Relationship*,
-  wobei $u, u', u'' in Sigma^*$.
+  wobei $u, u' in Sigma^*$.
 
   Ein qualified statement ist die Vereinigung aller qualifier zu einem beliebigen blank node.
 ] <def:qualifiers_alt>
 
+#todo[Die Beschriftung in der Abbildung muss noch korrigiert werden, aber das mache ich, wenn ich weiß welche der Definitionen ich nehme.]
 #figure(
   caption: [A visualisation of a qualified statement with two qualifiers (the triples with the edges $q_1, q_2$) using the terms introduced in @def:qualifiers. The boxes indicate the three subgraphs this qualified statement consists of: red box for the qualified relationship, green box for one qualifier and the violet box for the other qualifier. The `wdt:` description is used in analogy to the Wikibase RDF data model figure. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
   image("Qualifier_abstract.svg")
@@ -515,8 +516,7 @@ For further use a subset of these namespaces will be denoted by abbreviations.
 
 = Mapping
 
-Um zwischen dem VQG und RDF abzubilden brauchen wir erstmal eine Definition für den VQG.
-Qualifier stellen ein besonderes Konstrukt dar und werden in einem neuen Konstrukt dem qVQG abgebildet. Anschließend wird die Überführungsfunktion von einem VQG zu RDF und dann von einem qVQG zu einem VQG definiert. Im Anschluss wird über die Implementation dieser Funktionen gesprochen.
+To establish a mapping between Visual Query Graphs and SPARQL-SELECT queries, a formal specification for Visual Query Graphs is first introduced. Following this, the transformation function from a Visual Query Graph to SPARQL is defined. Lastly, the implementation of these functions is analysed and discussed.
 
 == Specification
 
@@ -569,7 +569,9 @@ Using this new VQG and VQL, we can now create an intuitive visualisation (see @f
 
 === Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
 
-#todo[Is the mapping invertible? Beweis ggf. durch Gegenbeispiel.]
+#todo[
+  VQG -> QG=BGP -> SPARQL query mit dem richtigen Projection Statement (den blank node wollen wir nicht in der Ausgabe sehen)
+]
 
 The goal of this section is to define a mapping from VQGs to SPARQL-SELECT queries. Much of the SPARQL query language's expressability is covered by BGPs. Further components, such as value constraints with the keyword `FILTER` could possibly also be visualised in the VQG, but are currently not defined. First, the goal is to show, that a VQG and qVQG can be converted to BGPs and the second step is to show how a SPARQL-SELECT query can be constructed from this.
 
@@ -623,28 +625,7 @@ The most important aspects for the choice of software and UX design were usabili
 
 
 #todo[probably remove the following paragraph]
-The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using a _partial_ ontology. It is cumbersome to the user to remember every conventions, especially, when they could be automatically enforced using a partially defined ontology.
 
-#figure(
-  caption: [SPARQL query: Find all Nobel prize winners with a student who won the same Nobel prize. @Vargas2019_RDF_Explorer],
-```HTML
-PREFIX wd: <http://www.wikidata.org/entity/>
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-SELECT ?prize ?student ?winner WHERE {
-     ?winner wdt:P166 ?prize .
-    # Variable -- [award received] -> Variable     ?student wdt:P802 ?winner .
-    # Variable -- [student] -> Variable
-     ?student wdt:P166 ?prize .
-    # Variable -- [award received] -> Variable
-     ?prize wdt:P31 wd:Q7191 .
-    # Variable -- [instance of] -> Nobel Prize
-}
-```
-)
-
-#remark[Though the query copied from @Vargas2019_RDF_Explorer seems to be correct, it yields an empty result. There are two items which are `instance of` `Nobel prize`, however, neither are a Nobel prize.]
-
-#todo[Wie formuliere ich hier freundlich, dass obwohl ein Werkzeug verwendet wurde das die möglichen Ergebnisse einer Abfrage im Voraus anzeigt, die produzierte Abfrage trotzdem keine Ergebnisse liefert, der Sinn und die Nutzbarkeit des Tools also fragwürdig scheint.]
 
 
 === Architecture
@@ -841,8 +822,30 @@ Novel to current work:
   - ...
 ]
 
+The step of formalising a natural-language question into a SPARQL query seems simple, however the first challenge arises in finding the correct entities for the query --- let alone the formalisation of the question itself. For example, the question `Find all Nobel prize winners with a student who won the same Nobel prize` (taken from @Vargas2019_RDF_Explorer) is not as simple to model as it would seem at first glance. In Wikidata, three properties are suggested for the search term "student": `wdt:P802 "student"`, `wdt:P1066 "student of"` and `wdt:P69 "educated at"`. In some cases the specific property does not matter. Wikibase instances have the disadvantage, that because they commonly lack an extensive ontology, data consistency varies. The user should be offered an abstraction layer, e.g. to assign a set of properties to an edge in the VQG or to generate the query using a _partial_ ontology. It is cumbersome to the user to remember every conventions, especially, when they could be automatically enforced using a partially defined ontology.
 
-= Further Work <heading:further_work>
+#figure(
+  caption: [SPARQL query: Find all Nobel prize winners with a student who won the same Nobel prize. @Vargas2019_RDF_Explorer],
+```HTML
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?prize ?student ?winner WHERE {
+     ?winner wdt:P166 ?prize .
+    # Variable -- [award received] -> Variable     ?student wdt:P802 ?winner .
+    # Variable -- [student] -> Variable
+     ?student wdt:P166 ?prize .
+    # Variable -- [award received] -> Variable
+     ?prize wdt:P31 wd:Q7191 .
+    # Variable -- [instance of] -> Nobel Prize
+}
+```
+)
+
+#remark[Though the query copied from @Vargas2019_RDF_Explorer seems to be correct, it yields an empty result. There are two items which are `instance of` `Nobel prize`, however, neither are a Nobel prize.]
+
+#todo[Wie formuliere ich hier freundlich, dass obwohl ein Werkzeug verwendet wurde das die möglichen Ergebnisse einer Abfrage im Voraus anzeigt, die produzierte Abfrage trotzdem keine Ergebnisse liefert, der Sinn und die Nutzbarkeit des Tools also fragwürdig scheint.]
+
+== Further Work <heading:further_work>
 
 + Creating/Manipulating RDF assertions (INSERT and UPDATE statements)
 
