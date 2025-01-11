@@ -472,13 +472,7 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
 
 #definition[
-  Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
-  $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med
-  $p := f_p u, u in Sigma^*$. Additionally, let $p_s$ and $p$ refer the same local name $u$ (or Wikibase property) using different prefixes $p_s := f_s u$. Lastly, let $o in L union I, o_j in O subset.eq L union I$ and $b in B$ a blank node. Then, a *qualified statement* in $G$ is defined as a set containing the triples
-  $
-      {(s, bold(p), b), (b,p_s,o)} union {(b, q_i, o_i) | i in NN}.
-  $
-  Statements such as $(b, q_i, o_i)$ are called *qualifiers* in $G$ and the triple $(s, f_t u, o)$ with $u in Sigma^*$ would be called *qualified edge* in the RDF graph $G$.
+  Sei Katze Miau
 ] <def:qualifiers>
 
 #figure(
@@ -498,16 +492,17 @@ Qualifier stellen ein besonderes Konstrukt dar und werden in einem neuen Konstru
 == Specification
 
 === Visual Query Graphs
+The so far introduced structures include Basic Graph Patterns in SPARQL queries and RDF triples. While Basic Graph Patterns are used to describe stencils to be queried against RDF triples, the goal of Visual Query Graphs is to eliminate the need to manually model reified structures using blank nodes. Since blank nodes are semantically equivalent to variables in a SPARQL query#footnote[https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QSynBlankNodes], they are not necessary to write SPARQL queries and would be redundant in the Visual Query Graph. To describe the Visual Query Graph, which has special visualisations for reified structures using blank nodes, we first define a Query Graph, which dispose of blank nodes.
+
 #definition[
-  Following @Vargas2019_RDF_Explorer, a *Query Graph* (QG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
-  The edges of the VQG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (I union V) times N$.
+  Following @Vargas2019_RDF_Explorer, a *Query Graph* (QG) 
+  is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables $N subset bold("I") union bold("L") union bold("V")$.
+  The edges of the QG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (I union V) times N$.
 ] <def:vqg>
 
-A qualifier, as defined in @heading:qualifiers, would now be constructed as shown in @fig:vqg_no_qualifier.
-
 
 #definition[
-  Following @def:vqg, a *qualifiable visual query graph* (qVQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
+  A *Visual Query Graph* (VQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
 ] <def:qvqg>
 
 #definition[
@@ -800,7 +795,9 @@ Novel to current work:
     [Literals with standard RDF data types (string, int, date, ...)], [(#sym.checkmark)],
     [Use multiple Wikibase instances as data sources], [#sym.checkmark],
     [Meta-Info Panel], [#sym.checkmark],
-    [Rendering qualifiers with the proposed visualisation], [#sym.crossmark]
+    [Rendering qualifiers with the proposed visualisation], [#sym.crossmark],
+    [Value Constraints], [#sym.crossmark],
+    [Result Modifiers (e.g. `ORDER`, `LIMIT`)], [#sym.crossmark]
   )
 )
 
