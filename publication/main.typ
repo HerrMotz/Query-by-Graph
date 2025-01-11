@@ -69,11 +69,11 @@
 
     I am deeply grateful to Lucas Werkmeister, whose expertise in the technical intricacies of Wikibase was indispensable. His guidance helped me navigate complexities I could not have overcome alone.  
 
-    I would also like to express my profound thanks to Clemens Beckstein and Johannes Mitschunas for their exceptional mentorship. Their wisdom, encouragement, and thoughtful feedback were instrumental in shaping this project and pushing it to its full potential.  
-
     Special thanks go to Patrick Stahl for his contributions to implementing UI features. His creativity and technical skill transformed abstract ideas into clear, functional designs, enriching the practical aspects of this work.  
 
-    Each of these individuals has played a vital role in bringing this thesis to fruition. Their support has made this journey not only intellectually rewarding but also personally meaningful.
+    My deepest gratitude, however, goes to Clemens Beckstein and Johannes Mitschunas for their exceptional mentorship. Their wisdom, encouragement, and thoughtful feedback were instrumental in shaping this project and pushing it to its full potential.  
+
+    Each of you has played a vital role in bringing this thesis to fruition. Your support has made this journey not only intellectually rewarding but also personally meaningful.
 
     To all of you, I extend my heartfelt gratitude.  
   ],
@@ -175,48 +175,43 @@
 
 = Introduction <heading:introduction>
 
-Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary. These assertions consist of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. These assertions are also referred to as *triples*. Another benefit of these triples is their ability to be represented as a graph (see @fig:rdf_graph_fragment), where nodes represent subjects and objects, and edges represent relationships. This allows to easily visualise the database relationships.
+Over its thousands of years in existence, humanity has built an _infrastructure for knowledge_. It started out with stone tablets, evolved to hand-written papyrus books, libraries, the printing press and recently culminated in computer and the internet. Instead of using a library and asking a librarian, we usually consult "the internet" using a search engine -- even for small questions. Now, in order to answer a question, the search engine needs to be able to treat the contents of a website in a semantically correct way, just like a human would. This is achieved using i.e. network analysis and techniques of natural language processing. However, what if the contents of websites could be semantically annotated by their creators? This lead to the inception of the Wikidata#footnote[https://www.wikidata.org] initiative, among others. Their idea was to rewrite Wikipedia articles into very simple assertions using a specified vocabulary. These assertions consist of a subject, predicate and an object, in analogy to sentence structures in linguistics, where subjects and objects can refer to objects of our intuition and predicates define how they are related. These assertions are also referred to as *triples*. Another benefit of these triples is their ability to be represented as a graph (see @fig:rdf_graph_fragment), where nodes represent subjects and objects (or e.g. Wikipedia articles), and edges represent predicates, also called properties or relationships. This triple structure allows to easily visualise the database's entries.
 
 #let lalalalalala = 90pt
 $
-  "Goethe (subject)"& xarrow("educated at (property)", width: lalalalalala)& "Leipzig (object)" \
+  "Goethe (subject)"& xarrow("educated at (predicate)", width: lalalalalala)& "Leipzig (object)" \
   "Goethe"& xarrow("place of birth", width: lalalalalala) &"Frankfurt am Main"
 $
 
 #figure(
-  caption: [A graphical visualisation of the triple $("Goethe", "educated at", "Leipzig")$ as a graph. Subjects and objects are represented as nodes and properties are represented as edges between these nodes.],
+  caption: [A graphical visualisation of the triple $("Goethe", "educated at", "Leipzig")$ as a graph. Subjects and objects are represented as nodes and predicates are represented as edges between these nodes.],
   image("example_triple_graph.svg", width: 230pt)
 ) <fig:rdf_graph_fragment>
 
-Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for results, just like classical relational databases. Such databases can be implemented using a framework called Resource Description Framework (RDF) and are called *triplestore* or *RDF graph*. A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
+Now, Wikidata contains a very big set of such triples, posing the new opportunity, that it could be used like a database and queried for information, just like classical relational databases. Such databases can be implemented using a framework called Resource Description Framework (RDF) and are called *triplestore* or *RDF graph*. A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
 
-The maximally flexible data model is what lead triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore, specifically for historians, which make the data gained from their research public in this database. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
+The maximally flexible data model is what lead triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore specifically designed for historians, enabling them to make the data from their research publicly accessible. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
 == Problem
-Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation is therefore being put into the hands of e.g. historians. Secondly, to adequately query a database, the user is forced to use the query language _SPARQL_, which requires technical knowledge.
+Making use of a triplestore in a broader audience poses the challenge, that the technicalities of the database are exposed to its user. To populate and query the database, the users have to attend to the conventions of the vocabulary and the database engineers. The formalisation step is therefore being put into the hands of e.g. historians. Secondly, to adequately query a database, the user is forced to use the query language _SPARQL_, which requires technical knowledge.
 
 #figure(caption: [The process of getting a result from an RDF triplestore.],
   image("methodology_pipeline_without_proposal.svg", width: 100%)
 )
 
-For example, a researcher might ask: 'What professions did members of societies dedicated to advancements in the natural sciences in Jena hold?' There are many ways to interpret this question: Are we looking for registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the current _occupation_ or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, which adequately captures its essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, we could look for things which are related to 'Natural research association' through the predicate 'instance of'. Both options seem just, but in practice, one returns results and the other does not.
+For example, a researcher might ask: "What professions did members of societies dedicated to advancements in the natural sciences in Jena hold?" There are many ways to interpret this question: Does the question refer to registered clubs, meaning a legal entity or does a regular's table in a pub count? What does the term profession refer to? Is it the current _occupation_ or the _trained_ profession? Secondly, before starting to write a SPARQL query, the next step is to 'pre-formalise' the question using the concise 'subject, predicate, object' syntax, to adequately captures the interpretation's essence. This requires familiarity with the database's modeling conventions. For example, a researcher could query for entities classified as clubs and ensure that these entities are also associated with 'natural sciences' through the predicate 'interested in'. Alternatively, things related to 'Natural research association' through the predicate 'instance of' could be queried. Both options seem just, but in practice, only _one_ returns results.
 
-We want to reach a broader user base, than these hurdles would invite to participate.
-One cannot expect the user to make these steps without extensive training, an understanding of how such things are usually modelled and extensive knowledge of the SPARQL language features. 
+However, these initiatives want to reach a broader user base than the one likely to engage given these hurdles. It is unreasonable to expect users to navigate these steps without substantial training, a clear understanding of typical modelling practices, and in-depth knowledge of SPARQL language features.
 
 #figure(caption: [A possible SPARQL query to the professions of members of societies for natural sciences in Jena from the database FactGrid.],
 ```HTML
 PREFIX fg: <https://database.factgrid.de/entity/>
 PREFIX fgt: <https://database.factgrid.de/prop/direct/>
 SELECT DISTINCT ?careerStatement WHERE {
-     ?society fgt:P2 fg:Q266832 .
-    # Variable -- [Ist ein(e)] -> Naturforschender Verein
-     ?society fgt:P83 fg:Q10391 .
-    # Variable -- [Ortsansässig in] -> Jena
-     ?people fgt:P91 ?society .
-    # Variable -- [Mitglied in] -> Variable
-     ?people fgt:P165 ?careerStatement .
-    # Variable -- [Karriere-Aussage] -> Variable
+  ?society fgt:P2 fg:Q266832 .
+  ?society fgt:P83 fg:Q10391 .
+  ?people fgt:P91 ?society .
+  ?people fgt:P165 ?careerStatement .
 }
 ```
 )
@@ -233,8 +228,8 @@ Creating a Visual Query Graph is similar to sketching: the user outlines the des
 This work aims to closely integrate with the triplestore software suite called Wikibase#footnote[https://wikiba.se], which is widely adopted#footnote[e.g. Wikidata and FactGrid]. Wikibase offers many very useful constructs, which, by their nature, require some technicalities to be represented using the triple syntax, e.g. further specifications of a property (which in Wikibase are called qualifiers). This work demonstrates that, beyond the standard triple syntax, such complex constructs can be represented as intuitive structures and queried using a Visual Query Graph. To achieve this, it introduces the conventions of data modelling in Wikibase and explains their mapping to RDF syntax.
 
 #figure(
-  caption: [The visual query graph which generates the above posted query],
-  image("screenshot_queybg_example.png", width: 100%)
+  caption: [A screenshot of the Visual Query Graph which generates the above posted query. Variables are shown in violet and things in light blue.],
+  image("screenshot_quebyg_example.png", width: 100%)
 )
 
 Query by Graph cannot fully eliminate the need for users to learn the conventions of an RDF triplestore. For instance, determining which subjects are available and what to expect is entirely dependent on the database's users and engineers, as is the naming of properties. However, with the editor's search fields, users can quickly adjust the meanings of nodes and edges, creating a workflow that feels more intuitive and similar to sketching.
@@ -343,6 +338,7 @@ However, for any structured querying to be possible, the databases ought to be f
 #definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
 
 = Querying
+
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
 The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
@@ -453,6 +449,10 @@ PREFIX wdv: <http://www.wikidata.org/value/>
   May $f_x in I$, then any IRI $i in I$ with a prefix can be written as $i = f_x u$ and $u in Sigma^*$. Technically, a valid RDF prefix could, for example, be written without a trailing slash, causing basic concatenation to produce an invalid IRI. For the purposes of this work, I consider the basic concatenation to work like the concatenation algorithmm for URIs specified in #link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986], if necessary.
 ]
 
+#todo[
+Note that the same property can be used in multiple qualifiers on the same statement
+]
+
 #definition[
   Let $G$ be an RDF graph, $s in I$ be a specific subject,#sym.space.med
   $Q:= { f_bold(q) u | u in Sigma^*}, Q subset I$ a set of qualifier IRIs with $q_i in Q$,#sym.space.med
@@ -481,7 +481,7 @@ Qualifier stellen ein besonderes Konstrukt dar und werden in einem neuen Konstru
 
 === Visual Query Graphs
 #definition[
-  Following @Vargas2019_RDF_Explorer, a *visual query graph* (VQG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
+  Following @Vargas2019_RDF_Explorer, a *Query Graph* (QG) is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables: $N subset bold("I") union bold("L") union bold("V")$.
   The edges of the VQG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (I union V) times N$.
 ] <def:vqg>
 
