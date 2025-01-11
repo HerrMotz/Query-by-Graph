@@ -243,8 +243,13 @@
   // Display preface as the second page.
   if preface != none {
     pagebreak()
-    heading(numbering: none, level: 1)[Preface]
-    preface
+    page(align(horizon+center, block(width:90%, if abstract != none {
+    smallcaps[Preface]
+        block(width: 80%)[
+          // Default leading is 0.65em.
+          #par(leading: 0.78em, justify: true, linebreaks: "optimized", abstract)
+        ]
+      })))
   }
 
   // Configure heading numbering.
