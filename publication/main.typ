@@ -213,8 +213,7 @@ SELECT DISTINCT ?careerStatement WHERE {
   ?people fgt:P91 ?society .
   ?people fgt:P165 ?careerStatement .
 }
-```
-)
+```) <fig:example_query_introduction>
 
 == Proposal
 This work aims to lay the fundamentals for a program, which allows to build queries to an RDF triplestore using visual representation. The idea is, that since the _contents_ of the RDF triplestore can be _visualised as a graph_, _so could the query_ @Vargas2019_RDF_Explorer @Simons_Blog_Entry_Graphic_query. Instead of writing a query in the database's query language SPARQL, the user employs a visual query builder, which in turn generates the equivalent query.
@@ -230,11 +229,13 @@ This work aims to closely integrate with the triplestore software suite called W
 #figure(
   caption: [A screenshot of the Visual Query Graph which generates the above posted query. Variables are shown in violet and things in light blue.],
   image("screenshot_quebyg_example.png", width: 100%)
-)
+) <fig:screenshot_example_vqg>
 
-Query by Graph cannot fully eliminate the need for users to learn the conventions of an RDF triplestore. For instance, determining which subjects are available and what to expect is entirely dependent on the database's users and engineers, as is the naming of properties. However, with the editor's search fields, users can quickly adjust the meanings of nodes and edges, creating a workflow that feels more intuitive and similar to sketching.
+#todo[Dieser Screenshot muss nochmal neu generiert werden. Da steht ?3 zwischen ?people und ?society.]
 
-A demonstration of the program is available at https://quebyg.danielmotz.de.
+Query by Graph cannot fully eliminate the need for users to learn the conventions of an RDF triplestore. For instance, determining which subjects are available and what to expect is entirely dependent on the database's users and engineers, as is the naming of properties. However, with Query by Graph, querying an RDF graph becomes as simple as drawing a suitable stencil that mirrors the RDF graph's structure. The desired pattern is sketched, while any undefined elements are left as variables to be resolved during the query process. Using the editor's search fields, users can quickly adjust the meanings of nodes and edges, creating a workflow that feels more intuitive and similar to sketching a chain of thought. 
+
+A demonstration of the program is available at https://quebyg.daniel-motz.de/.
 
 
 = Preliminaries
@@ -300,9 +301,9 @@ RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For 
 
 === Literals <heading:literals>
 
-A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements:
+A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements#footnote[The specifications for RDF allow for more elements for language-tagging @W3C_RDF_1.2_Proposal, however, they are not relevant to this work.]:
 + a *lexical form*, which is a Unicode string,
-+ a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation. (also note the remark below this list)
++ a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation.
 
 === Blank nodes
 RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
@@ -323,13 +324,15 @@ However, for any structured querying to be possible, the databases ought to be f
 
 === RDF Triple and RDF Graph <heading:triples>
 
-#definition[
-  Let *$I$* denote the set of IRIs, *$B$* denote the set containing all blank nodes, *$L$* denote the set of literals, *$T := I union L union B$* the set of all RDF-Terms and for further use *$V$* the set of all variables. Let
-  subject $bold("s") in bold("I") union bold("B")$,
-  predicate $bold("p") in bold("I")$ and
-  object $bold("o") in bold("T")$.
+To establish a concise notation for subsequent definitions, this work introduces specific sets to be used throughout. The set of all IRIs is represented by *$I$*, the set of all blank nodes by *$B$*, and the set of literals by *$L$*. The set of all valid RDF terms is defined as *$T := I union L union B$*.
 
-  Then, following @W3C_RDF_1.1_Reference, an *RDF triple* or simply a *triple*, takes the form:
+#definition[
+  Let
+  $bold("s") in bold("I") union bold("B")$ be a subject,
+  $bold("p") in bold("I")$ a predicate and
+  $bold("o") in bold("T")$ an object.
+
+  Then, following @W3C_RDF_1.1_Reference, an *RDF triple* or simply a *triple*, is defined as
   $
     (bold("s"), bold("p"), bold("o")).
   $
@@ -339,26 +342,44 @@ However, for any structured querying to be possible, the databases ought to be f
 
 = Querying
 
+Constructing a query for an RDF graph can be viewed as creating a subgraph — a set of RDF triples. In addition to valid RDF terms such as IRIs, blank nodes, and literals, now variables can be inserted at any position in the triple, instead of an RDF term. Each variable is distinct from all others and can be placed in multiple positions within the query graph. This query graph can now be looked as a stencil, where variables are like jokers in Scrabble. The database's query engine will try to find the same structure in the RDF graph and returns the RDF Terms which overlapped with a variable. This _matching_ is essentially the process of querying an RDF graph. Among other features, such stencils can be written using the RDF query language _SPARQL_, where this query graph or stencil is referred to as _Basic Graph Pattern_.
+
 == SPARQL Protocol and RDF Query Language <heading:sparql>
 
 The acronym _SPARQL_ is recursive and stands for *S*\PARQL *P*\rotocol *A*\nd *R*\DF *Q*\uery *L*\anguage. It is considered to be a _graph based_ query language. The definitions of the following section are an excerpt from the _Formal Definition of the SPARQL query language_ @W3C_SPARQL_Formal_Definition. All relevant aspects of the formal definition are clarified in this work. Readers interested in further details are encouraged to consult the documentation directly.
 
-This work focuses on a specific subset of SPARQL-SELECT queries, specifically those containing only triple patterns. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that e.g. an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`.
+This work focuses on a specific subset of SPARQL queries, specifically SPARQL-SELECT queries. SELECT queries can include additional components, such as value constraints, which restrict permissible variable assignments in the results. For instance, a constraint ensuring that e.g. an event occurred before 1900 would be expressed as `FILTER(?year < 1900)`. Such language features are not yet specified in the Visual Query Graph.
 
-Alternative SARPQL query types include `ASK` (essentially a SELECT query that returns whether the result set is non-empty) and `DESCRIBE`, which returns an RDF graph describing a given resource (the actual result is implementation defined @W3C_SPARQL_Specification). These queries and the data manipulation language for triplestores will not be dealt with in this work.
+Other types of SPARQL queries also exist, such as `ASK` and `DESCRIBE`, which differ in the structures they return. These SPARQL query types and also the data manipulation language for triplestores will not be dealt with in this work. They are detailed in the SPARQL specification @W3C_SPARQL_Specification.
+
+For further use, the set of all variables is from now on denoted by *$V$*. Following the syntax of SPARQL, variables in examples will be denoted with a leading `?` character followed by an alphanumerical word.
 
 #definition[
   A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns @W3C_SPARQL_Formal_Definition
   $ (T union V) times (I union V) times (T union V). $
 ]<def:bgp>
 
+#example[
+  A valid Basic Graph Pattern following the query in @fig:example_query_introduction would be
+  $
+    {
+      &("?society", "instance-of", "natural research association"),\ 
+      &("?society", "located-in", "Jena"),\
+      &("?people", "member-of", "?society"),\
+      &("?people", "career-statement", "?careerStatement")
+    }
+  $
+]
+
 #definition[
-  A *Graph Pattern* defines the pattern to be matched within an RDF graph. Most relevant to this work are *Basic Graph Patterns*. Additionally, `FILTER` statements are considered part of this category. Other types of graph patterns are detailed in the formal definition provided by @W3C_SPARQL_Formal_Definition.
+  In essence, a *Graph Pattern* can contain multiple and optional *Basic Graph Patterns*. This work concentrates on queries which only contain one Basic Graph Pattern.
 ]<def:graph_pattern>
 
 #definition[
-  A *SPARQL-SELECT query* is a special SPARQL query, which consists of a Graph Pattern, a target RDF graph and a result form. The so-called result form specifies how the result of a SPARQL query looks like. Here it is a projection to the valid variable assignments for the given Graph Pattern. Alternative result forms include `ASK` and `DESCRIBE`. The query results can be ordered and projected using solution modifiers e.g. `DISTINCT`, `LIMIT` or `ORDER` (in analogy to SQL) and also projected to a subset of the variables occuring in the Graph Pattern.
-]
+  A *SPARQL-SELECT query* is a special SPARQL query, which consists of a Graph Pattern, a target RDF graph and a result form. The so-called result form specifies how the result of a SPARQL query looks like. In the case of SELECT queries it is a projection to the valid variable assignments for the given Graph Pattern. Alternative result forms include `ASK` and `DESCRIBE`. 
+  The return tuple is determined by the query's projection statement, which specifies the subset of variables from the query to be included.
+  The query results can be ordered using solution modifiers e.g. `DISTINCT`, `LIMIT` or `ORDER` (in analogy to SQL).
+] <def:sparql_select_query>
 
 #remark[
   Since a basic graph pattern can have any RDF Term as a subject, this implies, that a SPARQL query can query for a triple, which has a literal as its subject. An RDF graph however cannot have a triple with a literal as a subject.
@@ -366,23 +387,26 @@ Alternative SARPQL query types include `ASK` (essentially a SELECT query that re
 
 Writing SPARQL queries is pretty straight-forward: The wanted structure
 is expressed in terms of the query language, and the unknown parts are replaced by variables. Say the user wants to know which universities Goethe went to. The matching query would look like @example:goethe_query. IRIs are enclosed within angle brackets.
-#figure(caption: [A SPARQL query to determine which educational institutions Goethe visited. Currently, the valid results are `wd:Q154804` (University of Leipzig) and `wd:Q157575` (University of Strasbourg)],
+#figure(caption: [A SPARQL query to determine which educational institutions Goethe visited. Currently, the valid results are `wd:Q154804` (University of Leipzig) and `wd:Q157575` (University of Strasbourg). The structural components from @def:sparql_select_query are highlighted with comments.],
   ```HTML
   PREFIX wd: <http://www.wikidata.org/entity/> # for brevity
   PREFIX wdt: <http://www.wikidata.org/prop/direct/> # for brevity
 
   SELECT # result form
-    ?institution # projection
-  WHERE { # graph pattern
-      wd:Q5879 wdt:P69 ?institution .
+    ?institution # projection statement
+  WHERE 
+    { # graph pattern, in this case a basic graph pattern ...
+      wd:Q5879 wdt:P69 ?institution . # ... with one entry
       # Johann Wolfgang von Goethe -- [educated at] -> Variable
-  }
+    }
   ```
 ) <example:goethe_query>
 
 In order to query a BGP containing a blank node, the query will specify a variable at the blank node's position. There are other syntactical structures to express blank nodes, which are however semantically equal @W3C_SPARQL_Formal_Definition.
 
 == Qualifiers <heading:qualifiers>
+The naming, addressing, and definition of qualifiers in Wikibase is ambiguous (@wikibooks_sparql_qualifiers @Erxleben2014_Wikidata_LOD). The term "qualifier" is used both for the syntactic structure and for the asserted RDF triple of an RDF graph. An achievement of this work is the clear differentiation between these terms and the introduction of new terminology to enable unambiguous communication of the intended meaning.
+
 @fig:query_for_qualifier shows how a Wikibase qualifier can be queried. It is worth noting that different prefixes are used to refer to the Wikibase property `P69`, while yet another prefix is used for `P580`. Although the qualifier structure could be queried unambiguously with a sufficiently large query, these specialized prefixes allow to pinpoint the relevant aspects. The specifics of the different prefixes and the contexts they define will be explained and formalised in this section.
 
 #figure(
