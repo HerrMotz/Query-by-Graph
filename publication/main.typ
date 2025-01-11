@@ -92,9 +92,9 @@
     ("IRI", [Internationalised Resource Identifier (see @heading:iri)]),
     ("BGP", [Basic Graph Pattern (@def:bgp)]),
     ("OWL", "Web Ontology Language"),
+    ("QG", [Query Graph (see @def:qg)]),
     ("VQG", [Visual Query Graph (see @def:vqg)]),
     ("VQL", "Visual Query Language"),
-    ("qVQG", [qualifiable Visual Query Graph (see @def:qvqg)]),
     ("WASM", [Web Assembly]),
     ("API", "Application Programming Interface"),
     ("WWW", "World Wide Web")
@@ -367,7 +367,7 @@ For further use, the set of all variables is from now on denoted by *$V$*. Follo
       &("?society", "located-in", "Jena"),\
       &("?people", "member-of", "?society"),\
       &("?people", "career-statement", "?careerStatement")
-    }
+    }.
   $
 ]
 
@@ -458,9 +458,9 @@ PREFIX wdv: <http://www.wikidata.org/value/>
 ) <example:prefixes_in_wikidata>
 
 Obeying this modeling, a *qualifier edge* is an edge pointing from an element of the namespace `wds:` to an element of any namespace using a predicate in the `pq:` namespace.  The *value of a qualifier* is the target node of this edge. 
-#todo[Es ist unklar, ob es ein wds an sich geben kann, ohne dass es ein wd gibt von dem aus auf es gezeigt wird. Daher kann ich nicht genau sagen, ob es eine qualifier edge an sich geben kann.]
+#todo[Es ist unklar, ob es ein wds an sich geben kann, ohne dass es ein wd gibt von dem aus auf es gezeigt wird. Daher kann ich nicht genau sagen, ob es eine qualifier edge an sich geben kann. Ich vermute allerdings sehr stark, dass das nicht geht, weil es im Wikibase Datenmodell keinen Sinn ergibt. Ein wds dient nämlich auch als Link zur Eintragung auf dem Item-Eintrag.]
 
-#figure(caption: [An overview of restrictions for the use of namespaces in Wikibase @wikibase_rdf_mapping_graphic. The labels of the nodes and edges act as placeholders for specific IRIs, whose  referents are within the namespace indicated.],
+#figure(caption: [An overview of restrictions for the use of namespaces in Wikibase @wikibase_rdf_mapping_graphic. The labels of the nodes and edges act as placeholders for specific IRIs, whose referents are within the namespace indicated by the label.],
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
@@ -472,11 +472,40 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
 
 #definition[
-  Sei Katze Miau
+  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
+  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o', o'' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"QE" union G_"QS" subset G$ mit
+  $ 
+    G_"QS" := {(s, f_p u, b), (b, f_s u, o), (b, f_q u', o')}
+  $
+  und außerdem
+  $
+    G_"QE" := {(s, f_p u'', b), (b, f_s u'', o'')}
+  $
+  Qualified Statement,
+  wobei $u, u', u'' in Sigma^*$.
+
+  Ein qualified statement ist die Vereinigung aller qualifier zu diesem blank node.
 ] <def:qualifiers>
 
+#todo[ALTERNATIVE von mir:]
+#definition[
+  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
+  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o', o'' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"Q" union G_"QR" subset G$ mit
+  $ 
+    G_"Q" := {(b, f_q u', o')}
+  $
+  und außerdem
+  $
+    G_"QR" := {(s, f_p u'', b), (b, f_s u'', o'')}
+  $
+  *Qualified Statement*, $G_Q$ heißt *Qualifier* und $G_"QR"$ heißt *Qualified Relationship*,
+  wobei $u, u', u'' in Sigma^*$.
+
+  Ein qualified statement ist die Vereinigung aller qualifier zu einem beliebigen blank node.
+] <def:qualifiers_alt>
+
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers (the triples with the edges $q_1, q_2$) using the terms introduced in @def:qualifiers. The `wdt:` description is used in analogy to the Wikibase RDF data model figure. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
+  caption: [A visualisation of a qualified statement with two qualifiers (the triples with the edges $q_1, q_2$) using the terms introduced in @def:qualifiers. The boxes indicate the three subgraphs this qualified statement consists of: red box for the qualified relationship, green box for one qualifier and the violet box for the other qualifier. The `wdt:` description is used in analogy to the Wikibase RDF data model figure. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
   image("Qualifier_abstract.svg")
 )
 #todo[Make sure, that this figure is on the same page as the definition above.]
@@ -498,20 +527,24 @@ The so far introduced structures include Basic Graph Patterns in SPARQL queries 
   Following @Vargas2019_RDF_Explorer, a *Query Graph* (QG) 
   is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables $N subset bold("I") union bold("L") union bold("V")$.
   The edges of the QG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (I union V) times N$.
+] <def:qg>
+
+
+#definition[
+  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
+  Let $N subset I union L union V$ be a set of nodes, $E subset N times (I union V) times N$ a set of edges, and $E_q subset E times {f_q u | u in Sigma^*} times N$ a set of qualifiers.
+  Then the directed, edge- and node-labelled graph $G=(N,E,E_q)$ is callied *Visual Query Graph* (VQG).
 ] <def:vqg>
 
-
 #definition[
-  A *Visual Query Graph* (VQG) is a directed, edge- and node-labelled graph $G_q=(N,E,E_q)$ with $N, E$ as defined above, $Q subset I$ the set of designated qualifier IRIs (see @def:qualifiers) and $E_q subset E times Q times N$.
-] <def:qvqg>
+  Let $G_q=(N,E,E_q)$ be a Visual Query Graph. Let $e in E$, $(e, q, o') in E_q$. Then the subgraph $G_"QR" union G_"Q" subset G_q$ with
+  $
+    G_"QR" &:= {e},\
+    G_"Q"  &:= {(e, q, o')}
+  $
+  is called *qualified statement*, $G_"QR"$ is called *qualified relationship* and $G_Q$ is called *qualifier*.
+] <def:vqg-qualifier>
 
-#definition[
-  A *qualifier* in the *qualifiable visual query graph* $G_q=(N,E,E_q)$ with $N, E, Q$ is a special directed, labelled edge $bold(e_q) in E_q$ as defined above and $bold(e_q) in E_q subset E times Q times N$. Let $e_q = (e, q, n)$ be a qualifier in $G_q$, then $e in E$ is called *qualified edge*, $q in Q$ is called *qualifying edge* and $n in N$ is called *qualifying value*.
-] <def:qvqg-qualifier>
-
-#todo[
-  This is probably still unclear.
-]
 
 #let vql_ops = (
    [User Interaction],
@@ -521,18 +554,18 @@ The so far introduced structures include Basic Graph Patterns in SPARQL queries 
     [*Adding a qualifier*]
 )
 
-Following @Vargas2019_RDF_Explorer, the qVQG is _constructed_ using the _qualifiable visual query language (qVQL)_, consisting of #{vql_ops.len()/2-1} algebraic operators, which will correspond to atomic user interactions of the VQG: adding a variable node, adding a literal node and adding a directed edge. In addition, I propose the actions of adding and removing an edge qualifier.
+Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using the _Visual Query Language (VQL)_, consisting of #{vql_ops.len()-1} algebraic operators, which will correspond to atomic user interactions in the user interface (see @fig:ops_in_vql).
 
 #figure(
   caption: "Operations in the VQL",
   table(columns: 1,
   ..vql_ops
   )
-)
+) <fig:ops_in_vql>
 
-Using this new *qVQG* and qVQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. Now, it needs to be shown, that the qVQG can be losslessly translated to a VQG and in turn to a SPARQL-SELECT query.
+Using this new VQG and VQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. Now, it needs to be shown, that the VQG can be losslessly translated to a VQG and in turn to a SPARQL-SELECT query.
 
-#figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the qVQG]) <fig:vqg_with_qualifier>
+#figure(image("Qualifier_mit.svg"), caption: [Qualifiers in the VQG]) <fig:vqg_with_qualifier>
 
 === Mapping Visual Query Graphs to SPARQL queries <heading:mapping_theory>
 
