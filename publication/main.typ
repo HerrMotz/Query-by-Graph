@@ -353,7 +353,7 @@ This work focuses on a specific subset of SPARQL queries, specifically SPARQL-SE
 
 Other types of SPARQL queries also exist, such as `ASK` and `DESCRIBE`, which differ in the structures they return. These SPARQL query types and also the data manipulation language for triplestores will not be dealt with in this work. They are detailed in the SPARQL specification @W3C_SPARQL_Specification.
 
-For further use, the set of all variables is from now on denoted by *$V$*. Following the syntax of SPARQL, variables in examples will be denoted with a leading `?` character followed by an alphanumerical word.
+For further use, the set of all variables is from now on denoted by *$V$*. Following the syntax of SPARQL, variables in examples will be denoted with a leading question mark `?` followed by an alphanumerical word.
 
 #definition[
   A *Basic Graph Pattern (BGP)* is a *subset* of SPARQL triple patterns @W3C_SPARQL_Formal_Definition
@@ -502,7 +502,7 @@ For further use a subset of these namespaces will be denoted by abbreviations.
   *Qualified Statement part* #todo[oder so etwas ähnliches müsste hier eigentlich stehen.], $G_Q$ heißt *Qualifier*, $G_"QR"$ heißt *Qualified Relationship* und $o'$ heißt *Qualifier Value* #todo[darf ich hier $o'$ schreiben? Ich könnte es auch einfach natürlichsprachlich erklären.],
   wobei $u, u' in Sigma^*$.
 
-  Ein *Qualified Statement* ist die Vereinigung aller qualifier zu einem beliebigen blank node.
+  Ein *Qualified Statement* ist die Vereinigung aller qualifier zu einem _beliebigen_ blank node.
 ] <def:qualifiers_alt>
 
 #todo[Die Beschriftung in der Abbildung muss noch korrigiert werden, aber das mache ich, wenn ich weiß welche der Definitionen ich nehme.]
@@ -688,7 +688,7 @@ classDiagram
 
 = Discussion
 
-An essential part of this work is the 
+A central focus of this work was the analysis of Wikibase conventions and the development of precise and adequate descriptions. The existing documentation on these conventions lacks terminological clarity, which poses challenges for new users attempting to familiarise themselves with the system. By introducing well-defined terminology and systematically guiding readers through the conventions, this work aims to provide a structured introduction to the technical intricacies of Wikibase.
 
 In comparison to other approaches such as @Vargas2019_RDF_Explorer @SPARQLVis, #todo[Ich muss nochmal die Referenzen prüfen. Finde die anderen Arbeiten nicht.] this work distinguishes itself through its emphasis on user experience design and speed. As noted earlier, even a limited user study involving digital humanities students demonstrated that the program can be effectively utilised with minimal training—an observation also made by @Vargas2019_RDF_Explorer in their user study. Unlike @Vargas2019_RDF_Explorer, which presents all possible assertions for an item and requires the user to select the next assertion, this work enables users to freely add nodes and edges without needing to specify their content in advance. While it is hypothesised that this represents a significant improvement in usability, a formal user study will be necessary to validate this claim.
 
