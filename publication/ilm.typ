@@ -245,7 +245,7 @@
     pagebreak()
     heading(numbering: none, level: 1)[Preface]
     box(
-      width: 50%,
+      width: 100%,
       preface
     )
   }
