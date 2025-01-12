@@ -16,11 +16,11 @@
 ))
 
 // for ER-Diagrams
-#import "@preview/pintorita:0.1.3"
+// #import "@preview/pintorita:0.1.3"
 
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
-#show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
+// #show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
 
 #let spct = sym.space.punct
 #show "e.g.": [e.#sym.space.thin\g.] // unsure whether I like this.
@@ -94,7 +94,6 @@
     ("IRI", [Internationalised Resource Identifier (see @heading:iri)]),
     ("BGP", [Basic Graph Pattern (@def:bgp)]),
     ("OWL", "Web Ontology Language"),
-    ("QG", [Query Graph (see @def:qg)]),
     ("VQG", [Visual Query Graph (see @def:vqg)]),
     ("VQL", "Visual Query Language"),
     ("WASM", [Web Assembly]),
@@ -241,9 +240,51 @@ A demonstration of the program is available at https://quebyg.daniel-motz.de/.
 
 
 = Preliminaries
-To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF) and the syntax of SPARQL queries to the triplestore. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work. SPARQL-SELECT queries function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same stencil as the SPARQL-SELECT query.
+To define the tasks of Query by Graph, it is essential to discuss Wikibase's data modelling conventions, the formal definitions of Wikibase's special constructs, their mapping to the Resource Description Framework (RDF), the RDF itself and the syntax of the query language for RDF, SPARQL. The most commonly used SPARQL queries for retrieving information are SPARQL-SELECT queries, which are the primary focus of this work. SPARQL-SELECT queries function like stencils that describe a triple pattern, which is applied across an RDF graph until a matching pattern is found. For each match in the RDF graph, the corresponding variable assignments are returned as a result set. The idea is that the Visual Query Graph will represent the same stencil as the SPARQL-SELECT query.
 
-Certain patterns in the RDF graph of Wikibase exist solely for technical reasons and are not immediately intuitive to users without a deeper understanding of the underlying technical necessities. For example, this includes relationships involving multiple objects. These patterns are limited in scope and are defined within the Wikibase data model, providing an opportunity to develop an intuitive representation for them in the Visual Query Graph. During query generation from the Visual Query Graph, these intuitive representations are translated into technically accurate constructs, ensuring they can be queried successfully.
+Certain patterns in the RDF graph of Wikibase exist solely for technical reasons and are not intuitive to users without an understanding of the underlying necessities. For example, this includes relationships involving multiple objects. These patterns are limited in scope and are defined within the Wikibase data model, providing an opportunity to develop an intuitive representation for them in the Visual Query Graph. During query generation from the Visual Query Graph, these intuitive representations are translated into technically accurate constructs, ensuring they can be queried successfully.
+
+== Resource Description Framework
+To introduce the Wikibase data model and its mapping to the Resource Description Framework (RDF), it is essential to first understand the terminology of RDF.
+
+=== Internationalised Resource Identifier <heading:iri>
+
+Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409` and `https://database.factgrid.de/prop/direct/P160`. Their purpose is to unambigously *refer to a resource* across all triplestores (or the WWW). The resource an IRI points at is called *referent* @W3C_RDF_1.1_Reference.
+
+
+#remark[IRIs can largely be treated as URIs, as they are interchangeable through conversion. Their primary purpose is to *identify the entity being referenced within a specific triplestore or Wikibase instance*. Since the technical details are not directly relevant to this work, I will refer readers to the referenced RFCs for further information.]
+
+
+=== Prefixing <def:prefixes_and_bases>
+RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For example, let `wd` be a prefix with the value `http://www.wikidata.org/entity/`. Then, the IRI `http://www.wikidata.org/entity/Q5879` can be rewritten using this prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters @W3C_RDF_1.1_Reference. The term "prefix" will also be used to describe specific prefixes in the Wikibase data model: Each Wikibase instance defines a set of prefixes and data modelling conventions around them.
+
+=== Literals <heading:literals>
+
+A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements#footnote[The specifications and the new proposal for RDF allow for more elements for language-tagging @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal, however, they are not relevant to this work.]:
++ a *lexical form*, which is a Unicode string,
++ a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation.
+
+=== Blank nodes
+RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
+It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
+
+=== RDF Triple and RDF Graph <heading:triples>
+
+To establish a concise notation for subsequent definitions, this work introduces specific sets to be used throughout. The set of all IRIs is represented by *$I$*, the set of all blank nodes by *$B$*, and the set of literals by *$L$*. The set of all valid RDF terms is defined as *$T := I union L union B$*.
+
+#definition[
+  Let
+  $bold("s") in bold("I") union bold("B")$ be a subject,
+  $bold("p") in bold("I")$ a predicate and
+  $bold("o") in bold("T")$ an object.
+
+  Then, following @W3C_RDF_1.1_Reference, an *RDF triple* or simply a *triple*, is defined as
+  $
+    (bold("s"), bold("p"), bold("o")).
+  $
+] <def:spo>
+
+#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
 
 == Data Model in Wikibase
 *Wikibase* is one of the most widely used softwares for community knowledge bases, with the most prominent instance, *Wikidata*#footnote[http://wikidata.org --- an initiative for a free community knowledge base], storing \~115 million data items. Wikibase has its own internal structure and conventions for naming and modeling entities and concepts. These internals are in turn mapped to an expression in RDF syntax @wikibase_rdf_mapping_article. This invertible mapping permits the use of _RDF terminology to refer to structures within Wikibase_ and most notably _the use of the SPARQL query language for information retrieval_. This specific data model of Wikibase is particularly noteworthy due to its widespread use and substantial influence on other initiatives, driven by its sheer scale. For example, DBpedia will make use of Wikidata resources @Lehmann2015DBpediaA.
@@ -285,61 +326,46 @@ The statements of @ex_qualifier_1 and @ex_qualifier_2 are called *qualifiers*.
 
 #figure(image("Qualifier_ohne.svg", width: 320pt), caption: [Graphical visualisation of a qualified statement using natural language descriptors.]) <fig:vqg_no_qualifier>
 
-Building on these necessities within the data model, the fundamentals of RDF are now introduced to provide the necessary toolbox for mapping the Wikibase data model to RDF syntax.
+Wikibase instances define IRI-prefixes for things of the same kind. This allows to think of them as namespaces for categories defined within the Wikibase data model. Since this work treats the set of all possible Wikibase instances where the IRIs use different domain names from e.g. `wikidata.org`, they can be thought of as variables for the instance-specific prefix. For convenience, these variables will be denoted by the prefix names followed by a colon (`wd:`, `p:`, `pq:`, `wdt:` and so on) defined by Wikidata (see @example:prefixes_in_wikidata). For the matters of this work, only IRIs which can be written as the concatenation of the prefix with a local name (an alphanumerical string) are considered to be an _element of the namespace_, e.g. `http://www.wikidata.org/prop/P1234` is an element of the namespace `p:` but `http://www.wikidata.org/prop/something/else/P1234` is not an element. Furthermore, the mapping of the Wikibase data model to RDF syntax specifies that these namespaces can only be used in triples (or edges, for that matter) that connect specific namespaces. _The use of these namespaces is therefore restricted._ For example, an edge with a referent in the namespace `p:` can only have sources in the namespace `wd:` and only targets in the namespace `wds:`. @fig:rdf_mapping is an illustration taken from the Wikibase documentation on RDF mapping, which gives an overview of these restrictions.
 
-== Resource Description Framework
+/*```turtle
+ wd:P22 a wikibase:Property ;
+     rdfs:label "Item property"@en ;
+     wikibase:propertyType wikibase:WikibaseItem ;
+     wikibase:directClaim wdt:P22 ;
+     wikibase:claim p:P22 ;
+     wikibase:statementProperty ps:P22 ;
+     wikibase:statementValue psv:P22 ;
+     wikibase:qualifier pq:P22 ;
+     wikibase:qualifierValue pqv:P22 ;
+     wikibase:reference pr:P22 ;
+     wikibase:referenceValue prv:P22 ;
+     wikibase:novalue wdno:P22 .
+```*/
 
-=== Internationalised Resource Identifier <heading:iri>
+#figure(caption: [An excerpt of customary IRI prefixes defined by Wikidata.],
+```HTML
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
+PREFIX pqv: <http://www.wikidata.org/prop/qualifier/value/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wds: <http://www.wikidata.org/entity/statement/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX wdv: <http://www.wikidata.org/value/>
+```
+) <example:prefixes_in_wikidata>
 
-Internationalised Resource Identifiers (IRIs) [#link("https://www.ietf.org/rfc/rfc3987.txt")[RFC3987]] are a superset of Uniform Resource Identifiers (URIs) [#link("https://www.ietf.org/rfc/rfc3986.txt")[RFC3986]], for example `http://database.factgrid.de/entity/Q409` and `https://database.factgrid.de/prop/direct/P160`. Their purpose is to unambigously *refer to a resource* across all triplestores (or the WWW). The resource an IRI points at is called *referent* @W3C_RDF_1.1_Reference.
+#figure(caption: [An overview of restrictions for the use of namespaces in Wikibase @wikibase_rdf_mapping_graphic. The labels of the nodes and edges act as placeholders for specific IRIs, whose referents are within the namespace indicated by the label.],
+  image("rdf_mapping.svg", width: 87%)
+) <fig:rdf_mapping>
 
 
-#remark[IRIs can largely be treated as URIs, as they are interchangeable through conversion. Their primary purpose is to *identify the entity being referenced within a specific triplestore or Wikibase instance*. Since the technical details are not directly relevant to this work, I will refer readers to the referenced RFCs for further information.]
-
-
-=== Prefixing <def:prefixes_and_bases>
-RDF allows to define a *prefix*, which acts as an *abbreviation of an IRI*. For example, let `wd` be a prefix with the value `http://www.wikidata.org/entity/`. Then, the IRI `http://www.wikidata.org/entity/Q5879` can be rewritten using this prefix as `wd:Q5879`. The part after the colon is called *local name* and is essentially a string restricted to alphanumerical characters @W3C_RDF_1.1_Reference.
-
-=== Literals <heading:literals>
-
-A *literal* in an RDF graph can be used to express values such as strings, dates and numbers. It essentially consists of two elements#footnote[The specifications and the new proposal for RDF allow for more elements for language-tagging @W3C_RDF_1.1_Reference @W3C_RDF_1.2_Proposal, however, they are not relevant to this work.]:
-+ a *lexical form*, which is a Unicode string,
-+ a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation.
-
-=== Blank nodes
-RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
-It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. In most common RDF formats, a blank node can be locally referenced using a *local name* and a special "empty" IRI-prefix often denoted by an underscore character.
-
-/*=== Modelling Information using Triples
-
-Suppose, that the assertion from @ex_spo_goethe is part of the A-box of an RDF database. It can be deducted that:
-#todo[such statements are called entailments]:
-- there is something called "Johann Wolfgang von Goethe",
-- using the assumption that a different symbol implies a different object, there is something different from Goethe, called "University of Leipzig",
-- there is a directed relation called "educated" at and
-- of course the assertion itself, meaning that the relation applies between these two objects.
-
-A computer still does not understand what it means to be educated at some place or where Leipzig is, but it can interact with this information in a formally correct way. The human operator can construe meaning, an interpretation grounded in the real world, in to the assertion. 
-
-However, for any structured querying to be possible, the databases ought to be filled according to certain conventions. Preferably such conventions that are interoperable with other data sources (see @heading:lod).*/
-
-=== RDF Triple and RDF Graph <heading:triples>
-
-To establish a concise notation for subsequent definitions, this work introduces specific sets to be used throughout. The set of all IRIs is represented by *$I$*, the set of all blank nodes by *$B$*, and the set of literals by *$L$*. The set of all valid RDF terms is defined as *$T := I union L union B$*.
-
-#definition[
+For further use a subset of these namespaces will be denoted by abbreviations.
+  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
   Let
-  $bold("s") in bold("I") union bold("B")$ be a subject,
-  $bold("p") in bold("I")$ a predicate and
-  $bold("o") in bold("T")$ an object.
-
-  Then, following @W3C_RDF_1.1_Reference, an *RDF triple* or simply a *triple*, is defined as
-  $
-    (bold("s"), bold("p"), bold("o")).
-  $
-] <def:spo>
-
-#definition[An *RDF graph* is a set of RDF triples. An RDF triple is said to be asserted in an RDF graph if it is an element of the RDF graph @W3C_RDF_1.2_Proposal.] <def:rdf_graph>
+  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRIs.
+  In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
 
 = Querying
 
@@ -428,86 +454,27 @@ The naming, addressing, and definition of qualifiers in Wikibase is ambiguous (@
   }
 ```) <fig:query_for_qualifier>
 
-Wikibase instances define IRI-prefixes for things of the same kind. This allows to think of them as namespaces for categories defined within the Wikibase data model. Since this work treats the set of all possible Wikibase instances where the IRIs use different domain names from e.g. `wikidata.org`, they can be thought of as variables for the instance-specific prefix. For convenience, these variables will be denoted by the prefix names followed by a colon (`wd:`, `p:`, `pq:`, `wdt:` and so on) defined by Wikidata (see @example:prefixes_in_wikidata). For the matters of this work, only IRIs which can be written as the concatenation of the prefix with a local name (an alphanumerical string) are considered to be an _element of the namespace_, e.g. `http://www.wikidata.org/prop/P1234` is an element of the namespace `p:` but `http://www.wikidata.org/prop/something/else/P1234` is not an element. Furthermore, the mapping of the Wikibase data model to RDF syntax specifies that these namespaces can only be used in triples (or edges, for that matter) that connect specific namespaces. _The use of these namespaces is therefore restricted._ For example, an edge with a referent in the namespace `p:` can only have sources in the namespace `wd:` and only targets in the namespace `wds:`. @fig:rdf_mapping is an illustration taken from the Wikibase documentation on RDF mapping, which gives an overview of these restrictions.
-
-/*```turtle
- wd:P22 a wikibase:Property ;
-     rdfs:label "Item property"@en ;
-     wikibase:propertyType wikibase:WikibaseItem ;
-     wikibase:directClaim wdt:P22 ;
-     wikibase:claim p:P22 ;
-     wikibase:statementProperty ps:P22 ;
-     wikibase:statementValue psv:P22 ;
-     wikibase:qualifier pq:P22 ;
-     wikibase:qualifierValue pqv:P22 ;
-     wikibase:reference pr:P22 ;
-     wikibase:referenceValue prv:P22 ;
-     wikibase:novalue wdno:P22 .
-```*/
-
-#figure(caption: [An excerpt of customary IRI prefixes defined by Wikidata.],
-```HTML
-PREFIX p: <http://www.wikidata.org/prop/>
-PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
-PREFIX pqv: <http://www.wikidata.org/prop/qualifier/value/>
-PREFIX ps: <http://www.wikidata.org/prop/statement/>
-PREFIX wd: <http://www.wikidata.org/entity/>
-PREFIX wds: <http://www.wikidata.org/entity/statement/>
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-PREFIX wdv: <http://www.wikidata.org/value/>
-```
-) <example:prefixes_in_wikidata>
-
 Obeying this modeling, a *qualifier edge* is an edge pointing from an element of the namespace `wds:` to an element of any namespace using a predicate in the `pq:` namespace.  The *value of a qualifier* is the target node of this edge. 
 #todo[Es ist unklar, ob es ein wds an sich geben kann, ohne dass es ein wd gibt von dem aus auf es gezeigt wird. Daher kann ich nicht genau sagen, ob es eine qualifier edge an sich geben kann. Ich vermute allerdings sehr stark, dass das nicht geht, weil es im Wikibase Datenmodell keinen Sinn ergibt. Ein wds dient nämlich auch als Link zur Eintragung auf dem Item-Eintrag.]
 
-#figure(caption: [An overview of restrictions for the use of namespaces in Wikibase @wikibase_rdf_mapping_graphic. The labels of the nodes and edges act as placeholders for specific IRIs, whose referents are within the namespace indicated by the label.],
-  image("rdf_mapping.svg", width: 87%)
-) <fig:rdf_mapping>
-
-
-For further use a subset of these namespaces will be denoted by abbreviations.
+#definition[
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
-  Let
-  $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRIs.
-  In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
+  Any RDF triple with a predicate of the form $f_p u$ with $u in Sigma^*$ is a *qualifier*. 
+]
 
 #definition[
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
-  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o', o'' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"QE" union G_"QS" subset G$ mit
+  Let $s in I$ be a subject, $b in B$ a blank node and $o, o' in I union L$ objects, which are all elements of $G$. Then, any subgraph $G_"QSn" subset G$ with
   $ 
-    G_"QS" := {(s, f_p u, b), (b, f_s u, o), (b, f_q u', o')}
+    G_"Q" &:= {(b, f_q u, o)}, \
+    G_"QSn" &:= {(s, f_p u', b), (b, f_s u', o')}
   $
-  und außerdem
-  $
-    G_"QE" := {(s, f_p u'', b), (b, f_s u'', o'')}
-  $
-  Qualified Statement #todo[Ich habe nur abgeschrieben, was wir gestern Abend notiert haben. Dafür brauche ich noch eine Lösung],
-  wobei $u, u', u'' in Sigma^*$.
-
-  Ein qualified statement ist die Vereinigung aller qualifier zu diesem blank node.
+  *Qualified Statement in the narrow sense*, and $o'$ is called *Qualifier Value*,
+  where $u, u' in Sigma^*$. A *Qualified Statement in the broader sense* is the union of all qualifiers to a specific blank node.
 ] <def:qualifiers>
 
-#todo[ALTERNATIVE von mir:]
-#definition[
-  Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
-  Sei $s in I$ ein Subjekt, $b in B$ ein Blank Node und $o, o' in I union L$ Objekte die, Teil in eines RDF Graphen $G$ sind. Dann heißt jeder Teilgraph $G_"Q" union G_"QR" subset G$ mit
-  $ 
-    G_"Q" := {(b, f_q u, o)}
-  $
-  und außerdem
-  $
-    G_"QR" := {(s, f_p u', b), (b, f_s u', o')}
-  $
-  *Qualified Statement part* #todo[oder so etwas ähnliches müsste hier eigentlich stehen.], $G_Q$ heißt *Qualifier*, $G_"QR"$ heißt *Qualified Relationship* und $o'$ heißt *Qualifier Value* #todo[darf ich hier $o'$ schreiben? Ich könnte es auch einfach natürlichsprachlich erklären.],
-  wobei $u, u' in Sigma^*$.
-
-  Ein *Qualified Statement* ist die Vereinigung aller qualifier zu einem _beliebigen_ blank node.
-] <def:qualifiers_alt>
-
-#todo[Die Beschriftung in der Abbildung muss noch korrigiert werden, aber das mache ich, wenn ich weiß welche der Definitionen ich nehme.]
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers (the triples with the edges $q_1, q_2$) using the terms introduced in @def:qualifiers. The boxes indicate the three subgraphs this qualified statement consists of: red box for the qualified relationship, green box for one qualifier and the violet box for the other qualifier. The `wdt:` description is used in analogy to the Wikibase RDF data model figure. It is to be interpreted as an IRI with the instance-specific prefix `wdt` and a valid arbitrary local name.],
+  caption: [A visualisation of a qualified statement with two qualifiers (the triples with the edges $q_1, q_2$) using the terms introduced in @def:qualifiers and $u,u',u''$ are valid local names. The boxes indicate the three subgraphs this qualified statement consists of: red box for the qualified relationship, green box for one qualifier and the violet box for the other qualifier. All nodes in this figure form the qualified statement in the broader sense.],
   image("Qualifier_abstract.svg")
 )
 #todo[Make sure, that this figure is on the same page as the definition above.]
@@ -517,27 +484,20 @@ For further use a subset of these namespaces will be denoted by abbreviations.
 
 = Mapping
 
-To establish a mapping between Visual Query Graphs and SPARQL-SELECT queries, a formal specification for Visual Query Graphs is first introduced. Following this, the transformation function from a Visual Query Graph to SPARQL is defined. Lastly, the implementation of these functions is analysed and discussed.
+#todo[semantic-preserving an gegebener Stelle näher erläutern als "Die Ergebnisse sind die gleichen von beiden Formalismen"]
+
+To establish a semantic-preserving mapping between Visual Query Graphs and SPARQL-SELECT queries, a formal specification for Visual Query Graphs is first introduced. Following this, the transformation function from a Visual Query Graph to SPARQL is defined. Lastly, the implementation of these functions is analysed and discussed.
 
 == Specification
 
 === Visual Query Graphs
-The so far introduced structures include Basic Graph Patterns in SPARQL queries and RDF triples. While Basic Graph Patterns are used to describe stencils to be queried against RDF triples, the goal of Visual Query Graphs is to eliminate the need to manually model reified structures using blank nodes. Since blank nodes are semantically equivalent to variables in a SPARQL query#footnote[https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QSynBlankNodes], they are not necessary to write SPARQL queries and would be redundant in the Visual Query Graph. To describe the Visual Query Graph, which has special visualisations for reified structures using blank nodes, we first define a Query Graph, which dispose of blank nodes.
+The so far introduced structures include Basic Graph Patterns in SPARQL queries and RDF triples. While Basic Graph Patterns are used to describe stencils to be queried against RDF triples, the goal of Visual Query Graphs is to eliminate the need to manually model reified structures using blank nodes. Other literature @Vargas2019_RDF_Explorer uses the term Visual Query Graph to refer to a Basic Graph Pattern without Blank Nodes. This work uses the same term to define a graph with multi-edges, which consist of the same triples as the Basic Graph Pattern would, but with the exception, that any qualifier structures are replaced with a multi-edge, including all statements of the qualified statement in the broader sense.
 
-#definition[
-  Following @Vargas2019_RDF_Explorer, a *Query Graph* (QG) 
-  is defined as a directed, edge- and vertex-labelled graph $G=(N,E)$, with vertices/nodes $N$ and edges $E$. The nodes of $G$ are a finite set of IRIs, literals or variables $N subset bold("I") union bold("L") union bold("V")$.
-  The edges of the QG are a finite set of triples, where each triple indicates a directed edge between two nodes with a label taken from the set of IRIs or variables: $E subset N times (I union V) times N$.
-] <def:qg>
-
-#remark[
-  For this work, the Wikibase namespaces `wd` for directly addressing items and `wdt` for addressing properties are generally adequate. However, the program allows users the flexibility to define custom prefixes that deviate from these conventions, a capability reflected in this definition.
-]
-
+In order to build a Visual Query Graph, we need special edges which involve all nodes of a qualified statement in the broader sense. This can be done using a hypergraph, which creates a hyper-edge with 
 #definition[
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
-  Let $N subset I union L union V$ be a set of nodes, $E subset N times (I union V) times N$ a set of edges, and $E_q subset E times {f_q u | u in Sigma^*} times N$ a set of qualifiers.
-  Then the directed, edge- and node-labelled graph $G=(N,E,E_q)$ is callied *Visual Query Graph* (VQG).
+  Let $N subset I union L union V$ be a set of nodes, $E subset N times (I union V) times N$ a set of edges, and $E_q subset cal(P)(E times {f_s u | u in Sigma^*} union {f_q u | u in Sigma^*} times N)$ a set of hyper-edges for qualified statements.
+  Let $G=(N,E,E_q)$ be a directed hypergraph, with two types of edges
 ] <def:vqg>
 
 #definition[
@@ -577,6 +537,9 @@ Using this new VQG and VQL, we can now create an intuitive visualisation (see @f
   VQG -> QG=BGP -> SPARQL query mit dem richtigen Projection Statement (den blank node wollen wir nicht in der Ausgabe sehen) and vice versa.
 ]
 
+#todo[an geeigneter Stelle einfügen:
+Since blank nodes are semantically equivalent to variables in a SPARQL query#footnote[https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QSynBlankNodes], they are not necessary to write SPARQL queries and would be redundant in the Visual Query Graph.]
+
 The idea is to map a Visual Query Graph with its special qualifier edges to a Basic Graph Pattern from which a SPARQL SELECT-query can be constructed and vice versa. However, the key step is to translate between BGPs and VQGs.
 
 Translating from a BGP to a VQG is very intuitive: For each qualified statement in the BGP, the blank node in the qualified relationship is removed and the missing connection between the subject and object is reestablished using a regular edge. The loose ends of the qualifiers are connected to this edge.
@@ -587,7 +550,12 @@ Translating from a VQG to a BGP is a bit more complex to denote, but this is onl
 
 #todo[
   My work also has the advantage, that all conventions are regulated in a configuration file specifically for data sources. A user (in the future) can add
-  new conventions at a central place and will know, which effects changes have. 
+  new conventions at a central place and will know, which effects changes have.
+
+  an geeigneter Stelle einfügen:
+  #remark[
+  For this work, the Wikibase namespaces `wd` for directly addressing items and `wdt` for addressing properties are generally adequate. However, the program allows users the flexibility to define custom prefixes that deviate from these conventions, a capability reflected in this definition.
+]
 ]
 
 The goal of this work is to create two mostly separate programs:
