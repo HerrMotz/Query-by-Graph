@@ -252,6 +252,7 @@
 
   // Configure heading numbering.
   set heading(numbering: "1.")
+  show heading: it => pagebreak() + pagebreak(to: "odd", weak: false) + it
 
   show heading.where(level: 6): set heading(outlined: false)
 
