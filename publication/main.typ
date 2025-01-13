@@ -20,7 +20,7 @@
 
 #set text(lang: "en", region: "GB")
 #show: great-theorems-init
-#show raw.where(lang: "pintora"): it => pintorita.render(it.text) // todo: Add this back in when I want to print.
+#show raw.where(lang: "pintora"): it => pintorita.render(it.text)
 
 #let spct = sym.space.punct
 #show "e.g.": [e.#sym.space.thin\g.] // unsure whether I like this.
@@ -59,9 +59,8 @@
   ),
   
   abstract: [
-    #todo[VQG eingeführt, ]
-    
-    This thesis establishes the foundation for a visual query builder for SPARQL queries, called *Query by Graph*. The developed program enables users to construct queries for Wikibase instances without the need for coding. Since RDF triplestore contents can be represented as graphs, queries can too. With Query by Graph, users can visually sketch the desired graph structure and insert variables to retrieve results. Additionally, Query by Graph introduces an intuitive representation for querying special Wikibase constructs directly, enhancing usability and functionality.
+    This thesis introduces a Visual Query Builder for SPARQL queries, reducing the effort required to query Wikibase systems. At its core is a Visual Query Graph, which abstracts technical complexities of reified structures, such as Wikibase qualifiers, by leveraging a new labelled hyper-edge.
+    Building on this concept, the newly implemented program features a robust, modular Rust backend and a Web frontend. Early testing by digital humanities students with FactGrid demonstrated the program's usefulness for constructing SPARQL queries.  
   ],
   
   preface: align(left)[
@@ -73,7 +72,7 @@
 
     Special thanks go to Patrick Stahl for his contributions to implementing UI features. Your technical skills enriched the practical aspects of this work. 
 
-    This work owes its early public exposure to Clemens Beck. Thank you for testing the early preview of the program in your seminar and for providing crucial support and manpower to accelerate its development.
+    I owe the programs early public exposure to Clemens Beck. Thank you for testing the early preview of the program in your seminar and for providing crucial support and manpower to accelerate its development.
 
     My deep gratitude goes to Clemens Beckstein and Johannes Mitschunas for their exceptional mentorship. Their wisdom, encouragement, and thoughtful feedback were instrumental in shaping this project and pushing it to its full potential.
     
@@ -107,7 +106,7 @@
     ("WWW", "World Wide Web")
   ),
 
-  external-link-circle: true, // TURN THIS OFF IF YOU GENERATE THE PRINT VARIANT
+  external-link-circle: true, // TODO: TURN THIS OFF IF YOU GENERATE THE PRINT VARIANT
   
   figure-index: (enabled: true),
   table-index: (enabled: true),
@@ -193,11 +192,12 @@ $
 $
 
 #figure(
-  caption: [A graphical visualisation of the triple $("Goethe", "educated at", "Leipzig")$ as a graph. Subjects and objects are represented as nodes and predicates are represented as edges between these nodes.],
+  caption: [A graphical visualisation of the triples $("Goethe", "educated at", "Leipzig")$ and $("Goethe", "place of birth", "Frankfurt am Main")$ as a graph. Gothe is subject to both relationships, while edges represent predicates pointing to the the respective cities as objects.],
   image("example_triple_graph.svg", width: 230pt)
 ) <fig:rdf_graph_fragment>
 
-Wikidata contains a very big set of such triples, posing the opportunity, that it could be used like a database and queried for information, just like classical relational databases. Such databases can be implemented using a framework called Resource Description Framework (RDF) and are called *triplestore* or *RDF graph*. A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on. In contrast, any entry in a relational database needs to be consistent with the specified data model and applications making use of that data in turn expect consistency. By design, an application using triplestores must account for the absence of data.
+Wikidata contains a very big set of such triples, posing the opportunity, that it could be used like a database and queried for information, just like classical relational databases. Such databases can be implemented using a framework called Resource Description Framework (RDF) and are called *triplestore* or *RDF graph*. A resource can be any object of our intuition and these resources can be described using the syntax RDF offers. The vocabulary used to describe the resources, is specified or chosen by the users. Triplestores can be advantageous when the information collected is incomplete or might be enhanced later on.
+Applications using triplestores are inherently designed to handle the absence of data, as these systems lack a rigid schema. In contrast, relational databases enforce a strict schema that ensures every entry adheres to a predefined structure, enabling applications to consistently rely on well-organised and uniformly structured information.
 
 The maximally flexible data model is what lead triplestores to become popular in the digital humanities. An initiative called FactGrid#footnote[https://factgrid.de] hosts a triplestore specifically designed for historians, enabling them to make the data from their research publicly accessible. This poses the potential, that a user with knowledge of the specified vocabulary and conventions of the database, could get information about historical facts by writing an adequate query to the database. Furthermore, inferencing information about historical facts could be made a matter of, again, writing an adequate query.
 
@@ -236,15 +236,15 @@ This work aims to lay the fundamentals for a program, which allows to build quer
   image("methodology_pipeline.svg", width: 100%)
 )
 
-Creating a Visual Query Graph is similar to sketching: the user outlines the desired database structure and fills in variables for the desired results. The sketched graph is then automatically converted into a SPARQL query that adheres to all syntactical requirements. A result is retrieved from an RDF triplestore by finding the same graph structure as specified by the query. A variable will match any value in the RDF graph.
-
 #figure(
-  caption: [A screenshot of the Visual Query Graph which generates the above posted query. Variables are shown in violet and things in light blue. Green nodes show which variables are part of the result set.],
+  caption: [A screenshot of the Visual Query Graph which is generated to the query in @fig:example_query_introduction. Variables are shown in violet and things in light blue. Green nodes show which variables are part of the result set.],
   image("screenshot_quebyg_example.png")
 ) <fig:screenshot_example_vqg>
 
+Creating a Visual Query Graph is similar to sketching: the user outlines the desired database structure and fills in variables for the desired results. The sketched graph is then automatically converted into a SPARQL query that adheres to all syntactical requirements. A result is retrieved from an RDF triplestore by finding the same graph structure as specified by the query. A variable will match any value in the RDF graph.
+
 #figure(
-  caption: [An exemplary RDF Graph against which query from @fig:example_query_introduction is run.],
+  caption: [An exemplary RDF Graph against which the query from @fig:screenshot_example_vqg or equivalently @fig:example_query_introduction is run.],
   image("RDF_Graph_example.svg"),
 )
 
@@ -283,7 +283,7 @@ A *literal* in an RDF graph can be used to express values such as strings, dates
 + a *data type IRI*, which defines the mapping from the lexical form to the literal value in the user representation.
 
 === Blank nodes <heading:blank_nodes>
-RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
+RDF specifies *blank nodes*, which do not have an IRI nor a literal assigned to them. Most common syntax expresses blank nodes with a "blank IRI" denoted by an underscore followed by a local name, e.g. `_:implicit1`. The specification @W3C_RDF_1.1_Reference and the current version of its successor @W3C_RDF_1.2_Proposal do not comment on the structure of a blank node: "Otherwise, the set of possible blank nodes is arbitrary." @W3C_RDF_1.1_Reference.
 It only specifies, that *the set of blank nodes is disjunct from all literals and IRIs*. It furthermore specifies, that: "Blank nodes in graph patterns [for SPARQL queries] *act as variables*, not as references to specific blank nodes in the data being queried" @W3C_SPARQL_Specification. This means, that variables can be used to query blank nodes and are treated the same way by the query engine.
 
 === RDF Triple and RDF Graph <heading:triples>
@@ -327,8 +327,6 @@ Most real-world relationships might present to be more complex than something on
   caption: [Presentation of an qualified relationship in the software Wikibase.],
   image("screenshot_wikidata.png", width: 320pt)
 )<fig:qualifier_screenshot>
-
-// TODO: bei diesem Beispiel jurisprudence rausnehmen.
 
 One possibility is to let relationships have more than two operands, i.e. increase the arity by one for each additional parameter. "Educated at" would then be called "educated at (#sym.dot) from (#sym.dot) to (#sym.dot)". Another way using the triple syntax is to create an implicit object, that assists in modelling the relationship using an *implicit* or *blank node* to describe a new concept; a human might be inclined to give it a name, e.g. "educated at for a certain time". This act is also called *reification* (objectification of a fact).
 The following triples exemplify such an implicit relationship, called a *qualified statement*:
@@ -378,14 +376,15 @@ PREFIX wdv: <http://www.wikidata.org/value/>
   image("rdf_mapping.svg", width: 87%)
 ) <fig:rdf_mapping>
 
-
-For further use a subset of these namespaces will be denoted by abbreviations.
+For further use, a subset of these namespaces will be denoted by abbreviations.
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
   Let
   $f_bold(p), f_bold(q), f_bold(s) in I$ be _distinct_ IRIs.
   In analogy to the Wikibase data model, $f_bold(p)$ will denote the prefix for the namespace for *p*\roperties `p:`, $f_bold(q)$ for *q*\ualifying properties `pq:` and $f_bold(s)$ for *s*\tatements `ps:`. <def:prefix_formally>
 
 = Querying <heading:querying>
+
+With the structure of the data to be queried now clearly defined, the next step involves formulating a corresponding SPARQL query and creating a query yielding the same results using a Visual Query Graph.
 
 Constructing a query for an RDF graph can be viewed as creating a subgraph — a set of RDF triples. In addition to valid RDF terms such as IRIs, blank nodes, and literals, now variables can be inserted at any position in the triple, instead of an RDF term. Each variable is distinct from all others and can be placed in multiple positions within the query graph. The database's query engine will try to find the same structure in the RDF graph and returns the RDF Terms which overlapped with a variable. This _matching_ is essentially the process of querying an RDF graph. Among other features, such stencils can be written using the RDF query language _SPARQL_, where this query graph or stencil is referred to as _Basic Graph Pattern_.
 
@@ -450,24 +449,19 @@ is expressed in terms of the query language, and the unknown parts are replaced 
 In order to query a BGP containing a blank node, a query has to specify a variable at the blank node's position. There are other syntactical structures to express blank nodes, which are however semantically equal to using a variable @W3C_SPARQL_Formal_Definition. 
 
 == Qualifiers <heading:qualifiers>
-The term qualifier is not clearly defined in the documentation around Wikibase @wikibooks_sparql_qualifiers @Erxleben2014_Wikidata_LOD. An achievement of this work is the dissemination of the terminology, in order to create adequate queries for these structures. @fig:query_for_qualifier shows an exemplary query for qualifiers. By incorporating the namespace conventions of Wikibase as shown in @fig:rdf_mapping, it becomes evident that the variable `?implicit1` matches a node within the `wds:` namespace. The values of these nodes are however irrelevant for querying and therefore to this work. Therefore, the choice was made to ignore this implementation detail in the following definitions, and treat them as blank nodes. As already mentioned in @heading:blank_nodes, querying using blank nodes and variables yields the same results. And since `wds:`-nodes can only be queried using variables, queries constructed using the following definitions yield the same results.
+The term qualifier is not clearly defined in the documentation around Wikibase @wikibooks_sparql_qualifiers @Erxleben2014_Wikidata_LOD. An achievement of this work is the dissemination of the terminology, in order to create adequate queries for these structures. @fig:query_for_qualifier shows an exemplary query for qualifiers. By incorporating the namespace conventions of Wikibase as shown in @fig:rdf_mapping, it becomes evident that the variable `?implicit1` matches a node within the `wds:` namespace. The values of these nodes are however irrelevant for querying and therefore to this work. Therefore, the choice was made to ignore this implementation detail in the following definitions, and treat them as blank nodes. As already mentioned in @heading:blank_nodes, querying using blank nodes and variables yields the same results.
 
 #figure(
-  caption: [A query to fetch the start date of Goethe's education at the University of Leipzig],
+  caption: [A query to fetch the start date of Goethe's education at the University of Leipzig using the prefixes posted in @example:prefixes_in_wikidata.],
 ```HTML
-  PREFIX wd: <http://www.wikidata.org/entity/>
-  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-  PREFIX p: <http://www.wikidata.org/prop/>
-  PREFIX ps: <http://www.wikidata.org/prop/statement/>
-  PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
-  SELECT ?startDate WHERE {
-      wd:Q5879 p:P69 ?implicit1 .     # these two lines 
-      ?implicit1 ps:P69 wd:Q154804 .  # specify the qualified edge
-      ?implicit1 pq:P580 ?startDate . # query for the qualifiers referent
-  }
+SELECT ?startDate WHERE {
+    wd:Q5879 p:P69 _:implicit1 .     # this and the following line
+    _:implicit1 ps:P69 wd:Q154804 .  # specify the narrow qualified statement
+    _:implicit1 pq:P580 ?startDate . # and this queries the qualifier's referent
+}
 ```) <fig:query_for_qualifier>
 
-Obeying the Wikibase data model and its namespace conventions, a *qualifier edge* is an edge pointing from an element of the namespace `wds:` to an element of any namespace using a predicate in the `pq:` namespace. The *value of a qualifier* is the target node of this edge. 
+Obeying the Wikibase data model and its namespace conventions, a *qualifier* or *qualifier edge* is an edge pointing from an element of the namespace `wds:` to an element of any namespace using a predicate in the `pq:` namespace. The *value of a qualifier* is the target node of this edge. 
 
 #definition[
   Let $Sigma$ be a valid alphabet for local names and $Sigma^*$ its Kleene closure.
@@ -490,16 +484,13 @@ Obeying the Wikibase data model and its namespace conventions, a *qualifier edge
 ] <def:qualifiers>
 
 #figure(
-  caption: [A visualisation of a qualified statement with two qualifiers using the terms introduced in @def:qualifiers and $u,u',u''$ are valid local names. The red box indicates the qualified relationship, the green box one qualifier and the violet box the other qualifier.],
-  image("Qualifier_abstract.svg", width: 49%)
+  caption: [A visualisation of a qualified statement in the broader sense with two qualifiers using the terms introduced in @def:qualifiers and $u,u',u''$ are local names. The red box indicates the qualified relationship, the green box one qualifier and the violet box the other qualifier.],
+  image("Qualifier_abstract.svg", width: 53%)
 )
 
 = Mapping <heading:mapping>
 
-// #todo[semantic-preserving an gegebener Stelle näher erläutern als "Die Ergebnisse sind die gleichen von beiden Formalismen"]
-
-To establish a semantic-preserving mapping between Visual Query Graphs and SPARQL-SELECT queries, a formal specification for Visual Query Graphs is first introduced. Following this, the transformation function from a Visual Query Graph to SPARQL is defined. Lastly, the implementation of these functions is analysed and discussed.
-
+To establish a semantic-preserving mapping between Visual Query Graphs and SPARQL-SELECT queries --- meaning it yields the same results in both formalisms -- a formal specification for Visual Query Graphs is introduced. Following this, the transformation function from a Visual Query Graph to SPARQL is defined. Lastly, the implementation of these functions is analysed and discussed.
 
 == Visual Query Graphs and Basic Graph Patterns
 The so far introduced structures include Basic Graph Patterns in SPARQL queries and RDF triples. While Basic Graph Patterns are used to describe stencils to be queried against RDF triples, the goal of Visual Query Graphs is to eliminate the need to manually model reified structures using blank nodes. Other literature @Vargas2019_RDF_Explorer uses the term Visual Query Graph to refer to a Basic Graph Pattern without Blank Nodes. This work uses the same term to define a graph with multi-edges, which consist of the same triples as the Basic Graph Pattern would, but with the exception, that any qualifier structures are replaced with a multi-edge, including all statements of the qualified statement in the broader sense.
@@ -507,7 +498,7 @@ The so far introduced structures include Basic Graph Patterns in SPARQL queries 
 In order to build a Visual Query Graph, we need special edges which involve all nodes of a qualified statement in the broader sense. This can be done using a hypergraph. A qualifier will be a hyperedge consisting between at least three nodes using at least two edges. All Basic Graph Patterns which are not qualified statements in the broader sense will be copied to the Visual Query Graph without any changes. All qualified statements will be exchanged for a hyper-edge, where the blank node is removed and the edges will be rebuilt using one directed hyper-edge. The visualisation of the hyper-edge in the VQG can be seen in @fig:vqg_with_qualifier.
 
 #figure(
-image("Qualifier_mit.svg"), caption: [Visual Query Graph with two Qualifiers. The equivalent SPARQL query should return two qualifier values. The qualifiers are highlighted using a violet and a green box.]) <fig:vqg_with_qualifier>
+image("Qualifier_mit.svg", width: 60%), caption: [Visual Query Graph with two Qualifiers. The equivalent SPARQL query should return two qualifier values. The qualifiers are highlighted using a violet and a green box.]) <fig:vqg_with_qualifier>
 
 
 #definition[
@@ -541,18 +532,22 @@ image("Qualifier_mit.svg"), caption: [Visual Query Graph with two Qualifiers. Th
 
   #figure(
     caption:[Visual Query Graph with two qualifiers using the accurate Wikibase prefixes.],
-    image("Qualifier_hypergraph.svg")
+    image("Qualifier_hypergraph.svg", width: 60%)
   )<fig:vqg_with_qualifier_formal>
+
+To construct a valid BGP from a VQG, all regular edges are copied, and for each hyperedge the BGP receives at least three edges: first, the qualified statement in the narrower sense is added, as an edge from the source of the hyperedge to a newly inserted blank node. Second, for each of the hyperedge's target tuples $t$, an edge in the BGP is added from the same blank node to node in $t$ using the the label in $t$.
+
+== Specification
 
 #let vql_ops = (
    [User Interaction],
     [Adding a variable node],
     [Adding a literal node],
     [Adding a directed edge],
-    [*Adding a qualifier*]
+    [*Adding a qualifier to an edge*]
 )
 
-Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using the _Visual Query Language (VQL)_, consisting of four algebraic operators, which will correspond to atomic user interactions in the user interface (see @fig:ops_in_vql).
+This section outlines how the Visual Query Graph and hyperedges can be built using the visual query interface. Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using the _Visual Query Language (VQL)_, consisting of four algebraic operators, which will correspond to atomic user interactions in the user interface (see @fig:ops_in_vql).
 
 #figure(
   caption: "Operations in the VQL",
@@ -561,9 +556,13 @@ Following @Vargas2019_RDF_Explorer, the VQG is _constructed_ using the _Visual Q
   )
 ) <fig:ops_in_vql>
 
-Using this new VQG and VQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. The mapping from Visual Query Graphs to Basic Graph Patterns follows the definition of the construction.
+The purpose of the hyperedge in the VQG is to express the association between the relationships recorded within it. When rendering the graph using the display library, however, the edge between the subject and object should be hierarchically emphasised, with qualifier edges subordinated, as illustrated in @fig:vqg_with_qualifier_formal. Consequently, in the data structure of the VQG, a qualifier should be considered as a property of the regular edge connecting two nodes. Therefore, the addition of a qualifier is always in reference to an existing edge and will be modelled as such.
 
-#todo[describe the details of how the VSQ hyperedges get used by the implementation to construct a valid RDF graph]
+Using this new VQG and VQL, we can now create an intuitive visualisation (see @fig:vqg_with_qualifier) as motivated by @Simons_Blog_Entry_Graphic_query. The mapping from Visual Query Graphs to Basic Graph Patterns follows the definition of the construction, but with some simplifications.
+
+
+
+
 
 
 == Implementation <heading:implementation>
@@ -584,13 +583,7 @@ The *frontend* was developed using TypeScript, Vite, Vue3, ReteJS, and TailwindC
 + configure Wikibase data sources and
 + handle all data source specific tasks (such as enriching entities with information from a the Wikibase API).
 
-#todo[Das folgende hier hört sich für mich nicht natürlich an, es ist mir nicth so richtig klar, was das noch für advantages hat die nicht schon vorher gesagt wurden und warum. Entweder ausführen was für weitere advantages, oder streichen. Extensible, Efficient and maintain formal precision -> in welcher Hinsicht? Hier vielleicht konkretisieren oder streichen.]
-
-This approach offered a compelling advantage over a traditional server-client architecture. The resulting combination of architectures is extensible, efficient, and maintains formal precision.
-- Rust hat ein algebraisches Typsystem, ich kann keinen Fall vergessen: alle Fälle müssen betrachtet sein, das heißt es ist sehr robust (explain how algebraic type systems work)
-- Weil alles auf dem Client läuft isses sehr schnell
-- Weil es in WASM ist es noch schneller
-- Weil es so modular aufgebaut ist, muss ich nur an den Übergabestellen ein neues Format bzw. neue Typen definieren bzw. erwarten und dann gibt es keine Side-Effects
+This approach presents a significant advantage over e.g. traditional server-client architectures by combining extensibility, efficiency, and formal precision. Rust's algebraic type system plays a central role in ensuring robustness, as it enforces the consideration of all possible cases, leaving no room for omissions. This guarantees a high level of reliability in the system's design. Moreover, since the entire computation occurs on the client side, the performance benefits are substantial, with rapid execution speeds. The use of WebAssembly further enhances this efficiency by providing a highly optimised runtime environment. Additionally, the modular design of the architecture simplifies the process of integrating new formats or types. By defining and handling these changes only at the interface boundaries, the system avoids unintended side effects, ensuring a predictable and maintainable implementation. This combination of features makes the architecture both robust and adaptable to evolving requirements.
 
 The *Wikibase data sources* are configured by the user and stored in the browser's local storage. Following the conventions of Wikibase, the choice was made to only allow one prefix for items and one for properties. In the context of Visual Query Graphs it only makes sense that the item prefixes point directly to the item, e.g. `wd` for Wikidata, and the property prefixes to the property value, e.g. `wdt`. 
 
@@ -598,12 +591,16 @@ The *backend* is designed to parse SPARQL queries into Query Graphs and convert 
 
 To ensure compatibility between the backend and frontend, both use the exact same types with equivalent data types in their environments. This ensures the correct exchange of data between both representations.
 
-The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI. The BGPs in turn are mapped to a SPARQL-SELECT query with all variables from the VQG added to the projection. #todo[Check if this is still the case when I am finished with the qualifier feature, or whether I leave out the blank-node-placeholder variables.]
+The VQG is exported in the form of an edge list from the frontend to the backend. The elements of the edge list are triples, corresponding to BGPs, and each entry of the triple is a literal, variable or IRI. The BGPs in turn are mapped to a SPARQL-SELECT query with all variables from the VQG added to the projection.
 
 
 === Visual Query Graphs in the Implementation
 
 The following listing shows a UML diagram containing the key data types. The class diagram is so complex because of the support for multiple Wikibase instances, which comes with the necessity to store meta-information about the entities in a Visual Query Graph.
+
+The key challenge in mapping a VQG to a BGP is to insert the correct edges for qualified statement in the broader sense. The frontend passes the qualifiers "as is" to the backend, which uses the prefixes specified in the Wikibase data source configuration to insert the adequate edges. This BGP is in turn used to generate a SPARQL-SELECT query.
+
+The inverse operation requires pattern matching for qualified-statements in the broader sense, which is also done in the backend. The instantiated objects are passed to the frontend, which sets its current Visual Query Graph with the incoming data and redraws the visualisation.
 
 #figure(caption: [Key Data Types for the translation between VQG and SPARQL.],
 ```pintora
@@ -662,7 +659,7 @@ classDiagram
 ```
 )
 
-= Discussion <heading:discussion>
+/*= Discussion <heading:discussion>
 
 #todo[formuleiren einer erstmal groben Argumentationskette, sodass sie den rest des Abschnitts dann gerade zieht -> Achtung, was davon ist redundant mit Implementation?
 
@@ -690,11 +687,9 @@ Another significant advantage is the inclusion of implementation-specific RDF co
 
 #todo[hier ist der topic switch von theoretischer Aufarbeitung zur praktischen Implementationetwas abrupt, vielleicht klarer überleiten/abgrenzen? Außerdem: Hier wird zwei mal (redundant) gesagt, dass noch weitere Nutzerstudie angeschlossen werden soll, vielleicht wäre hier gut auf MEPHIsto und HisQu zu referenzieren?]
 
-In comparison to other approaches such as @Vargas2019_RDF_Explorer @SPARQLVis, #todo[Ich muss nochmal die Referenzen prüfen. Finde die anderen Arbeiten nicht.] this work distinguishes itself through its emphasis on user experience design and responsiveness. 
-
 #todo[Wo wurde denn die user study vorher erwähnt? Und was umfasste diese 'limited' user study, da wäre nen kurzer Absatz vll gar niht schlecht zu am ende von Implementation? Oder halt vor diesem Kapitel?]
 
-As noted earlier, even a limited user study involving digital humanities students demonstrated that the program can be effectively utilised with minimal training—an observation also made by @Vargas2019_RDF_Explorer in their user study. Still, a full user study is necessary to validate this claim. Unlike @Vargas2019_RDF_Explorer, which presents all possible assertions for an item and requires the user to select the next assertion, this work enables users to freely add nodes and edges without needing to specify their content in advance. While it is hypothesised that this represents a significant improvement in usability, a formal user study will be necessary to validate this claim.
+As noted earlier, even a limited user study involving digital humanities students demonstrated that the program can be effectively utilised with minimal training—an observation also made by @Vargas2019_RDF_Explorer in their user study. The test was, however, conducted without the implementation for qualifiers. Furthermore, a full user study is necessary to validate this claim. Unlike @Vargas2019_RDF_Explorer, which presents all possible assertions for an item and requires the user to select the next assertion, this work enables users to freely add nodes and edges without needing to specify their content in advance. While it is hypothesised that this represents a significant improvement in usability, a formal user study will be necessary to validate this claim.
 
 #todo[nochmal nachformulieren, was ist hier mit configuration gemeint? Concise! (chat GPT?) Heißt das, ich kann die gleichzeitig abfragen von mehreren Wikibase systemen? Würde das Sinn ergeben?]
 
@@ -703,8 +698,6 @@ A simple, but fundamental enhancement is the configuration of and switching betw
 #todo[Next Absatz prüfen: stimmt das? Existiert das bereits?]
 
 #todo[Next Absatz: Another limitation... hier die first limitation? Oder ist das gerade in der Aufzählung verrutscht?]
-
-Another limitation is the inability to represent multi-edges in the Visual Query Graph. This feature would allow specifying multiple valid properties between two items. Given the community-driven nature of Wikibase, mistakes often occur and may go unnoticed for some time. For instance, in Wikidata, the term "student" yields several results, such as `wdt:P802` ("student"), `wdt:P1066` ("student of"), and `wdt:P69` ("educated at"). A user could by accident or for good reason choose one of the three properties to make an entry. A user writing a query could draw multiple edges and choose to ignore the differences or to filter using different means, e.g. using an `instance-of` property. @Vargas2019_RDF_Explorer technically supports this through the use of `FILTER` and `REGEX` statements. However, this feature could be made much more accessible in a specialised Visual Query Graph representation.
 
 In future work, following the approach of @Sparnatural, integrating an ontology to provide pre-built structures that users can drag and drop onto the sketching board would be highly beneficial. A major limitation of @Sparnatural is its reliance on an ontology for _every_ query. In contrast, Query by Graph allows any valid Query Graph to generate a SPARQL-SELECT query with a BGP. This allows to derive Query Graph fragments from ontology snippets. For instance, a relationship like `grandchildren` could be defined in OWL and translated into a Query Graph fragment such as `{(?children, parents, ?parents), (?grandchildren, parents, ?children)}`. An abstraction layer could then expose only the derived grandchildren, presenting this relationship as a single node in the _Visual_ Query Graph.
 
@@ -718,9 +711,9 @@ Lastly, the implementation of Query by Graph currently only supports string lite
 
 Also, Wikibase makes use of labels which could be added to the query. And the query could be directly executed from Query by Graph and the results displayed as e.g. a graph.
 
-ALTERNATIVE
+ALTERNATIVE*/
 
-= Discussion
+= Discussion <heading:discussion>
 
 == Evaluation
 
@@ -739,7 +732,7 @@ A preliminary user study with digital humanities students demonstrated that the 
 == Future Prospects and Limitations
 Future work will explore the integration of ontology-driven query snippets, following @Sparnatural. Unlike @Sparnatural, which mandates an ontology for every query, Query by Graph allows users to derive query fragments directly from ontology snippets, providing a more flexible and intuitive mechanism for constructing complex queries.
 
-Currently, Query by Graph supports only SPARQL-SELECT queries with a single Basic Graph Pattern. Future enhancements could include the visualisation of optional graph patterns, value constraints (e.g., `FILTER` statements), and support for multi-edges within Visual Query Graphs. For instance, multi-edges could enable users to specify multiple valid properties between items, simplifying the querying of ambiguous relationships (e.g., `wdt:P802` "student", `wdt:P1066` "student of", and `wdt:P69` "educated at"). While tools like @Vargas2019_RDF_Explorer support this functionality through `FILTER` and `REGEX` statements, their application is not intuitive and requires much technical understanding.
+Currently, Query by Graph supports only SPARQL-SELECT queries with a single Basic Graph Pattern. Future enhancements could include the visualisation of optional graph patterns, value constraints (e.g., `FILTER` statements), and support for "multi-edges" within Visual Query Graphs. For instance, multi-edges could enable users to specify multiple valid properties between items, simplifying the querying of ambiguous relationships (e.g., `wdt:P802` "student", `wdt:P1066` "student of", and `wdt:P69` "educated at"). While tools like @Vargas2019_RDF_Explorer support this functionality through `FILTER` and `REGEX` statements, their application is not intuitive and requires much technical understanding.
 
 Another prospective enhancement is the inclusion of graph-execution results visualisation directly within the tool. Users could execute queries and display the results as interactive graphs, further streamlining the query process.
 
