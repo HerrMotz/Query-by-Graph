@@ -205,8 +205,8 @@ const gotoLink = (url?: string) => {
         You can delete an individual by pressing RMB on it.
       </p>
       <div class="flex w-full bg-amber-100 rounded-2xl h-[65vh]">
-        <div class="w-2/12 bg-amber-50 rounded-tl-2xl h-full">
-          <h2 class="text-xl font-semibold bg-amber-100 p-4">
+        <div class="w-2/12 rounded-tl-2xl h-full">
+          <h2 class="text-xl font-semibold bg-amber-200 p-4">
             Metainfo
             <span v-if="selectedNode?.dataSource?.name"
                   class="inline"> (from {{ selectedNode.dataSource.name }}) </span>
