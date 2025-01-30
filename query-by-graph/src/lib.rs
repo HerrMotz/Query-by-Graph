@@ -97,7 +97,7 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
                 .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.iri))
                 .collect::<Vec<_>>();
             temp.sort();
-            temp.join("\n")
+            format!("{}\n\n", temp.join("\n"))
         };
 
         let where_clause: String = connections
@@ -146,7 +146,7 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
 
         let service = if add_service_statement {
             format!(
-                "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}",
+                "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}\n",
                 indentation
             )
         } else {
@@ -155,12 +155,12 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
 
         if add_label_service_prefixes {
             format!(
-                "{}\n{}\n{}\n\nSELECT {} WHERE {{\n{}{}\n}}",
+                "{}\n{}\n{}SELECT {} WHERE {{\n{}{}}}",
                 BD_PREFIX, WIKIBASE_PREFIX, prefix_list, projection_list, where_clause, service
             )
         } else {
             format!(
-                "{}\n\nSELECT {} WHERE {{\n{}{}\n}}",
+                "{}SELECT {} WHERE {{\n{}{}}}",
                 prefix_list, projection_list, where_clause, service
             )
         }
