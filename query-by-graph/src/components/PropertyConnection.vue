@@ -18,7 +18,7 @@
       <h3 v-if="value" class="font-bold font-mono w-32 -ml-16 bg-amber-50">
         {{ value.label }}
       </h3>
-      <h3 v-if="value" class="font-bold font-mono w-32 -ml-16 bg-amber-50">
+      <h3 v-if="value" class="font-bold font-mono w-32 -ml-16 bg-amber-50 text-lg">
         {{value.prefix.abbreviation}}{{ value.prefix.abbreviation && ':'}}{{value.id}}
       </h3>
     </div>
@@ -29,7 +29,6 @@
 <script>
 import {defineComponent} from 'vue'
 import EntitySelector from "./EntitySelector.vue";
-import {variableEntity} from "../lib/rete/constants.ts";
 
 // This connection component has the following features:
 // - it displays a label in the middle of the connection

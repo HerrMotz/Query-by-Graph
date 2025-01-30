@@ -30,21 +30,6 @@ const factGridDataSource: WikibaseDataSource = {
     queryService: "https://database.factgrid.de/query/",
 }
 
-const testinstanceSource: WikibaseDataSource = {
-    name: "Test Instance",
-    url: "https://daniels-test-instance.wikibase.cloud/",
-    preferredLanguages: ['en'],
-    entityPrefix: {
-        url: "https://daniels-test-instance.wikibase.cloud/entity/",
-        abbreviation: "ti"
-    },
-    propertyPrefix: {
-        url: "https://daniels-test-instance.wikibase.cloud/prop/direct/",
-        abbreviation: "tt"
-    },
-    queryService: "https://daniels-test-instance.wikibase.cloud/query/",
-}
-
 const noDataSource: WikibaseDataSource = {
     name: "",
     uri: "",
@@ -60,4 +45,4 @@ const noDataSource: WikibaseDataSource = {
     queryService: "",
 }
 
-export {wikiDataDataSource,factGridDataSource,testinstanceSource,noDataSource}
+export {wikiDataDataSource,factGridDataSource,noDataSource}

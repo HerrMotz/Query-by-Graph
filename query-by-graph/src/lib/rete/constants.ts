@@ -1,4 +1,4 @@
-import EntityType from "../types/EntityType.ts";
+import {EntityType} from "../types/EntityType.ts";
 import {noDataSource} from "../constants";
 import {deepCopy} from "../utils";
 

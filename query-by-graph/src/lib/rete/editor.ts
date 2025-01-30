@@ -8,7 +8,7 @@ import {ArrangeAppliers, AutoArrangePlugin, Presets as ArrangePresets} from "ret
 import {h} from "vue";
 import CustomConnection from "../../components/PropertyConnection.vue";
 import {removeNodeWithConnections} from "./utils.ts";
-import EntityType from "../types/EntityType.ts";
+import {EntityType} from "../types/EntityType.ts";
 import ConnectionInterfaceType from "../types/ConnectionInterfaceType.ts";
 import EntityNodeComponent from "../../components/EntityNode.vue";
 import CustomInputControl from "../../components/EntitySelectorInputControl.vue";
@@ -381,6 +381,7 @@ export async function createEditor(container: HTMLElement) {
     }));
 
     async function _layout_helper(animate?: boolean) {
+        console.log("Layout start");
         await arrange.layout({
             applier: animate ? applier : undefined,
             options: {
@@ -391,6 +392,56 @@ export async function createEditor(container: HTMLElement) {
         AreaExtensions.zoomAt(area, editor.getNodes());
     }
 
+    async function simplifyVQG() {
+        const allNodes = editor.getNodes();
+        // traverse all nodes, store them and check for duplicates
+        const seen: Map<string, string> = new Map();
+    
+        for (const node of allNodes) {
+            const nodeId = node.entity.id || '';
+            // new Node encountered
+            if (!seen.has(nodeId)) {
+                seen.set(nodeId, node.id);
+            // duplicate Node encountered
+            } else {
+                const originalNodeId = seen.get(nodeId);
+                for (const conn of editor.getConnections()) {
+                    // store old connection for its properties
+                    const oldConn = editor.getConnection(conn.id);
+                    // source is the duplicate --> create connection from original to target
+                    if (conn.source === node.id) {
+                        await editor.removeConnection(conn.id);
+                        const newConn = new Connection(
+                            editor.getNode(originalNodeId!),
+                            conn.sourceOutput,
+                            editor.getNode(conn.target),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
+                    // target is the duplicate --> create connection from source to original
+                    } else if (conn.target === node.id) {
+                        await editor.removeConnection(conn.id);
+                        const newConn = new Connection(
+                            editor.getNode(conn.source),
+                            conn.sourceOutput,
+                            editor.getNode(originalNodeId!),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
+                    }
+                }
+                // remove the duplicate node
+                await editor.removeNode(node.id);
+            }
+        }
+    }
+    
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
         arrow: () => true
     });
@@ -484,7 +535,7 @@ export async function createEditor(container: HTMLElement) {
             vueCallback = callback;
         },
         addPipe: (pipe: any) => editor.addPipe(pipe),
-        removeSelectedConnections: async () => {
+        removeSelectedItems: async () => {
             // DEBUG
             // console.log("Remove selected connections")
             for (const item of [...editor.getConnections()]) {
@@ -497,6 +548,15 @@ export async function createEditor(container: HTMLElement) {
                     await removeNodeWithConnections(editor, item.id);
                 }
             }
+        },
+        addNode: async () => {
+            // DEBUG
+            console.log("Add variable node")
+            highestIdCount++;
+            const node = createNode(socket, highestIdCount, editor, area);
+            await editor.addNode(node);
+
+            await _layout_helper(true);
         },
         undo: () => history.undo(),
         redo: () => history.redo(),
@@ -518,22 +578,50 @@ export async function createEditor(container: HTMLElement) {
             );
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
-            //  Leaving this for the future :)
-            return Promise.allSettled(convertedConnectionsPromise).then(values => {
+            // Leaving this for the future :)
+
+            // Edit: the race condition is resolved by deleting and adding the nodes in sequence
+            // this should not be a big performance hit, as the number of nodes probably never exceeds 20
+            return Promise.allSettled(convertedConnectionsPromise).then(async values => {
                 if (values.every((result) => result.status === "fulfilled")) {
                     const convertedConnections = values.map(v => v.value)
-                    console.log("Converted Connections")
-                    console.log(convertedConnections);
 
-                    editor.getConnections().forEach(e => editor.removeConnection(e.id));
-                    editor.getNodes().forEach(n => editor.removeNode(n.id));
+                    // the connections and nodes have to be deleted sequentially instead of in parallel
+                    // otherwise the editor gets in a state where connections reference already deleted nodes
+                    // which leads to undefined sources/targets
+                    for (const conn of editor.getConnections()) {
+                        await editor.removeConnection(conn.id);
+                    }
+                    for (const node of editor.getNodes()) {
+                        await editor.removeNode(node.id);
+                    }
+
+                    // track nodes in a map to avoid duplicates
+                    const nodeMap = new Map();
+                    const promises= [];
+
+                    // can be parallel as nodes are not connected yet
+                    for (const c of convertedConnections){
+                        if(!nodeMap.has(c.source.id)){
+                            const subject = createNode(socket, highestIdCount, editor, area);
+                            subject.setEntity(c.source);
+                            nodeMap.set(c.source.id, subject);
+                            promises.push(editor.addNode(subject));
+                        }
+                        if(!nodeMap.has(c.target.id)){
+                            const object = createNode(socket, highestIdCount, editor, area);
+                            object.setEntity(c.target);
+                            nodeMap.set(c.target.id, object);
+                            promises.push(editor.addNode(object));
+                        }
+                    }
+
+                    await Promise.all(promises);
+
 
                     return convertedConnections.map(c => {
-                        const subject = createNode(socket, highestIdCount, editor, area);
-                        subject.setEntity(c.source);
-
-                        const object = createNode(socket, highestIdCount, editor, area);
-                        object.setEntity(c.target);
+                        const subject = nodeMap.get(c.source.id);
+                        const object = nodeMap.get(c.target.id);
 
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
@@ -541,14 +629,8 @@ export async function createEditor(container: HTMLElement) {
                         predicate.property = c.property;
                         predicate.selected = false;
 
-
                         return new Promise<true>(async function (resolve) {
-                            await editor.addNode(object);
-                            await editor.addNode(subject);
-
-                            await editor.addConnection(
-                                predicate
-                            );
+                            await editor.addConnection(predicate);
                             await _layout_helper(true);
                             resolve(true);
                         });
@@ -559,6 +641,10 @@ export async function createEditor(container: HTMLElement) {
         exportConnections: (): ConnectionInterfaceType[] => {
             return exportConnectionsHelper(editor)
         },
-        getNode: (id: string) => editor.getNode(id)
+        getNode: (id: string) => editor.getNode(id),
+        simplify: async() => {
+            await simplifyVQG()
+        }
     };
 }
+

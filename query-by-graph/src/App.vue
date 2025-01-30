@@ -3,7 +3,7 @@ import {onMounted, ref, shallowRef} from 'vue';
 import {createEditor} from "./lib/rete/editor.ts";
 import {ClassicPreset} from 'rete';
 
-import {graph_to_query_wasm, query_to_graph_wasm} from "../pkg";
+import {query_to_vqg_wasm, vqg_to_query_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
 import * as monaco from "monaco-editor"
@@ -56,13 +56,15 @@ import {debounce} from "./lib/utils";
 
 interface Editor {
   setVueCallback: (callback: (context: any) => void) => void;
-  removeSelectedConnections: () => Promise<void>;
+  removeSelectedItems: () => Promise<void>;
+  addNode: () => Promise<void>;
   undo: () => void;
   redo: () => void;
   importConnections: (connections: ConnectionInterfaceType[]) => Promise<Promise<true>[] | undefined>;
   exportConnections: () => ConnectionInterfaceType[];
   layout: (animate: boolean) => void;
   getNode: (nodeId: string) => ClassicPreset.Node | undefined;
+  simplify: () => void;
 }
 
 const editor = ref<Editor | null>();  // Define the type of editor as Promise<Editor> | null
@@ -77,7 +79,8 @@ function codeChangeEvent() {
     // if the code value is not empty but the returned connection array is,
     // then there is probably a syntax error.
     // in this case, do not import the connections
-    const graph = JSON.parse(query_to_graph_wasm(code.value));
+    console.log("code.value", code.value)
+    const graph = JSON.parse(query_to_vqg_wasm(code.value));
     if (!!code.value && !!graph && graph?.length > 0) {
       console.log("graph", graph)
       loadingForCodeChanges.value = true;
@@ -123,7 +126,7 @@ onMounted(async () => {
           // DEBUG
           console.log("The connections in App.vue")
           console.log(connections)
-          code.value = graph_to_query_wasm(JSON.stringify(connections));
+          code.value = vqg_to_query_wasm(JSON.stringify(connections), true, false);
           formatCode();
         }, 10);
       }
@@ -164,6 +167,16 @@ onMounted(async () => {
   }
 });
 
+// calling simplify and then layout does simplify the graph but arranges it in a weird way
+// this is fixed by clicking the button twice, which is simulated here (the timeout is necessary)
+const simplifyAndArrange = () => {
+  editor.value?.layout(true);
+  editor.value?.simplify();
+  setTimeout(() => {
+    editor.value?.layout(true);
+  }, 10);
+}
+
 const copyToClipboard = () => {
   navigator.clipboard.writeText(code.value);
 }
@@ -193,8 +206,8 @@ const gotoLink = (url?: string) => {
         You can delete an individual by pressing RMB on it.
       </p>
       <div class="flex w-full bg-amber-100 rounded-2xl h-[65vh]">
-        <div class="w-2/12 bg-amber-50 rounded-tl-2xl h-full">
-          <h2 class="text-xl font-semibold bg-amber-100 p-4">
+        <div class="w-2/12 rounded-tl-2xl h-full">
+          <h2 class="text-xl font-semibold bg-amber-200 p-4">
             Metainfo
             <span v-if="selectedNode?.dataSource?.name"
                   class="inline"> (from {{ selectedNode.dataSource.name }}) </span>
@@ -264,6 +277,33 @@ const gotoLink = (url?: string) => {
           </h2>
           <div class="flex-col flex gap-6 p-4">
             <div class="flex-col flex gap-2">
+              <h4 class="font-semibold">Adding and deleting nodes</h4>
+              <div class="flex gap-4">
+                <Button class="grow"
+                    @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
+                    if (editor) {
+                      editor.addNode();
+                    }
+                  }">
+                  Add a node
+                </Button>
+                <Button class="grow"
+                    @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
+                    if (editor) {
+                      editor.removeSelectedItems();
+                    }
+                  }">
+                  Delete selected
+                </Button>
+              </div>
+
+              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
+                <em>Hint:</em>
+                Select a connection by clicking on it and then click the button above to delete it.
+                This only works when at least one connection is selected (red).
+              </p>
+            </div>
+            <div class="flex-col flex gap-2">
               <h4 class="font-semibold">History</h4>
               <div class="flex gap-4">
                 <Button class="grow" @click="() => {
@@ -273,7 +313,7 @@ const gotoLink = (url?: string) => {
               }">
                   Undo
                   <kbd
-                      class="inline-flex items-center rounded border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Y</kbd>
+                      class="inline-flex items-center rounded-sm border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Y</kbd>
                 </Button>
                 <Button class="grow" @click="() => {
                 if (editor) {
@@ -283,7 +323,7 @@ const gotoLink = (url?: string) => {
 
                   Redo
                   <kbd
-                      class="inline-flex items-center rounded border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Z</kbd>
+                      class="inline-flex items-center rounded-sm border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Z</kbd>
                 </Button>
               </div>
             </div>
@@ -291,7 +331,12 @@ const gotoLink = (url?: string) => {
             <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Arrangement</h4>
               <div class="flex gap-4">
-                <Button class="grow" @click="() => {if (editor) {editor.layout(true)}}">
+                <Button class="grow" @click="() => {
+                  if (editor) {
+                    //editor.simplify();
+                    //editor.layout(true);
+                    simplifyAndArrange();
+                    }}">
                   Auto-Arrange the graph
                 </Button>
               </div>
@@ -311,22 +356,6 @@ const gotoLink = (url?: string) => {
               <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
                 <em>Hint:</em>
                 Select a data source by clicking one of the buttons above.
-              </p>
-            </div>
-            <div class="flex-col flex gap-2">
-              <h4 class="font-semibold">Delete selected connections</h4>
-              <Button
-                  @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
-                if (editor) {
-                  editor.removeSelectedConnections();
-                }
-              }">
-                Delete selected
-              </Button>
-              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
-                <em>Hint:</em>
-                Select a connection by clicking on it and then click the button above to delete it.
-                This only works when at least one connection is selected (red).
               </p>
             </div>
             <div class="flex-col flex gap-2">
@@ -354,7 +383,8 @@ const gotoLink = (url?: string) => {
             <span>
               Generated SPARQL Query
               <span v-if="loadingForCodeChanges">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
                      viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor"
@@ -384,9 +414,6 @@ const gotoLink = (url?: string) => {
               @mount="handleMount"
               @change="debouncedCodeChangeEvent()"
           />
-        </div>
-        <div>
-          asd
         </div>
       </div>
 
