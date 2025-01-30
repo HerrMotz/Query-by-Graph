@@ -1,3 +1,5 @@
+import {PrefixType} from "./EntityType.ts";
+
 export interface WikibaseDataSource {
     name: string;
     uri: string,
@@ -6,10 +8,7 @@ export interface WikibaseDataSource {
         iri: string,
         abbreviation: string
     },
-    itemPrefix: {
-        iri: string,
-        abbreviation: string
-    },
+    itemPrefix: PrefixType,
     queryService: string,
 }
 

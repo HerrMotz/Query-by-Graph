@@ -8,7 +8,7 @@ import {ArrangeAppliers, AutoArrangePlugin, Presets as ArrangePresets} from "ret
 import {h} from "vue";
 import CustomConnection from "../../components/PropertyConnection.vue";
 import {removeNodeWithConnections} from "./utils.ts";
-import EntityType from "../types/EntityType.ts";
+import {EntityType} from "../types/EntityType.ts";
 import ConnectionInterfaceType from "../types/ConnectionInterfaceType.ts";
 import EntityNodeComponent from "../../components/EntityNode.vue";
 import CustomInputControl from "../../components/EntitySelectorInputControl.vue";
