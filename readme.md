@@ -1,18 +1,8 @@
-# Query by Graph (QuebyG)
+# Query by Graph
 
-## Motivation
-https://blog.factgrid.de/archives/2596
-
-## Abstract
-As part of HisQu and πάρεδρος, I propose a collection of tools, which allow unintroduced users to interact with ontologies using a visual SPARQL query builder. Furthermore, QuebyG analyses arbitrary RDF-triple databases and generates suggestion based on a natural language prompt.
+Query by Graph allows its users to build a visual query graph, which is converted into an adequate SPARQL query for Wikibase instances.
+The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/archives/2596).
 
 ## Related Works
-- https://github.com/sparna-git/Sparnatural
-- https://query.wikidata.org/querybuilder/
-- https://qlever.cs.uni-freiburg.de/wikidata/B39udm (Hannah Bast, hat auch Paper publiziert)
-
-## Methods
-- sugesstion of predicates using word association/fuzzy search (QLever)
-
-## SPARQL (SPARQL Protocol And RDF Query Language)
-
+- [Sparnatural](https://github.com/sparna-git/Sparnatural)
+- [RDF Explorer](https://rdfexplorer.org/)
