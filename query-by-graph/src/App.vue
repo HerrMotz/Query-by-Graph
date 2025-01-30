@@ -126,7 +126,7 @@ onMounted(async () => {
           // DEBUG
           console.log("The connections in App.vue")
           console.log(connections)
-          code.value = vqg_to_query_wasm(JSON.stringify(connections));
+          code.value = vqg_to_query_wasm(JSON.stringify(connections), true, false);
           formatCode();
         }, 10);
       }
