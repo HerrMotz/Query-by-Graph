@@ -285,7 +285,7 @@ const gotoLink = (url?: string) => {
               }">
                   Undo
                   <kbd
-                      class="inline-flex items-center rounded border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Y</kbd>
+                      class="inline-flex items-center rounded-sm border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Y</kbd>
                 </Button>
                 <Button class="grow" @click="() => {
                 if (editor) {
@@ -295,7 +295,7 @@ const gotoLink = (url?: string) => {
 
                   Redo
                   <kbd
-                      class="inline-flex items-center rounded border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Z</kbd>
+                      class="inline-flex items-center rounded-sm border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Z</kbd>
                 </Button>
               </div>
             </div>
@@ -401,9 +401,6 @@ const gotoLink = (url?: string) => {
               @mount="handleMount"
               @change="debouncedCodeChangeEvent()"
           />
-        </div>
-        <div>
-          asd
         </div>
       </div>
 

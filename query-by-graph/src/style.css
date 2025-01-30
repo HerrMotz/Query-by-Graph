@@ -1,6 +1,6 @@
-@import "lib/highlight/default.css";
+@import './lib/highlight/default.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
 
