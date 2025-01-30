@@ -179,7 +179,6 @@
       "geboren am",
       "Betreuer"
     )
-    // page("") // empty page for printing
     cover-page-helper(cover-german, german-language-specific-text)
   }
 
@@ -191,7 +190,6 @@
       "born on",
       "assessed by"
     )
-    // page("") // empty page for printing
     cover-page-helper(cover-english, english-language-specific-text)
   }
 
@@ -246,11 +244,15 @@
   if preface != none {
     pagebreak()
     heading(numbering: none, level: 1)[Preface]
-    preface
+    box(
+      width: 100%,
+      preface
+    )
   }
 
   // Configure heading numbering.
   set heading(numbering: "1.")
+  //show heading.where(level:1): it => pagebreak(to: "odd", weak: false) + it
 
   show heading.where(level: 6): set heading(outlined: false)
 
@@ -327,8 +329,18 @@
     inset: (x: 5pt),
   )
 
+  let image_width = 360pt
+
   // Break large tables across pages.
   // show figure.where(kind: table): set block(breakable: true) // DM 02.01.2025
+  set figure.caption(position: bottom)
+  show figure.caption: it => box(width: image_width, text(size: .8em, [
+
+    #it
+  ]))
+
+  // set the width of images in the whole document
+  set image(width: image_width)
   
   set table(
     // Increase the table cell's padding
@@ -404,6 +416,9 @@
     )
   }
 
+  heading(numbering: none, level: 1)[Appendix]
+  
+
   // Display indices of figures, tables, and listings.
   let fig-t(kind) = figure.where(kind: kind)
   let has-fig(kind) = counter(fig-t(kind)).get().at(0) > 0
@@ -413,13 +428,6 @@
       let imgs = figure-index.enabled and has-fig(image)
       let tbls = table-index.enabled and has-fig(table)
       let lsts = listing-index.enabled and has-fig(raw)
-      if imgs or tbls or lsts {
-        // Note that we pagebreak only once instead of each each
-        // individual index. This is because for documents that only have a couple of
-        // figures, starting each index on new page would result in superfluous
-        // whitespace.
-        pagebreak()
-      }
 
       if imgs { outline(title: figure-index.at("title", default: "Index of Figures"), target: fig-t(image)) }
       if tbls { outline(title: table-index.at("title", default: "Index of Tables"), target: fig-t(table)) }
@@ -429,9 +437,36 @@
 
   if appendix != none {
     pagebreak()
-    heading(numbering: none, level: 1)[Appendix]
     appendix
   }
+
+  pagebreak()
+  [
+= Declaration of Academic Integrity
+
+1. I hereby confirm that this work — or in case of group work, the contribution for which I am responsible and which I have clearly identified as such — is my own work and that I have not used any sources or resources other than those referenced.
+
+   I take responsibility for the quality of this text and its content and have ensured that all information and arguments provided are substantiated with or supported by appropriate academic sources. I have clearly identified and fully referenced any material such as text passages, thoughts, concepts or graphics that I have directly or indirectly copied from the work of others or my own previous work. Except where stated otherwise by reference or acknowledgement, the work presented is my own in terms of copyright. 
+   
+2. I understand that this declaration also applies to generative AI tools which cannot be cited (hereinafter referred to as "generative AI").
+
+  I understand that the use of generative AI is not permitted unless the examiner has explicitly authorised its use (Declaration of Permitted Resources). Where the use of generative AI was permitted, I confirm that I have only used it as a resource and that this work is largely my own original work. I take full responsibility for any AI-generated content I included in my work. 
+   
+  Where the use of generative AI was permitted to compose this work, I have acknowledged its use in a separate appendix. This appendix includes information about which AI tool was used or a detailed description of how it was used in accordance with the requirements specified in the examiner#sym.quote.single\s Declaration of Permitted Resources. I have read and understood the requirements contained therein and any use of generative AI in this work has been acknowledged accordingly (e.g. type, purpose and scope as well as specific instructions on how to acknowledge its use). 
+
+
+3. I also confirm that this work has not been previously submitted in an identical or similar form to any other examination authority in Germany or abroad, and that it has not been previously published in German or any other language. 
+
+4. I am aware that any failure to observe the aforementioned points may lead to the imposition of penalties in accordance with the relevant examination regulations. In particular, this may include that my work will be classified as deception and marked as failed. Repeated or severe attempts to deceive may also lead to a temporary or permanent exclusion from further assessments in my degree programme. 
+
+#v(40pt)
+#grid(columns: (1fr, 1fr), row-gutter: 1em,
+  line(length: 150pt, stroke: (dash: "dashed")),
+  line(length: 200pt, stroke: (dash: "dashed")),
+  "Place and date",
+  "Signature"
+)
+  ]
 }
 
 // This function formats its `body` (content) into a blockquote.

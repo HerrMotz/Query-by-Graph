@@ -1,21 +1,21 @@
 mod utils;
 
+use crate::utils::set_panic_hook;
+use serde::{Deserialize, Serialize};
+use serde_json::{from_str, to_string};
+use spargebra::algebra::GraphPattern;
+use spargebra::term::TriplePattern;
+use spargebra::{Query, SparqlSyntaxError};
 use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
-use serde_json::{from_str, to_string};
-use serde::{Deserialize, Serialize};
-use crate::utils::set_panic_hook;
-use spargebra::{Query, SparqlSyntaxError};
-use spargebra::algebra::GraphPattern;
-use spargebra::term::{TriplePattern};
 
-const INDENTATION_COUNT:usize = 4;
+const INDENTATION_COUNT: usize = 4;
 
 #[derive(Serialize, Deserialize)]
 pub struct Entity {
     pub id: String,
     pub label: String,
-    pub prefix: Prefix
+    pub prefix: Prefix,
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -43,15 +43,22 @@ pub fn graph_to_query_wasm(json: &str) -> String {
 }
 
 fn graph_to_query(connections: Vec<Connection>) -> String {
+    let indentation = " ".repeat(INDENTATION_COUNT);
+
     if connections.len() < 1 {
         String::from("")
     } else {
-        let projection_set = connections.iter()
+        let projection_set = connections
+            .iter()
             .flat_map(|connection| {
                 vec![&connection.source, &connection.target, &connection.property]
             })
             .filter(|entity| entity.id.starts_with('?'))
-            .map(|entity| entity.id.clone())
+            .flat_map(|entity| {
+                let var = entity.id.clone();
+                let label_var = format!("?{}Label", var.trim_start_matches("?"));
+                vec![var, label_var]
+            })
             .collect::<HashSet<_>>();
 
         let projection_list = if projection_set.len() == 0 {
@@ -62,7 +69,8 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             sorted_projection_set.join(" ")
         };
 
-        let prefix_set = connections.iter()
+        let prefix_set = connections
+            .iter()
             .flat_map(|connection| {
                 vec![&connection.source, &connection.target, &connection.property]
             })
@@ -70,8 +78,11 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             .map(|entity| entity.prefix.clone())
             .collect::<HashSet<_>>();
 
-        let prefix_list = if prefix_set.len() == 0 { String::from("") } else {
-            let mut temp = prefix_set.into_iter()
+        let prefix_list = if prefix_set.len() == 0 {
+            String::from("")
+        } else {
+            let mut temp = prefix_set
+                .into_iter()
                 // PREFIX wd: <http://www.wikidata.org/entity/>
                 .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.iri))
                 .collect::<Vec<_>>();
@@ -79,28 +90,35 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             temp.join("\n")
         };
 
-        let where_clause: String = connections.iter()
+        let where_clause: String = connections
+            .iter()
             .map(|connection| {
                 let source_iri = if connection.source.prefix.iri.is_empty() {
                     connection.source.id.clone() // Clone the String to avoid moving it
                 } else {
-                    format!("{}:{}", connection.source.prefix.abbreviation, connection.source.id)
+                    format!(
+                        "{}:{}",
+                        connection.source.prefix.abbreviation, connection.source.id
+                    )
                 };
 
                 let property_iri = if connection.property.prefix.iri.is_empty() {
                     connection.property.id.clone() // Clone the String to avoid moving it
                 } else {
-                    format!("{}:{}", connection.property.prefix.abbreviation, connection.property.id)
+                    format!(
+                        "{}:{}",
+                        connection.property.prefix.abbreviation, connection.property.id
+                    )
                 };
 
                 let target_iri = if connection.target.prefix.iri.is_empty() {
                     connection.target.id.clone() // Clone the String to avoid moving it
                 } else {
-                    format!("{}:{}", connection.target.prefix.abbreviation, connection.target.id)
+                    format!(
+                        "{}:{}",
+                        connection.target.prefix.abbreviation, connection.target.id
+                    )
                 };
-
-
-                let indentation = " ".repeat(INDENTATION_COUNT);
 
                 format!(
                     "{} {} {} {} .\n{}# {} -- [{}] -> {}\n",
@@ -116,9 +134,14 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             })
             .collect();
 
+        let service = format!(
+            "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}",
+            indentation
+        );
+
         format!(
-            "{}\nSELECT {} WHERE {{\n{}}}",
-            prefix_list, projection_list, where_clause
+            "{}\nSELECT {} WHERE {{\n{}{}\n\n}}",
+            prefix_list, projection_list, where_clause, service
         )
     }
 }
@@ -128,15 +151,15 @@ fn parse_query(query: &str) -> Result<Query, SparqlSyntaxError> {
 }
 
 fn bgp_to_graph(bgp: Vec<TriplePattern>) -> Vec<Connection> {
-    bgp.iter().map(
-        |pattern| {
+    bgp.iter()
+        .map(|pattern| {
             connection_constructor(
-                pattern.subject.to_string(), 
-                pattern.predicate.to_string(), 
-                pattern.object.to_string()
+                pattern.subject.to_string(),
+                pattern.predicate.to_string(),
+                pattern.object.to_string(),
             )
-        }
-    ).collect()
+        })
+        .collect()
 }
 
 #[wasm_bindgen]
@@ -160,10 +183,13 @@ fn query_to_graph(query: &str) -> Vec<Connection> {
     // Match on the query type.
     match parsed_query {
         Ok(Query::Select { pattern: p, .. }) => match p {
-            GraphPattern::Project {variables: _, inner: i} => match i {
-                _ => match_bgp_or_path_to_graph(*i)
-            }
-            _ => match_bgp_or_path_to_graph(p)
+            GraphPattern::Project {
+                variables: _,
+                inner: i,
+            } => match i {
+                _ => match_bgp_or_path_to_graph(*i),
+            },
+            _ => match_bgp_or_path_to_graph(p),
         },
         _ => vec![],
     }
@@ -175,13 +201,21 @@ fn match_bgp_or_path_to_graph(p: GraphPattern) -> Vec<Connection> {
         GraphPattern::Path {
             subject: s,
             path: p,
-            object: o
-        } => vec![connection_constructor(s.to_string(), p.to_string(), o.to_string())],
-        _ => vec![]
+            object: o,
+        } => vec![connection_constructor(
+            s.to_string(),
+            p.to_string(),
+            o.to_string(),
+        )],
+        _ => vec![],
     }
 }
 
-fn connection_constructor(subject_name: String, predicate_name: String, object_name: String) -> Connection {
+fn connection_constructor(
+    subject_name: String,
+    predicate_name: String,
+    object_name: String,
+) -> Connection {
     Connection {
         property: Entity {
             id: predicate_name.clone(),

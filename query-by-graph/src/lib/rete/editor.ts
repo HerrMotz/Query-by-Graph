@@ -382,56 +382,66 @@ export async function createEditor(container: HTMLElement) {
 
     async function _layout_helper(animate?: boolean) {
         console.log("Layout start");
-        const nodes = editor.getNodes();
-        console.log("Nodes for layout:", nodes);
-        
-        // Error: org.eclipse.elk.graph.json.JsonImportException: Referenced shape does not exist: 7861588051d9c26d_o0_output
-        // Debug shape references
-        const elkGraph = {
-            id: "root",
-            children: nodes.map(node => ({
-                id: node.id,
-                width: node.width,
-                height: node.height,
-                ports: [
-                    {
-                        id: `${node.id}_o0_output`,
-                        properties: { side: 'EAST' }
-                    },
-                    {
-                        id: `${node.id}_i0_input`,
-                        properties: { side: 'WEST' }
-                    }
-                ]
-            })),
-            edges: editor.getConnections().map(conn => ({
-                id: conn.id,
-                sources: [`${conn.source}_o0_output`],
-                targets: [`${conn.target}_i0_input`]
-            }))
-        };
-        
-        console.log("ELK Graph structure:", elkGraph);
-        
-        try {
-            await arrange.layout({
-                applier: animate ? applier : undefined,
-                options: {
-                    'elk.spacing.nodeNode': "100",
-                    'elk.layered.spacing.nodeNodeBetweenLayers': "240"
-                }
-            });
+        await arrange.layout({
+            applier: animate ? applier : undefined,
+            options: {
+                'elk.spacing.nodeNode': "100",
+                'elk.layered.spacing.nodeNodeBetweenLayers': "240"
+            }
+        });
         AreaExtensions.zoomAt(area, editor.getNodes());
-        console.log("Layout done")
-        } catch (error) {
-            console.error("ELK Layout error details:", {
-                error,
-                nodes: nodes.map(n => ({id: n.id, connections: editor.getConnections().filter(c => c.source === n.id || c.target === n.id)}))
-            });
-            throw error;
-        }
     }
 
+    async function simplifyVQG() {
+        const allNodes = editor.getNodes();
+        // traverse all nodes, store them and check for duplicates
+        const seen: Map<string, string> = new Map();
+    
+        for (const node of allNodes) {
+            const nodeId = node.entity.id || '';
+            // new Node encountered
+            if (!seen.has(nodeId)) {
+                seen.set(nodeId, node.id);
+            // duplicate Node encountered
+            } else {
+                const originalNodeId = seen.get(nodeId);
+                for (const conn of editor.getConnections()) {
+                    // store old connection for its properties
+                    const oldConn = editor.getConnection(conn.id);
+                    // source is the duplicate --> create connection from original to target
+                    if (conn.source === node.id) {
+                        await editor.removeConnection(conn.id);
+                        const newConn = new Connection(
+                            editor.getNode(originalNodeId!),
+                            conn.sourceOutput,
+                            editor.getNode(conn.target),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
+                    // target is the duplicate --> create connection from source to original
+                    } else if (conn.target === node.id) {
+                        await editor.removeConnection(conn.id);
+                        const newConn = new Connection(
+                            editor.getNode(conn.source),
+                            conn.sourceOutput,
+                            editor.getNode(originalNodeId!),
+                            conn.targetInput
+                        );
+                        newConn.id = conn.id;
+                        newConn.property = oldConn.property;
+                        newConn.selected = oldConn.selected;
+                        await editor.addConnection(newConn);
+                    }
+                }
+                // remove the duplicate node
+                await editor.removeNode(node.id);
+            }
+        }
+    }
+    
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
         arrow: () => true
     });
@@ -557,57 +567,63 @@ export async function createEditor(container: HTMLElement) {
                 // I do not know why typescript gives me an error without the default noEntity, but there should be no
                 // case where this comes up, especially with the filter statement.
             );
-            console.log("convertedConnectionsPromise: ", convertedConnectionsPromise)
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
-            //  Leaving this for the future :)
-            return Promise.allSettled(convertedConnectionsPromise).then(values => {
+            // Leaving this for the future :)
+
+            // Edit: the race condition is resolved by deleting and adding the nodes in sequence
+            // this should not be a big performance hit, as the number of nodes probably never exceeds 20
+            return Promise.allSettled(convertedConnectionsPromise).then(async values => {
                 if (values.every((result) => result.status === "fulfilled")) {
                     const convertedConnections = values.map(v => v.value)
-                    console.log("Converted Connections")
-                    console.log(convertedConnections);
 
-                    // clear existing graph
-                    editor.getConnections().forEach(e => editor.removeConnection(e.id));
-                    editor.getNodes().forEach(n => editor.removeNode(n.id));
-                    console.log("Graph deleted")
+                    // the connections and nodes have to be deleted sequentially instead of in parallel
+                    // otherwise the editor gets in a state where connections reference already deleted nodes
+                    // which leads to undefined sources/targets
+                    for (const conn of editor.getConnections()) {
+                        await editor.removeConnection(conn.id);
+                    }
+                    for (const node of editor.getNodes()) {
+                        await editor.removeNode(node.id);
+                    }
+
+                    // track nodes in a map to avoid duplicates
+                    const nodeMap = new Map();
+                    const promises= [];
+
+                    // can be parallel as nodes are not connected yet
+                    for (const c of convertedConnections){
+                        if(!nodeMap.has(c.source.id)){
+                            const subject = createNode(socket, highestIdCount, editor, area);
+                            subject.setEntity(c.source);
+                            nodeMap.set(c.source.id, subject);
+                            promises.push(editor.addNode(subject));
+                        }
+                        if(!nodeMap.has(c.target.id)){
+                            const object = createNode(socket, highestIdCount, editor, area);
+                            object.setEntity(c.target);
+                            nodeMap.set(c.target.id, object);
+                            promises.push(editor.addNode(object));
+                        }
+                    }
+
+                    await Promise.all(promises);
 
 
                     return convertedConnections.map(c => {
-                        const subject = createNode(socket, highestIdCount, editor, area);
-                        subject.setEntity(c.source);
-                        console.log("created subject: ", subject);
-
-                        const object = createNode(socket, highestIdCount, editor, area);
-                        object.setEntity(c.target);
-                        console.log("created object: ", object);
+                        const subject = nodeMap.get(c.source.id);
+                        const object = nodeMap.get(c.target.id);
 
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
                         )
                         predicate.property = c.property;
                         predicate.selected = false;
-                        console.log("created predicate: ", predicate);
 
                         return new Promise<true>(async function (resolve) {
-                            try {
-                                await editor.addNode(object);
-                                await editor.addNode(subject);
-                                await editor.addConnection(predicate);
-                                // Add small delay to ensure nodes are fully initialized
-                                setTimeout(async () => {
-                                    try {
-                                        await _layout_helper(true);
-                                        resolve(true);
-                                    } catch (error) {
-                                        console.error("Layout error:", error);
-                                        resolve(true); // Still resolve to prevent blocking
-                                    }
-                                }, 100);
-                            } catch (error) {
-                                console.error("Node/Connection error:", error);
-                                resolve(true);
-                            }
+                            await editor.addConnection(predicate);
+                            await _layout_helper(true);
+                            resolve(true);
                         });
                     });
                 }
@@ -616,6 +632,10 @@ export async function createEditor(container: HTMLElement) {
         exportConnections: (): ConnectionInterfaceType[] => {
             return exportConnectionsHelper(editor)
         },
-        getNode: (id: string) => editor.getNode(id)
+        getNode: (id: string) => editor.getNode(id),
+        simplify: async() => {
+            await simplifyVQG()
+        }
     };
 }
+
