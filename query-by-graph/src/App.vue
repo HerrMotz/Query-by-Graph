@@ -3,7 +3,7 @@ import {onMounted, ref, shallowRef} from 'vue';
 import {createEditor} from "./lib/rete/editor.ts";
 import {ClassicPreset} from 'rete';
 
-import {graph_to_query_wasm, query_to_graph_wasm} from "../pkg";
+import {query_to_vqg_wasm, vqg_to_query_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
 import * as monaco from "monaco-editor"
@@ -80,7 +80,7 @@ function codeChangeEvent() {
     // then there is probably a syntax error.
     // in this case, do not import the connections
     console.log("code.value", code.value)
-    const graph = JSON.parse(query_to_graph_wasm(code.value));
+    const graph = JSON.parse(query_to_vqg_wasm(code.value));
     if (!!code.value && !!graph && graph?.length > 0) {
       console.log("graph", graph)
       loadingForCodeChanges.value = true;
@@ -126,7 +126,7 @@ onMounted(async () => {
           // DEBUG
           console.log("The connections in App.vue")
           console.log(connections)
-          code.value = graph_to_query_wasm(JSON.stringify(connections));
+          code.value = vqg_to_query_wasm(JSON.stringify(connections));
           formatCode();
         }, 10);
       }
