@@ -535,7 +535,7 @@ export async function createEditor(container: HTMLElement) {
             vueCallback = callback;
         },
         addPipe: (pipe: any) => editor.addPipe(pipe),
-        removeSelectedConnections: async () => {
+        removeSelectedItems: async () => {
             // DEBUG
             // console.log("Remove selected connections")
             for (const item of [...editor.getConnections()]) {
@@ -548,6 +548,15 @@ export async function createEditor(container: HTMLElement) {
                     await removeNodeWithConnections(editor, item.id);
                 }
             }
+        },
+        addNode: async () => {
+            // DEBUG
+            console.log("Add variable node")
+            highestIdCount++;
+            const node = createNode(socket, highestIdCount, editor, area);
+            await editor.addNode(node);
+
+            await _layout_helper(true);
         },
         undo: () => history.undo(),
         redo: () => history.redo(),

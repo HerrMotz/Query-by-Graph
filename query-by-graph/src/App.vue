@@ -6,7 +6,7 @@ import {ClassicPreset} from 'rete';
 import {graph_to_query_wasm, query_to_graph_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
-import * as monaco from "monaco-editor-core"
+import * as monaco from "monaco-editor"
 
 monaco.editor.defineTheme('custom-theme', {
   base: 'vs', // Use 'vs-light' as the base theme
@@ -56,7 +56,8 @@ import {debounce} from "./lib/utils";
 
 interface Editor {
   setVueCallback: (callback: (context: any) => void) => void;
-  removeSelectedConnections: () => Promise<void>;
+  removeSelectedItems: () => Promise<void>;
+  addNode: () => Promise<void>;
   undo: () => void;
   redo: () => void;
   importConnections: (connections: ConnectionInterfaceType[]) => Promise<Promise<true>[] | undefined>;
@@ -276,6 +277,33 @@ const gotoLink = (url?: string) => {
           </h2>
           <div class="flex-col flex gap-6 p-4">
             <div class="flex-col flex gap-2">
+              <h4 class="font-semibold">Adding and deleting nodes</h4>
+              <div class="flex gap-4">
+                <Button class="grow"
+                    @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
+                    if (editor) {
+                      editor.addNode();
+                    }
+                  }">
+                  Add a node
+                </Button>
+                <Button class="grow"
+                    @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
+                    if (editor) {
+                      editor.removeSelectedItems();
+                    }
+                  }">
+                  Delete selected
+                </Button>
+              </div>
+
+              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
+                <em>Hint:</em>
+                Select a connection by clicking on it and then click the button above to delete it.
+                This only works when at least one connection is selected (red).
+              </p>
+            </div>
+            <div class="flex-col flex gap-2">
               <h4 class="font-semibold">History</h4>
               <div class="flex gap-4">
                 <Button class="grow" @click="() => {
@@ -331,22 +359,6 @@ const gotoLink = (url?: string) => {
               </p>
             </div>
             <div class="flex-col flex gap-2">
-              <h4 class="font-semibold">Delete selected connections</h4>
-              <Button
-                  @click="() => { // why the hell is this necessary in TypeScript with Vue3 D':
-                if (editor) {
-                  editor.removeSelectedConnections();
-                }
-              }">
-                Delete selected
-              </Button>
-              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
-                <em>Hint:</em>
-                Select a connection by clicking on it and then click the button above to delete it.
-                This only works when at least one connection is selected (red).
-              </p>
-            </div>
-            <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Open new query builder</h4>
               <Button
                   @click="gotoLink()">
@@ -371,7 +383,8 @@ const gotoLink = (url?: string) => {
             <span>
               Generated SPARQL Query
               <span v-if="loadingForCodeChanges">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
                      viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor"
