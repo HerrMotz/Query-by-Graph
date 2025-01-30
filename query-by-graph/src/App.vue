@@ -6,7 +6,7 @@ import {ClassicPreset} from 'rete';
 import {graph_to_query_wasm, query_to_graph_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
-import * as monaco from "monaco-editor"
+import * as monaco from "monaco-editor-core"
 
 monaco.editor.defineTheme('custom-theme', {
   base: 'vs', // Use 'vs-light' as the base theme
