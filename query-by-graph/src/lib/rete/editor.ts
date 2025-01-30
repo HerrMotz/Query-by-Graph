@@ -381,6 +381,7 @@ export async function createEditor(container: HTMLElement) {
     }));
 
     async function _layout_helper(animate?: boolean) {
+        console.log("Layout start");
         await arrange.layout({
             applier: animate ? applier : undefined,
             options: {
@@ -518,22 +519,50 @@ export async function createEditor(container: HTMLElement) {
             );
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
-            //  Leaving this for the future :)
-            return Promise.allSettled(convertedConnectionsPromise).then(values => {
+            // Leaving this for the future :)
+
+            // Edit: the race condition is resolved by deleting and adding the nodes in sequence
+            // this should not be a big performance hit, as the number of nodes probably never exceeds 20
+            return Promise.allSettled(convertedConnectionsPromise).then(async values => {
                 if (values.every((result) => result.status === "fulfilled")) {
                     const convertedConnections = values.map(v => v.value)
-                    console.log("Converted Connections")
-                    console.log(convertedConnections);
 
-                    editor.getConnections().forEach(e => editor.removeConnection(e.id));
-                    editor.getNodes().forEach(n => editor.removeNode(n.id));
+                    // the connections and nodes have to be deleted sequentially instead of in parallel
+                    // otherwise the editor gets in a state where connections reference already deleted nodes
+                    // which leads to undefined sources/targets
+                    for (const conn of editor.getConnections()) {
+                        await editor.removeConnection(conn.id);
+                    }
+                    for (const node of editor.getNodes()) {
+                        await editor.removeNode(node.id);
+                    }
+
+                    // track nodes in a map to avoid duplicates
+                    const nodeMap = new Map();
+                    const promises= [];
+
+                    // can be parallel as nodes are not connected yet
+                    for (const c of convertedConnections){
+                        if(!nodeMap.has(c.source.id)){
+                            const subject = createNode(socket, highestIdCount, editor, area);
+                            subject.setEntity(c.source);
+                            nodeMap.set(c.source.id, subject);
+                            promises.push(editor.addNode(subject));
+                        }
+                        if(!nodeMap.has(c.target.id)){
+                            const object = createNode(socket, highestIdCount, editor, area);
+                            object.setEntity(c.target);
+                            nodeMap.set(c.target.id, object);
+                            promises.push(editor.addNode(object));
+                        }
+                    }
+
+                    await Promise.all(promises);
+
 
                     return convertedConnections.map(c => {
-                        const subject = createNode(socket, highestIdCount, editor, area);
-                        subject.setEntity(c.source);
-
-                        const object = createNode(socket, highestIdCount, editor, area);
-                        object.setEntity(c.target);
+                        const subject = nodeMap.get(c.source.id);
+                        const object = nodeMap.get(c.target.id);
 
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
@@ -541,14 +570,8 @@ export async function createEditor(container: HTMLElement) {
                         predicate.property = c.property;
                         predicate.selected = false;
 
-
                         return new Promise<true>(async function (resolve) {
-                            await editor.addNode(object);
-                            await editor.addNode(subject);
-
-                            await editor.addConnection(
-                                predicate
-                            );
+                            await editor.addConnection(predicate);
                             await _layout_helper(true);
                             resolve(true);
                         });
