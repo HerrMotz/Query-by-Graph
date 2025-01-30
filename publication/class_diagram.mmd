@@ -1,0 +1,59 @@
+classDiagram
+    class PREFIX {
+        string iri
+        string abbreviation
+    }
+    
+    class WIKIBASEDATASOURCE {
+        string name
+        PREFIX propertyPrefix
+        PREFIX itemPrefix
+        PREFIX qualifierPrefix
+        PREFIX statementPrefix
+        PREFIX propStatementPrefix
+        string[] preferredLanguages
+    }
+    
+    class LITERAL {
+        string value
+        string datatype
+    }
+    
+    class ITEM {
+    }
+    
+    class PROPERTY {
+        QUALIFIER[] qualifiers?
+    }
+    
+    class ENTITY {
+        string id
+        string label
+        PREFIX prefix
+        WIKIBASEDATASOURCE dataSource
+    }
+    
+    ENTITY <|-- ITEM
+    ENTITY <|-- PROPERTY
+    
+    class CONNECTION {
+        PROPERTY property
+        ITEM source
+        ITEM|LITERAL target
+    }
+    
+    class QUALIFIER {
+        PROPERTY property
+        ITEM target
+    }
+    
+    PREFIX "1" o-- "*" ENTITY
+    PREFIX "2" o-- "*" WIKIBASEDATASOURCE
+    
+    ENTITY "*" --o "1" WIKIBASEDATASOURCE
+    
+    CONNECTION "1..2" o-- "*" ITEM
+    CONNECTION "0..1" o-- "*" LITERAL
+    CONNECTION "1" o-- "*" PROPERTY
+    
+    PROPERTY "1" *-- "*" QUALIFIER

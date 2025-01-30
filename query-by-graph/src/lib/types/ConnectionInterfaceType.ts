@@ -1,4 +1,4 @@
-import EntityType from "./EntityType.ts";
+import {EntityType} from "./EntityType.ts";
 
 interface ConnectionInterfaceType {
   property: EntityType,

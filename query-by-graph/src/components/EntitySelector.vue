@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import WikibaseDataService from "../lib/wikidata/WikibaseDataService.ts";
-import {WikiDataEntity, WikiDataSearchApiResponse} from "../lib/wikidata/types.ts";
+import {WikiDataEntity, WikiDataSearchApiResponse} from "../lib/types/WikibaseDataSource.ts";
 import {computed} from 'vue';
 
 const props = defineProps({
@@ -32,9 +32,10 @@ import {
   ComboboxOption,
   ComboboxOptions,
 } from '@headlessui/vue'
-import EntityType from "../lib/types/EntityType.ts";
+import {EntityType} from "../lib/types/EntityType.ts";
 import {noEntity, variableEntity, variableEntityConstructor} from "../lib/rete/constants.ts";
 import {selectedDataSource} from "../store.ts";
+import {debounce} from "../lib/utils";
 
 const queriedEntities = ref([
   noEntity,
@@ -62,7 +63,7 @@ function queryHelper(query: string) {
   }).then((data: WikiDataSearchApiResponse) => {
     queriedEntities.value = data.search.map((entity: WikiDataEntity) => {
       const prefix = props.type === 'item'
-          ? selectedDataSource.value.entityPrefix
+          ? selectedDataSource.value.itemPrefix
           : selectedDataSource.value.propertyPrefix
 
       return { // EntityType
@@ -70,7 +71,7 @@ function queryHelper(query: string) {
         label: entity.display.label.value,
         description: entity.display.description.value,
         prefix: {
-          uri: prefix.url,
+          iri: prefix.iri,
           abbreviation: prefix.abbreviation,
         },
         dataSource: {...selectedDataSource.value} // save datasource
@@ -82,6 +83,8 @@ function queryHelper(query: string) {
     console.log(reason);
   });
 }
+
+const debouncedQueryHelper = debounce(queryHelper, 100);
 
 function eventEmitEntityHelper(entity: EntityType) {
   console.log("Entity Selector emits event");
@@ -101,19 +104,19 @@ function eventEmitEntityHelper(entity: EntityType) {
       <div class="relative mt-2">
         <ComboboxInput
             :class="[
-                'rounded-md border-0 bg-white py-1.5 pl-3 pr-12 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                'rounded-md border-0 bg-white py-1.5 pl-3 pr-12 text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
                 inputClasses ? inputClasses : 'w-full'
             ]"
-            @change="queryHelper($event.target.value)"
+            @change="debouncedQueryHelper($event.target.value)"
             :display-value="displayValue"
         />
-        <ComboboxButton class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
+        <ComboboxButton class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-hidden">
           <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true"/>
         </ComboboxButton>
 
         <ComboboxOptions v-if="queriedEntities.length > 0"
                          :class="[
-                             'absolute z-10 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm',
+                             'absolute z-10 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-hidden sm:text-sm',
                              dropdownClasses ? dropdownClasses : 'w-full'
                              ]">
           <ComboboxOption v-for="entity in queriedEntities" :key="entity.id" :value="entity" as="template"

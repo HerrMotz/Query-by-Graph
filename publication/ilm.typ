@@ -27,16 +27,41 @@
 
   // The paper size to use.
   paper-size: "a4",
+  
+  cover-german: (
+    faculty: none, 
+    university: none,
+    type-of-work: none,
+    academic-degree: none,
+    field-of-study: none,
+    author-info: none,
+    assessor: none,
+    place-and-submission-date: none,
+  ),
 
-  // Date that will be displayed on cover page.
-  // The value needs to be of the 'datetime' type.
-  // More info: https://typst.app/docs/reference/foundations/datetime/
-  // Example: datetime(year: 2024, month: 03, day: 17)
-  date: none,
+  /** e.g.
+    cover-german: (
+      faculty: "Fakultät für Mathematik und Informatik",
+      university: "Friedrich-Schiller-Universität Jena",
+      type-of-work: "Bachelorarbeit",
+      academic-degree: [Bachelor of Science (B.#sym.space.punct\Sc.)],
+      field-of-study: "Informatik",
+      author-info: "15.07.2001 in Chemnitz",
+      assessor: "Prof. Dr. Clemens Beckstein",
+      place-and-submission-date: "Jena, 12. Januar 2025",
+    ),
+  */
 
-  // Format in which the date will be displayed on cover page.
-  // More info: https://typst.app/docs/reference/foundations/datetime/#format
-  date-format: "[month repr:long] [day padding:zero], [year repr:full]",
+  cover-english: (
+    faculty: none,
+    university: none,
+    type-of-work: none,
+    academic-degree: none,
+    field-of-study: none,
+    author-info: none,
+    assessor: none,
+    place-and-submission-date: none,
+  ),
 
   // An abstract for your work. Can be omitted if you don't have one.
   abstract: none,
@@ -48,7 +73,11 @@
   // The result of a call to the `outline` function or `none`.
   // Set this to `none`, if you want to disable the table of contents.
   // More info: https://typst.app/docs/reference/model/outline/
-  table-of-contents: outline(),
+  table-of-contents: outline(depth: 2),
+
+  appendix: none,
+
+  abbreviations: (),
 
   // The result of a call to the `bibliography` function or `none`.
   // Example: bibliography("refs.bib")
@@ -91,7 +120,7 @@
 
   // Set raw text font.
   // Default is Fira Mono at 8.8pt
-  show raw: set text(font: "Noto Mono", size: 9pt)
+  show raw: set text(font: "Noto Sans Mono", size: 8.8pt)
 
   // Configure page size and margins.
   set page(
@@ -99,34 +128,85 @@
     margin: (bottom: 1.75cm, top: 2.25cm),
   )
 
-  // Cover page.
-  page(align(left + horizon, block(width: 90%)[
-      #let v-space = v(2em, weak: true)
-      #text(3em)[*#title*]
+  let cover-page-helper(cover, language-specific-text) = page(align(center + horizon, block(width: 90%)[
+        #let v-space = v(2em, weak: true)
+  
+        #image("fsulogo.svg", width: 10cm)
+        
+        #text(3em)[*#title*]
+        
+        #text(2em, smallcaps[#cover.type-of-work])
+  
+        #language-specific-text.at(0)
+  
+        #cover.academic-degree
+  
+        #language-specific-text.at(1) #cover.field-of-study
+  
+        #v-space
+  
+        #smallcaps[#cover.university]
+  
+        #cover.faculty
+  
+        #v-space
 
-      #v-space
-      #text(1.6em, author)
+        #language-specific-text.at(2)
+  
+        #text(1.6em, author)
+        #v(-3mm)
+        #language-specific-text.at(3) #cover.author-info
 
-      #if abstract != none {
-        v-space
+        #v-space
+  
+        #language-specific-text.at(4)
+        
+        #cover.assessor
+
+        #v(2em)
+        
+        #cover.place-and-submission-date
+  
+    ]))
+
+
+  // German cover page.
+  if (cover-german.values().all(x => x != none)) {
+    let german-language-specific-text = (
+      "zur Erlangung des akademischen Grades",
+      "im Studienfach",
+      "eingereicht von",
+      "geboren am",
+      "Betreuer"
+    )
+    cover-page-helper(cover-german, german-language-specific-text)
+  }
+
+  if (cover-english.values().all(x => x != none)) {
+    let english-language-specific-text = (
+      "for the attainment of the academic degree",
+      "in",
+      "submitted by",
+      "born on",
+      "assessed by"
+    )
+    cover-page-helper(cover-english, english-language-specific-text)
+  }
+
+  page[]
+
+  page(align(horizon+center, block(width:90%, if abstract != none {
+    smallcaps[Abstract]
         block(width: 80%)[
           // Default leading is 0.65em.
           #par(leading: 0.78em, justify: true, linebreaks: "optimized", abstract)
         ]
-      }
-
-      #if date != none {
-        v-space
-        // Display date as MMMM DD, YYYY
-        text(date.display(date-format))
-      }
-  ]))
+      })))
 
   // Configure paragraph properties.
   // Default leading is 0.65em.
-  set par(leading: 0.7em, justify: true, linebreaks: "optimized")
   // Default spacing is 1.2em.
-  show par: set block(spacing: 1.35em) // change this in typst v0.12.0
+  set par(leading: 0.7em, spacing: 1.35em, justify: true, linebreaks: "optimized")
 
   // Add vertical space after headings.
   show heading: it => {
@@ -139,8 +219,9 @@
   // Show a small maroon circle next to external links.
   show link: it => {
     it
-    // Workaround for ctheorems package so that its labels keep the default link styling.
-    if external-link-circle and type(it.dest) != label  {
+    
+    //if external-link-circle and type(it.dest) != label and type(it.dest) != location { // this excludes e.g. ctheorems links and abbreviations in this document
+    if external-link-circle and type(it.dest) == str { // this only adds to links to external websites
       sym.wj
       h(1.6pt)
       sym.wj
@@ -148,21 +229,56 @@
     }
   }
 
-  // Display preface as the second page.
-  if preface != none {
-    page(preface)
-  }
-
   // Indent nested entires in the outline.
   set outline(indent: auto)
 
   // Display table of contents.
+  page("")
   if table-of-contents != none {
     table-of-contents
   }
 
+  page[]
+
+  // Display preface as the second page.
+  if preface != none {
+    pagebreak()
+    heading(numbering: none, level: 1)[Preface]
+    box(
+      width: 100%,
+      preface
+    )
+  }
+
   // Configure heading numbering.
   set heading(numbering: "1.")
+  //show heading.where(level:1): it => pagebreak(to: "odd", weak: false) + it
+
+  show heading.where(level: 6): set heading(outlined: false)
+
+  show heading.where(
+    level: 4,
+  ): it => text(
+    weight: "regular",
+    style: "italic",
+    it.body + [. ]
+  )
+  
+  show heading.where(
+    level: 5,
+  ): it => text(
+    weight: "regular",
+    style: "italic",
+    it.body,
+  )
+
+  show heading.where(
+    level: 6,
+  ): it => text(
+    weight: "regular",
+    style: "italic",
+    it.body,
+  )
 
   // Configure page numbering and footer.
   set page(
@@ -213,8 +329,19 @@
     inset: (x: 5pt),
   )
 
+  let image_width = 360pt
+
   // Break large tables across pages.
-  show figure.where(kind: table): set block(breakable: true)
+  // show figure.where(kind: table): set block(breakable: true) // DM 02.01.2025
+  set figure.caption(position: bottom)
+  show figure.caption: it => box(width: image_width, text(size: .8em, [
+
+    #it
+  ]))
+
+  // set the width of images in the whole document
+  set image(width: image_width)
+  
   set table(
     // Increase the table cell's padding
     inset: 7pt, // default is 5pt
@@ -230,6 +357,18 @@
       if chapter-pagebreak { colbreak(weak: true) }
       it
     }
+
+    for a in abbreviations {
+      let abbreviation_ref = "abbreviation_ref_"+a.at(0)
+      body = context {
+        show a.at(0): if query(ref.where(target: "abbreviation_ref_"+a.at(0))).len() > 1 { // todo: make counter work
+            link(locate(label(abbreviation_ref)), text(a.at(1) + " (" + insert-zwsp(a.at(0)) + ")"))
+          } else {
+            link( locate(label("abbreviation_ref_"+a.at(0))), a.at(0))
+          }
+        body
+      }
+    }
     body
   }
 
@@ -242,6 +381,44 @@
     bibliography
   }
 
+   let abbreviation_index = {
+    heading(level: 1, numbering: none, "Abbreviations")
+    let i = 0
+    while i < abbreviations.len() {
+      context {
+        let k = 0
+        let a = abbreviations.at(i)
+        let width_of_abbrev_text = 14cm-measure(a.at(0)).width
+        let d = if measure(a.at(1)).width > width_of_abbrev_text {
+          width_of_abbrev_text
+        } else {
+          measure(a.at(1)).width
+        }
+        grid(columns: (auto, auto, d), align: (left, center, right),
+          ..while k < 3 {
+            ( ( (k == 0, text(hyphenate: false)[#a.at(0) #label("abbreviation_ref_"+a.at(0))]),
+              (k == 1, repeat[.]),
+              (k == 2, text(hyphenate: true, a.at(1))),
+              ).find(t => t.at(0)).at(1),)
+            k += 1
+            
+          }
+        )
+      }
+      i += 1
+      v(-.6em)
+    }
+  }
+
+  if abbreviations.len() > 0 {
+    page(columns: 1,
+      abbreviation_index
+    )
+  }
+
+  heading(numbering: none, level: 1)[Appendix]
+  
+
   // Display indices of figures, tables, and listings.
   let fig-t(kind) = figure.where(kind: kind)
   let has-fig(kind) = counter(fig-t(kind)).get().at(0) > 0
@@ -251,19 +428,45 @@
       let imgs = figure-index.enabled and has-fig(image)
       let tbls = table-index.enabled and has-fig(table)
       let lsts = listing-index.enabled and has-fig(raw)
-      if imgs or tbls or lsts {
-        // Note that we pagebreak only once instead of each each
-        // individual index. This is because for documents that only have a couple of
-        // figures, starting each index on new page would result in superfluous
-        // whitespace.
-        pagebreak()
-      }
 
       if imgs { outline(title: figure-index.at("title", default: "Index of Figures"), target: fig-t(image)) }
       if tbls { outline(title: table-index.at("title", default: "Index of Tables"), target: fig-t(table)) }
       if lsts { outline(title: listing-index.at("title", default: "Index of Listings"), target: fig-t(raw)) }
     }
   }
+
+  if appendix != none {
+    pagebreak()
+    appendix
+  }
+
+  pagebreak()
+  [
+= Declaration of Academic Integrity
+
+1. I hereby confirm that this work — or in case of group work, the contribution for which I am responsible and which I have clearly identified as such — is my own work and that I have not used any sources or resources other than those referenced.
+
+   I take responsibility for the quality of this text and its content and have ensured that all information and arguments provided are substantiated with or supported by appropriate academic sources. I have clearly identified and fully referenced any material such as text passages, thoughts, concepts or graphics that I have directly or indirectly copied from the work of others or my own previous work. Except where stated otherwise by reference or acknowledgement, the work presented is my own in terms of copyright. 
+   
+2. I understand that this declaration also applies to generative AI tools which cannot be cited (hereinafter referred to as "generative AI").
+
+  I understand that the use of generative AI is not permitted unless the examiner has explicitly authorised its use (Declaration of Permitted Resources). Where the use of generative AI was permitted, I confirm that I have only used it as a resource and that this work is largely my own original work. I take full responsibility for any AI-generated content I included in my work. 
+   
+  Where the use of generative AI was permitted to compose this work, I have acknowledged its use in a separate appendix. This appendix includes information about which AI tool was used or a detailed description of how it was used in accordance with the requirements specified in the examiner#sym.quote.single\s Declaration of Permitted Resources. I have read and understood the requirements contained therein and any use of generative AI in this work has been acknowledged accordingly (e.g. type, purpose and scope as well as specific instructions on how to acknowledge its use). 
+
+
+3. I also confirm that this work has not been previously submitted in an identical or similar form to any other examination authority in Germany or abroad, and that it has not been previously published in German or any other language. 
+
+4. I am aware that any failure to observe the aforementioned points may lead to the imposition of penalties in accordance with the relevant examination regulations. In particular, this may include that my work will be classified as deception and marked as failed. Repeated or severe attempts to deceive may also lead to a temporary or permanent exclusion from further assessments in my degree programme. 
+
+#v(40pt)
+#grid(columns: (1fr, 1fr), row-gutter: 1em,
+  line(length: 150pt, stroke: (dash: "dashed")),
+  line(length: 200pt, stroke: (dash: "dashed")),
+  "Place and date",
+  "Signature"
+)
+  ]
 }
 
 // This function formats its `body` (content) into a blockquote.

@@ -14,7 +14,7 @@ const setCheckedForSomeSeconds = () => {
 
 <template>
   <button @click="setCheckedForSomeSeconds"
-          :class="{ 'flex h-9 w-24 rounded bg-amber-300 hover:bg-gray-200 items-center justify-center': true,
+          :class="{ 'flex h-9 w-24 rounded-sm bg-amber-300 hover:bg-gray-200 items-center justify-center': true,
                     'text-green-700 underline': checked}">
     <span class="text-xs mr-1">Copy</span>
     <ClipboardDocumentCheckIcon v-if="checked" class="h-5 w-5" />

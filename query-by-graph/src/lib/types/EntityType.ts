@@ -1,14 +1,14 @@
-import WikibaseDataSource from "./WikibaseDataSource";
+import {WikibaseDataSource} from "./WikibaseDataSource";
 
-interface EntityType {
+export interface EntityType {
     id: string,
     label: string,
     description: string,
-    prefix: {
-       uri: string,
-       abbreviation: string,
-    };
+    prefix: PrefixType,
     dataSource: WikibaseDataSource;
 }
 
-export default EntityType;
+export interface PrefixType {
+    iri: string,
+    abbreviation: string,
+}
