@@ -4,6 +4,7 @@ import {ConnectionPlugin, Presets as ConnectionPresets} from "rete-connection-pl
 import {ConnectionPathPlugin} from "rete-connection-path-plugin";
 import {HistoryExtensions, HistoryPlugin, Presets as HistoryPresets} from "rete-history-plugin";
 import {Presets, VueArea2D, VuePlugin} from "rete-vue-plugin";
+import {ArrangeAppliers, AutoArrangePlugin, Presets as ArrangePresets} from "rete-auto-arrange-plugin";
 import {h} from "vue";
 import CustomConnection from "../../components/PropertyConnection.vue";
 import {removeNodeWithConnections} from "./utils.ts";
@@ -13,12 +14,193 @@ import EntityNodeComponent from "../../components/EntityNode.vue";
 import CustomInputControl from "../../components/EntitySelectorInputControl.vue";
 import {noEntity, variableEntityConstructor} from "./constants.ts";
 import {noDataSource} from "../constants";
+import {dataSources} from "../../store.ts";
+import {LanguageTaggedLiteral, WikibaseDataSource} from "../types/WikibaseDataSource.ts";
+import WikibaseDataService from "../wikidata/WikibaseDataService.ts";
+
+function exportConnectionsHelper(editor:any) {
+    return editor.getConnections().map((connection:any) => {
+        const c = editor.getConnection(connection.id)
+        const source = editor.getNode(c.source);
+        const target = editor.getNode(c.target);
+        return {
+            property: c.property || noEntity,
+            source: source.entity,
+            target: target.entity
+        };
+    })
+}
+
+const INPUT_SOCKET_NAME = "i0";
+const OUTPUT_SOCKET_NAME = "o0";
+
+const fqdnRegex = new RegExp(/(?:[\w-]+\.)+[\w-]+/);
+
+function convertConnectionsToPrefixedRepresentation(connections: Array<ConnectionInterfaceType>, vqgEntities: Array<EntityType>): Promise<ConnectionInterfaceType>[] {
+    // this function takes in a connections array from e.g. the rust backend
+    // and replaces the full URL with prefixes
+
+    // if no prefix can be found, this means that the item is not from a data source the visual query builder knows
+    // In this case, the prefix will not be replaced.
+
+    return connections.map(connection => {
+        const { property, source, target } = connection;
+
+        function _replaceWithPrefix(entity:EntityType) {
+            // check if it is a variable
+            if (entity.id.startsWith('?')) {
+                entity.label = 'Variable';
+                return entity;
+            }
+
+
+            // find out, which data source the entity might belong to
+            const fqdn = fqdnRegex.exec(entity.id);
+            if (!fqdn || !fqdn[0]) {
+                return entity;
+            }
+
+            async function _wikibase_metadata_helper(entity: EntityType, newIdentifier: string, datasource: WikibaseDataSource, rightPrefix: {iri: string, abbreviation: string}): Promise<EntityType | false> {
+                // queries the wikidata api
+                // returns false if no match could be found
+                // else it will return an enriched entity
+                const wds = new WikibaseDataService(datasource);
+
+                function _findTheRightTranslation(preferredLanguages: string[], languageTaggedDict: { [language: string]: LanguageTaggedLiteral }) {
+                    // This function takes the first found preferred language of the language tagged literal labels
+                    // If the preferred language is not available, it will use English
+                    // If English is not available, it will use the first available tagged literal.
+                    return languageTaggedDict[preferredLanguages.find(lang => languageTaggedDict[lang].value) || 'en' || Object.keys(languageTaggedDict)[0]].value || "No literal found";
+                }
+
+                try {
+                    const apiResult = await wds.getItemMetaInfo(newIdentifier);
+                    if (apiResult) {
+                        return {
+                            ...entity,
+                            id: newIdentifier,
+                            label: _findTheRightTranslation(datasource.preferredLanguages, apiResult.labels),
+                            description: _findTheRightTranslation(datasource.preferredLanguages, apiResult.descriptions),
+                            prefix: rightPrefix,
+                            dataSource: datasource,
+                            // TODO add the remaining fields here (if you can think of any)
+                        }
+                    }
+                    return entity;
+                } catch (e) {
+                    return {
+                        ...entity,
+                        id: newIdentifier
+                    };
+                }
+            }
+
+            function _vqg_metadata_helper(id: string, prefixIri: string, prefixAbbreviation: string): EntityType | false {
+                // this function enriches the entity with metadata
+                //  1. find a matching node in the VQG and make it equal
+                //  2. if there is no node, fetch from the Wikidata API
+                const foundMatch = vqgEntities.find((e: EntityType) => id === e.id && prefixIri === e.prefix.iri && prefixAbbreviation === e.prefix.abbreviation)
+                // This conditional statement looks a bit sketch, because it does not cleanly differentiate between
+                // edges and nodes. However, I can safely assume, that a node will not have a property prefix and vice
+                // versa. In Wikibase, the id already is indicative of whether it is an item or a prop, but the prefixes
+                // are important to differentiate between Wikibase instances.
+                // In case the above explanation was unclear: This statement would match an edge with an item prefix and
+                // Q-number as identifier. However, this "cannot" be the case, unless something is wrong in the Wikibase
+                // instance data model. At this point, I just assume that it is.
+                if (!foundMatch) {
+                    return false;
+                }
+
+                return {...foundMatch} // TODO check whether this also work with pass by reference. Could save memory.
+            }
+
+            function _replace_helper(id: string, prefixIri: string) {
+                return id.replace(prefixIri, "").replace("<", "").replace(">", "")
+            }
+
+            // TODO somehow it uses the property id with prefix but not this does not happen for itemprefix. Why? Ask someone else.
+            //  I know why: because the _wrapper for properties is never called, as the item wrapper always returns something. This is devious.
+            type ValidPrefixKeys = 'itemPrefix' | 'propertyPrefix';
+            function _wrapper(fqdn: string, prefixKey: ValidPrefixKeys) {
+                // this method is just a wrapper, because the code for items and props is identical, except for the
+                // keys "itemPrefix" and "propertyPrefix"
+                const matchingDatasourceForEntity = dataSources.find(s => s[prefixKey].iri.includes(fqdn));
+                if (matchingDatasourceForEntity) {
+                    const isTheRightPrefix = entity.id.includes(matchingDatasourceForEntity[prefixKey].iri);
+                    // this part is very important! If it would not return false, the differentiation between prop and
+                    //  item would not be correct.
+                    if (!isTheRightPrefix) {
+                        return false;
+                    }
+                    const newIdentifier = _replace_helper(entity.id, matchingDatasourceForEntity[prefixKey].iri)
+                    const matchInVQG = _vqg_metadata_helper(newIdentifier, matchingDatasourceForEntity[prefixKey].iri, matchingDatasourceForEntity[prefixKey].abbreviation);
+                    if (matchInVQG === false) {
+                        // try to fetch from wikidata
+                        return _wikibase_metadata_helper(entity, newIdentifier, matchingDatasourceForEntity, matchingDatasourceForEntity[prefixKey]).then(matchInWikibase => {
+                            if (matchInWikibase === false) {
+                                return {
+                                    ...entity,
+                                    id: newIdentifier,
+                                    prefix: matchingDatasourceForEntity[prefixKey],
+                                    dataSource: matchingDatasourceForEntity
+                                }
+                            } else {
+                                return matchInWikibase;
+                            }
+                        });
+                    } else {
+                        return matchInVQG;
+                    }
+                } else {
+                    return false;
+                }
+
+            }
+
+            const item = _wrapper(fqdn[0], "itemPrefix")
+            if (item) {
+                return item
+            }
+
+            const property = _wrapper(fqdn[0], "propertyPrefix")
+            if (property) {
+                return property;
+            }
+
+            // return the entity from the input unchanged
+            return entity;
+        }
+
+        return Promise.allSettled([
+            _replaceWithPrefix(property),
+            _replaceWithPrefix(source),
+            _replaceWithPrefix(target)
+        ]).then((values) => {
+            if (
+                values.every(
+                    (result): result is PromiseFulfilledResult<EntityType> => result.status === "fulfilled"
+                )
+            ) {
+                return {
+                    property: (values[0] as PromiseFulfilledResult<EntityType>).value,
+                    source: (values[1] as PromiseFulfilledResult<EntityType>).value,
+                    target: (values[2] as PromiseFulfilledResult<EntityType>).value
+                };
+            } else {
+                // this case will not occur, nevertheless typescript requires me to catch it.
+                return {
+                    property: noEntity,
+                    source: noEntity,
+                    target: noEntity
+                };
+            }
+        });
+    });
+}
+
 
 // Each connection holds additional data, which is defined here
-class Connection extends ClassicPreset.Connection<
-    ClassicPreset.Node,
-    ClassicPreset.Node
-> {
+class Connection<N extends ClassicPreset.Node> extends ClassicPreset.Connection<N, N> {
     selected?: boolean;
     property?: EntityType;
 }
@@ -27,6 +209,8 @@ class Connection extends ClassicPreset.Connection<
 // This is ensured here.
 class EntityNodeClass extends ClassicPreset.Node {
     entity: EntityType;
+    width = 300; // this important for arranging the nodes
+    height = 280;
 
     constructor(public label: string, public e: EntityType) {
         super(label);
@@ -60,8 +244,47 @@ class EntitySelectorInputControl extends ClassicPreset.InputControl<"text", Enti
 
 }
 
-type Schemes = GetSchemes<EntityNodeClass, Connection>;
+type Schemes = GetSchemes<EntityNodeClass, Connection<EntityNodeClass>>;
 type AreaExtra = VueArea2D<Schemes>;
+
+function createNode(socket: ClassicPreset.Socket, highestIdCount: number, editor: any, area: any) {
+    const newEntity = variableEntityConstructor(
+        highestIdCount.toString()
+    )
+
+    const node = new EntityNodeClass(newEntity.label, newEntity);
+
+    // DEBUG
+    // console.log("Node", node.entity);
+
+    node.addControl(
+        "entityInput",
+        new EntitySelectorInputControl({
+            initial: {id: "", label: "", prefix: {iri: "", abbreviation: ""}, description: "", dataSource: noDataSource},
+            change(value) {
+                // DEBUG
+                // console.log("Entity Input called change")
+                // console.log(value)
+                // console.log("node entity value")
+                // console.log(node.getEntity())
+                node.setEntity(value)
+                // console.log("node value after update")
+                // console.log(node.getEntity())
+
+                editor.getConnections().forEach((c:any) => {
+                    area.update("connection", c.id)
+                })
+
+                // console.log("update node in area")
+                area.update("node", node.id)
+            }
+        })
+    );
+    node.addInput(INPUT_SOCKET_NAME, new ClassicPreset.Input(socket, "", true));
+    node.addOutput(OUTPUT_SOCKET_NAME, new ClassicPreset.Output(socket, "", true));
+
+    return node;
+}
 
 export async function createEditor(container: HTMLElement) {
     const socket = new ClassicPreset.Socket("socket");
@@ -73,6 +296,7 @@ export async function createEditor(container: HTMLElement) {
     const selector = AreaExtensions.selector();
     const accumulating = AreaExtensions.accumulateOnCtrl();
     const history = new HistoryPlugin<Schemes>();
+    const arrange = new AutoArrangePlugin<Schemes>();
 
     let vueCallback: (context: any) => void;
     let highestIdCount = 0;
@@ -126,7 +350,7 @@ export async function createEditor(container: HTMLElement) {
                 editor.getConnections().forEach((c) => {
                     area.update("connection", c.id)
                 })
-            }
+            },
         });
     }
 
@@ -155,6 +379,17 @@ export async function createEditor(container: HTMLElement) {
             }
         }
     }));
+
+    async function _layout_helper(animate?: boolean) {
+        await arrange.layout({
+            applier: animate ? applier : undefined,
+            options: {
+                'elk.spacing.nodeNode': "100",
+                'elk.layered.spacing.nodeNodeBetweenLayers': "240"
+            }
+        });
+        AreaExtensions.zoomAt(area, editor.getNodes());
+    }
 
     const pathPlugin = new ConnectionPathPlugin<Schemes, Area2D<Schemes>>({
         arrow: () => true
@@ -186,42 +421,10 @@ export async function createEditor(container: HTMLElement) {
 
                 highestIdCount++;
 
-                const newEntity = variableEntityConstructor(
-                    highestIdCount.toString()
-                )
-
-                const node = new EntityNodeClass(newEntity.label, newEntity);
-
-                // DEBUG
-                // console.log("Node", node.entity);
-
-                node.addControl(
-                    "entityInput",
-                    new EntitySelectorInputControl({
-                        initial: {id: "", label: "", prefix: {uri: "", abbreviation: ""}, description: "", dataSource: noDataSource},
-                        change(value) {
-                            // DEBUG
-                            // console.log("Entity Input called change")
-                            // console.log(value)
-                            // console.log("node entity value")
-                            // console.log(node.getEntity())
-                            node.setEntity(value)
-                            // console.log("node value after update")
-                            // console.log(node.getEntity())
-
-                            editor.getConnections().forEach((c) => {
-                                area.update("connection", c.id)
-                            })
-
-                            // console.log("update node in area")
-                            area.update("node", node.id)
-                        }
-                    })
-                );
-                node.addInput("i0", new ClassicPreset.Input(socket, "", true));
-                node.addOutput("o0", new ClassicPreset.Output(socket, "", true));
+                const node = createNode(socket, highestIdCount, editor, area);
 
                 await editor.addNode(node);
+
                 area.area.setPointerFrom(event);
 
                 await area.translate(node.id, area.area.pointer);
@@ -242,7 +445,7 @@ export async function createEditor(container: HTMLElement) {
             const node = context.data as ClassicPreset.Node;
             console.log(`Node clicked: ${node.id}`);
 
-            if (vueCallback !== undefined){
+            if (vueCallback){
                 vueCallback({
                     type: 'nodeselected',
                     data: node,
@@ -250,16 +453,27 @@ export async function createEditor(container: HTMLElement) {
             }
         }
 
-        if (vueCallback !== undefined) {
+        if (vueCallback) {
             vueCallback(context);
         }
         return context;
     });
 
+    const applier = new ArrangeAppliers.TransitionApplier<Schemes, never>({
+        duration: 500,
+        timingFunction: (t:any) => t,
+        async onTick() {
+            await AreaExtensions.zoomAt(area, editor.getNodes());
+        }
+    });
+
+    arrange.addPreset(ArrangePresets.classic.setup());
+
     editor.use(area);
     area.use(connection);
     area.use(render);
     area.use(history);
+    area.use(arrange);
 
     AreaExtensions.simpleNodesOrder(area);
 
@@ -287,17 +501,63 @@ export async function createEditor(container: HTMLElement) {
         undo: () => history.undo(),
         redo: () => history.redo(),
         destroy: () => area.destroy(),
+        layout: async (animate?: boolean) => {
+            await _layout_helper(animate);
+        },
+        importConnections: (connections: ConnectionInterfaceType[]): Promise<(Promise<true>[] | undefined)> => {
+            // this function takes in connections, checks whether
+            // the graph needs to be changed
+
+            // if the graph needs to be changed, it will also auto-align the graph
+            const convertedConnectionsPromise = convertConnectionsToPrefixedRepresentation(
+                connections,
+                // put the associated entities of nodes and edges in the same array
+                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().filter(e=>e.property!==undefined).map(e => e.property ?? noEntity)))
+                // I do not know why typescript gives me an error without the default noEntity, but there should be no
+                // case where this comes up, especially with the filter statement.
+            );
+
+            // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
+            //  Leaving this for the future :)
+            return Promise.allSettled(convertedConnectionsPromise).then(values => {
+                if (values.every((result) => result.status === "fulfilled")) {
+                    const convertedConnections = values.map(v => v.value)
+                    console.log("Converted Connections")
+                    console.log(convertedConnections);
+
+                    editor.getConnections().forEach(e => editor.removeConnection(e.id));
+                    editor.getNodes().forEach(n => editor.removeNode(n.id));
+
+                    return convertedConnections.map(c => {
+                        const subject = createNode(socket, highestIdCount, editor, area);
+                        subject.setEntity(c.source);
+
+                        const object = createNode(socket, highestIdCount, editor, area);
+                        object.setEntity(c.target);
+
+                        const predicate = new Connection(
+                            subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
+                        )
+                        predicate.property = c.property;
+                        predicate.selected = false;
+
+
+                        return new Promise<true>(async function (resolve) {
+                            await editor.addNode(object);
+                            await editor.addNode(subject);
+
+                            await editor.addConnection(
+                                predicate
+                            );
+                            await _layout_helper(true);
+                            resolve(true);
+                        });
+                    });
+                }
+            });
+        },
         exportConnections: (): ConnectionInterfaceType[] => {
-            return editor.getConnections().map(connection => {
-                const c = editor.getConnection(connection.id)
-                const source = editor.getNode(c.source);
-                const target = editor.getNode(c.target);
-                return {
-                    property: c.property || noEntity,
-                    source: source.entity,
-                    target: target.entity
-                };
-            })
+            return exportConnectionsHelper(editor)
         },
         getNode: (id: string) => editor.getNode(id)
     };

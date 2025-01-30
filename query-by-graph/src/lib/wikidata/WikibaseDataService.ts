@@ -1,6 +1,5 @@
 import axios, {AxiosInstance} from "axios";
-import {WikiDataEntityDetails, WikiDataResponse, WikiDataSearchApiResponse} from "./types.ts";
-import WikibaseDataSource from "../types/WikibaseDataSource.ts";
+import {WikiDataEntityDetails, WikiDataResponse, WikiDataSearchApiResponse, WikibaseDataSource} from "../types/WikibaseDataSource.ts";
 
 class WikibaseDataService {
   private api: AxiosInstance;
@@ -8,7 +7,7 @@ class WikibaseDataService {
   private dataSource: WikibaseDataSource;
 
   constructor(dataSource: WikibaseDataSource) {
-    const baseURL = dataSource.url;
+    const baseURL = dataSource.uri;
     this.languages = dataSource.preferredLanguages;
     this.dataSource = dataSource;
 
@@ -21,8 +20,6 @@ class WikibaseDataService {
       },
     });
   }
-
-
 
   /**
    * Fetch metadata about a WikiData item by its ID.
@@ -58,9 +55,12 @@ class WikibaseDataService {
       if (!entity) {
         throw new Error(`Item with ID ${itemId} not found`);
       }
+
+      // TODO this can be done using the API.
       const filteredLabels = Object.fromEntries(
         Object.entries(entity.labels).filter(([lang]) => languages.includes(lang))
       );
+      // TODO this as well. Just pass the "languages" parameter to the action API
       const filteredDescriptions = Object.fromEntries(
         Object.entries(entity.descriptions).filter(([lang]) => languages.includes(lang))
       );
@@ -153,20 +153,20 @@ class WikibaseDataService {
 
     if (precision === 9) {
       formattedDate = year;
-    } 
+    }
     else if (precision === 10) {
       options.year = 'numeric';
       options.month = 'long';
       const date = new Date(`${year}-${month}-01`);
       formattedDate = date.toLocaleDateString(language, options);
-    } 
+    }
     else if (precision >= 11) {
       options.year = 'numeric';
       options.month = 'long';
       options.day = 'numeric';
       const date = new Date(`${year}-${month}-${day}`);
       formattedDate = date.toLocaleDateString(language, options);
-    } 
+    }
     else {
       formattedDate = year;
     }
