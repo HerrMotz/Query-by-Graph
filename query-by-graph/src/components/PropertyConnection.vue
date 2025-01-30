@@ -49,9 +49,6 @@ export default defineComponent({
   },
   mounted() {
     this.isMounted = true;
-    this.$emit("changed",
-      variableEntity
-    )
   },
   computed: {
     centerX() {
