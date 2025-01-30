@@ -1,5 +1,5 @@
 <template>
-  <div class="node bg-indigo-300 hover:bg-indigo-400" :class="{ selected: data.selected, 'bg-violet-400 hover:bg-violet-500': isVariableNode }" :style="nodeStyles" data-testid="node">
+  <div class="node bg-indigo-300 hover:bg-indigo-400" :class="{ selected: data.selected, 'bg-violet-400 hover:bg-violet-500': data?.entity?.id.startsWith('?') }" :style="nodeStyles" data-testid="node">
     <div class="p-2">
       <h1 class="text-3xl text-white font-bold" data-testid="title">{{ data.entity.label }} </h1>
       <h2 class="text-2xl text-gray-100 font-bold font-mono">{{data.entity.prefix.abbreviation}}{{ data.entity.prefix.abbreviation && ':'}}{{data.entity.id}}</h2>
@@ -47,11 +47,6 @@ export default defineComponent({
     data: Object,
     emit: Function,
     seed: String
-  },
-  computed: {
-    isVariableNode() {
-      return this.data.entity.id.startsWith('?')
-    }
   },
   setup(props) {
     const nodeStyles = computed(() => ({
