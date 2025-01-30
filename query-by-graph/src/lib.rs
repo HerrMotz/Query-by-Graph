@@ -10,6 +10,8 @@ use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 
 const INDENTATION_COUNT: usize = 4;
+const WIKIBASE_PREFIX: &str = "PREFIX wikibase: <http://wikiba.se/ontology#>";
+const BD_PREFIX: &str = "PREFIX bd: <http://www.bigdata.com/rdf#>";
 
 #[derive(Serialize, Deserialize)]
 pub struct Entity {
@@ -34,15 +36,19 @@ pub struct Connection {
 // wasm method, to get a string containing a JSON, which converts it to Connection
 // structs and then calls graph_to_query
 #[wasm_bindgen]
-pub fn graph_to_query_wasm(json: &str) -> String {
+pub fn vqg_to_query_wasm(
+    json: &str,
+    add_label_service: bool,
+    add_label_service_prefixes: bool,
+) -> String {
     // for better errors logging in the web browser
     set_panic_hook();
 
     let connections: Vec<Connection> = from_str(json).unwrap();
-    graph_to_query(connections)
+    vqg_to_query(connections, add_label_service, add_label_service_prefixes)
 }
 
-fn graph_to_query(connections: Vec<Connection>) -> String {
+fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_label_service_prefixes: bool) -> String {
     let indentation = " ".repeat(INDENTATION_COUNT);
 
     if connections.len() < 1 {
@@ -56,8 +62,12 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             .filter(|entity| entity.id.starts_with('?'))
             .flat_map(|entity| {
                 let var = entity.id.clone();
-                let label_var = format!("?{}Label", var.trim_start_matches("?"));
-                vec![var, label_var]
+                if add_service_statement {
+                    let label_var = format!("?{}Label", var.trim_start_matches("?"));
+                    vec![var, label_var]
+                } else {
+                    vec![var]
+                }
             })
             .collect::<HashSet<_>>();
 
@@ -83,11 +93,11 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
         } else {
             let mut temp = prefix_set
                 .into_iter()
-                // PREFIX wd: <http://www.wikidata.org/entity/>
+                // e.g. PREFIX wd: <http://www.wikidata.org/entity/>
                 .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.iri))
                 .collect::<Vec<_>>();
             temp.sort();
-            temp.join("\n")
+            format!("{}\n\n", temp.join("\n"))
         };
 
         let where_clause: String = connections
@@ -121,7 +131,7 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
                 };
 
                 format!(
-                    "{} {} {} {} .\n{}# {} -- [{}] -> {}\n",
+                    "{}{} {} {} .\n{}# {} -- [{}] -> {}\n",
                     indentation,
                     source_iri,
                     property_iri,
@@ -134,15 +144,26 @@ fn graph_to_query(connections: Vec<Connection>) -> String {
             })
             .collect();
 
-        let service = format!(
-            "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}",
-            indentation
-        );
+        let service = if add_service_statement {
+            format!(
+                "{}SERVICE wikibase:label {{ bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }}\n",
+                indentation
+            )
+        } else {
+            String::from("")
+        };
 
-        format!(
-            "{}\nSELECT {} WHERE {{\n{}{}\n\n}}",
-            prefix_list, projection_list, where_clause, service
-        )
+        if add_label_service_prefixes {
+            format!(
+                "{}\n{}\n{}SELECT {} WHERE {{\n{}{}}}",
+                BD_PREFIX, WIKIBASE_PREFIX, prefix_list, projection_list, where_clause, service
+            )
+        } else {
+            format!(
+                "{}SELECT {} WHERE {{\n{}{}}}",
+                prefix_list, projection_list, where_clause, service
+            )
+        }
     }
 }
 
@@ -150,7 +171,7 @@ fn parse_query(query: &str) -> Result<Query, SparqlSyntaxError> {
     Query::parse(query, None)
 }
 
-fn bgp_to_graph(bgp: Vec<TriplePattern>) -> Vec<Connection> {
+fn bgp_to_vqg(bgp: Vec<TriplePattern>) -> Vec<Connection> {
     bgp.iter()
         .map(|pattern| {
             connection_constructor(
@@ -163,11 +184,11 @@ fn bgp_to_graph(bgp: Vec<TriplePattern>) -> Vec<Connection> {
 }
 
 #[wasm_bindgen]
-pub fn query_to_graph_wasm(query: &str) -> String {
+pub fn query_to_vqg_wasm(query: &str) -> String {
     // for better errors logging in the web browser
     set_panic_hook();
 
-    to_string(&query_to_graph(query)).unwrap()
+    to_string(&query_to_vqg(query)).unwrap()
 }
 
 /// We get a query, can be a SELECT query or something else.
@@ -177,27 +198,59 @@ pub fn query_to_graph_wasm(query: &str) -> String {
 /// - base IRI (optional)
 ///
 /// The "graph pattern" is equivalent to a SPARQL Basic Graph Pattern (BGP)
-fn query_to_graph(query: &str) -> Vec<Connection> {
-    let parsed_query = parse_query(query);
-
-    // Match on the query type.
-    match parsed_query {
-        Ok(Query::Select { pattern: p, .. }) => match p {
-            GraphPattern::Project {
-                variables: _,
-                inner: i,
-            } => match i {
-                _ => match_bgp_or_path_to_graph(*i),
+fn query_to_vqg(query: &str) -> Vec<Connection> {
+    fn _helper(parsed_query: Result<Query, SparqlSyntaxError>) -> Vec<Connection> {
+        // Match on the query type.
+        match parsed_query {
+            Ok(Query::Select { pattern: p, .. }) => match p {
+                GraphPattern::Project {
+                    variables: _,
+                    inner: i,
+                } => match i {
+                    _ => match_bgp_or_path_to_vqg(*i),
+                },
+                _ => match_bgp_or_path_to_vqg(p),
             },
-            _ => match_bgp_or_path_to_graph(p),
-        },
-        _ => vec![],
+            _ => vec![],
+        }
+    }
+    let parsed_query = parse_query(query);
+    match parsed_query {
+        Err(_error) => {
+            let new_query = format!("{}{}{}", WIKIBASE_PREFIX, BD_PREFIX, query);
+            query_to_vqg(&new_query)
+        }
+        _ => _helper(parsed_query),
     }
 }
 
-fn match_bgp_or_path_to_graph(p: GraphPattern) -> Vec<Connection> {
+/// This will only match a subclass of [SPARQL queries](https://www.w3.org/TR/sparql11-query/).
+///
+/// ```sparql
+///  PREFIX bd: <http://www.bigdata.com/rdf#>
+//   PREFIX wikibase: <http://wikiba.se/ontology#>
+//   PREFIX wd: <http://www.wikidata.org/entity/>
+//   SELECT ?3 ?3Label WHERE {
+//     wd:Q5879 ?3 wd:Q2079 .
+//     # Johann Wolfgang von Goethe -- [Variable] -> Leipzig
+//     SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+//   }
+/// ```
+fn match_bgp_or_path_to_vqg(p: GraphPattern) -> Vec<Connection> {
     match p {
-        GraphPattern::Bgp { patterns: bgp } => bgp_to_graph(bgp),
+        GraphPattern::Bgp { patterns: bgp } => bgp_to_vqg(bgp),
+        // ignore any service statements
+        GraphPattern::Service {
+            name: _n,
+            inner: _i,
+            silent: _s,
+        } => vec![],
+        // this will match e.g. a BGP and a SERVICE statement
+        GraphPattern::Join { left: l, right: r } => {
+            let l_parsed = match_bgp_or_path_to_vqg(*l);
+            let r_parsed = match_bgp_or_path_to_vqg(*r);
+            l_parsed.into_iter().chain(r_parsed).collect()
+        }
         GraphPattern::Path {
             subject: s,
             path: p,
