@@ -6,3 +6,5 @@ The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/ar
 ## Related Works
 - [Sparnatural](https://github.com/sparna-git/Sparnatural)
 - [RDF Explorer](https://rdfexplorer.org/)
+
+You can download the publication [here](https://www.daniel-motz.de/static-content/Query-by-Graph-Bachelor-Thesis.pdf).
