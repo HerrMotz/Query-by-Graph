@@ -1,3 +1,5 @@
+/* LICENSE All rights reserved. */
+
 #import "template.typ": *
 #import "@preview/xarrow:0.3.0": xarrow, xarrowSquiggly, xarrowTwoHead
 #import "@preview/equate:0.2.1": equate
