@@ -43,7 +43,7 @@
                   <thead>
                   <tr>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
-                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">URI</th>
+                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">API URL</th>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Preferred Languages</th>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Item Prefix (IRI / Abbr.)</th>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Property Prefix (IRI / Abbr.)</th>
@@ -94,7 +94,7 @@
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700">URI</label>
+                    <label class="block text-sm font-medium text-gray-700">API base URL</label>
                     <input
                         v-model="newDataSource.uri"
                         type="text"
