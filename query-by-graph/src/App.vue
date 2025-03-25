@@ -8,6 +8,16 @@ import {query_to_vqg_wasm, vqg_to_query_wasm} from "../pkg";
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
 import * as monaco from "monaco-editor"
 
+import Button from "./components/Button.vue";
+import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
+import ClipboardButton from "./components/ClipboardButton.vue";
+import QueryButton from './components/QueryButton.vue';
+import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
+import {selectedDataSource, dataSources} from './store.ts';
+import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
+import {debounce} from "./lib/utils";
+import DataSourcesPopover from "./components/DataSourcesPopover.vue";
+
 monaco.editor.defineTheme('custom-theme', {
   base: 'vs', // Use 'vs-light' as the base theme
   inherit: false, // Inherit other colors and styles from 'vs-light'
@@ -44,15 +54,6 @@ const MONACO_EDITOR_OPTIONS = {
 function formatCode() {
   codeEditorRef.value?.getAction('editor.action.formatDocument').run()
 }
-
-import Button from "./components/Button.vue";
-import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
-import ClipboardButton from "./components/ClipboardButton.vue";
-import QueryButton from './components/QueryButton.vue';
-import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
-import {selectedDataSource, dataSources} from './store.ts';
-import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
-import {debounce} from "./lib/utils";
 
 interface Editor {
   setVueCallback: (callback: (context: any) => void) => void;
@@ -106,6 +107,7 @@ const debouncedCodeChangeEvent = debounce(codeChangeEvent, 1000);
 
 const selectedNode = ref<{ id: any; label: any; entityId: any; metadata: any; dataSource: any } | null>(null);
 
+const openDataSourcesPopover = ref(false);
 
 // for listening to the EntitySelector
 // DEBUG
@@ -123,9 +125,6 @@ onMounted(async () => {
       if (triggerEvents.includes(context.type)) {
         setTimeout(() => {
           const connections = editor.value!.exportConnections()
-          // DEBUG
-          console.log("The connections in App.vue")
-          console.log(connections)
           code.value = vqg_to_query_wasm(JSON.stringify(connections), true, false);
           formatCode();
         }, 10);
@@ -345,7 +344,7 @@ const gotoLink = (url?: string) => {
             <!-- Data Source Selector -->
             <div class="flex-col flex gap-2">
               <h4 class="font-semibold">Data Source</h4>
-              <div class="flex gap-4">
+              <div class="flex flex-wrap gap-4">
                 <Button
                     v-for="ds in dataSources"
                     :class="{'highlighted': selectedDataSource.name === ds.name}"
@@ -353,6 +352,11 @@ const gotoLink = (url?: string) => {
                   Use {{ ds.name }}
                 </Button>
               </div>
+              <Button
+                  @click="openDataSourcesPopover = true">
+                Manage Data Sources
+              </Button>
+              <DataSourcesPopover :open="openDataSourcesPopover" @close="openDataSourcesPopover = false"/>
               <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
                 <em>Hint:</em>
                 Select a data source by clicking one of the buttons above.
@@ -367,10 +371,6 @@ const gotoLink = (url?: string) => {
               <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
                 <em>Hint:</em>
                 Open a new window for building another graph without deleting the current one.
-              </p>
-              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
-
-
               </p>
             </div>
           </div>

@@ -12,7 +12,7 @@
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.5.4",
     "@headlessui/vue": "^1.7.22",
-    "axios": "^1.7.4",
+    "axios": "^1.8.4",
     "highlight.js": "^11.10.0",
     "monaco-editor": "^0.52.2",
     "rete": "^2.0.3",
@@ -23,7 +23,7 @@
     "rete-history-plugin": "^2.0.1",
     "rete-render-utils": "^2.0.2",
     "rete-vue-plugin": "^2.0.3",
-    "vue": "^3.4.31"
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@heroicons/vue": "^2.1.5",

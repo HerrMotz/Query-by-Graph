@@ -124,7 +124,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
             function _wrapper(fqdn: string, prefixKey: ValidPrefixKeys) {
                 // this method is just a wrapper, because the code for items and props is identical, except for the
                 // keys "itemPrefix" and "propertyPrefix"
-                const matchingDatasourceForEntity = dataSources.find(s => s[prefixKey].iri.includes(fqdn));
+                const matchingDatasourceForEntity = dataSources.value.find(s => s[prefixKey].iri.includes(fqdn));
                 if (matchingDatasourceForEntity) {
                     const isTheRightPrefix = entity.id.includes(matchingDatasourceForEntity[prefixKey].iri);
                     // this part is very important! If it would not return false, the differentiation between prop and
