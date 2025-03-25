@@ -14,6 +14,9 @@ export const selectedDataSource = ref<WikibaseDataSource>(wikiDataDataSource);
 // initialize the data sources from local storage on page load
 const localstorageDataSourcesKey = 'dataSources';
 const storedDataSources = localStorage.getItem(localstorageDataSourcesKey);
+if (!storedDataSources) {
+    localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(defaultDataSources));
+}
 // add the new data source to the list
 const localStoreDataSources = storedDataSources ? JSON.parse(storedDataSources) : defaultDataSources;
 
