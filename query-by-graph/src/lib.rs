@@ -199,6 +199,11 @@ pub fn query_to_vqg_wasm(query: &str) -> String {
 ///
 /// The "graph pattern" is equivalent to a SPARQL Basic Graph Pattern (BGP)
 fn query_to_vqg(query: &str) -> Vec<Connection> {
+
+    if query.is_empty() {
+        return vec![];
+    }
+
     fn _helper(parsed_query: Result<Query, SparqlSyntaxError>) -> Vec<Connection> {
         // Match on the query type.
         match parsed_query {

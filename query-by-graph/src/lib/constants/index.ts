@@ -30,6 +30,21 @@ const factGridDataSource: WikibaseDataSource = {
     queryService: "https://database.factgrid.de/query/",
 }
 
+const mimoDataSource: WikibaseDataSource = {
+    name: "MiMoText",
+    uri: "https://data.mimotext.uni-trier.de/w/api.php",
+    preferredLanguages: ['en'],
+    itemPrefix: {
+        iri: "https://data.mimotext.uni-trier.de/entity/",
+        abbreviation: "mmd"
+    },
+    propertyPrefix: {
+        iri: "https://data.mimotext.uni-trier.de/prop/direct/",
+        abbreviation: "mmdt"
+    },
+    queryService: "https://query.mimotext.uni-trier.de/", // do not leave blank spaces in urls
+}
+
 const noDataSource: WikibaseDataSource = {
     name: "",
     uri: "",
@@ -45,4 +60,4 @@ const noDataSource: WikibaseDataSource = {
     queryService: "",
 }
 
-export {wikiDataDataSource,factGridDataSource,noDataSource}
+export {wikiDataDataSource,factGridDataSource,mimoDataSource,noDataSource}

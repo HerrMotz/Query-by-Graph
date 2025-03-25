@@ -69,7 +69,7 @@ function queryHelper(query: string) {
       return { // EntityType
         id: entity.id,
         label: entity.display.label.value,
-        description: entity.display.description.value,
+        description: entity.display?.description?.value || '',
         prefix: {
           iri: prefix.iri,
           abbreviation: prefix.abbreviation,
