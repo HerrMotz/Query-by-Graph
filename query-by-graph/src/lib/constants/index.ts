@@ -35,11 +35,11 @@ const mimoDataSource: WikibaseDataSource = {
     uri: "https://data.mimotext.uni-trier.de/w/api.php",
     preferredLanguages: ['en'],
     itemPrefix: {
-        iri: "https://data.mimotext.uni-trier.de/entity/",
+        iri: "http://data.mimotext.uni-trier.de/entity/",
         abbreviation: "mmd"
     },
     propertyPrefix: {
-        iri: "https://data.mimotext.uni-trier.de/prop/direct/",
+        iri: "http://data.mimotext.uni-trier.de/prop/direct/",
         abbreviation: "mmdt"
     },
     queryService: "https://query.mimotext.uni-trier.de/", // do not leave blank spaces in urls
