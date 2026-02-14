@@ -10,7 +10,8 @@ const variableEntity: EntityType = { // EntityType
         iri: "",
         abbreviation: "",
     },
-    dataSource: noDataSource
+    dataSource: noDataSource,
+    selectedForProjection: true
 };
 
 const variableEntityConstructor = (name: string): EntityType => {
@@ -27,7 +28,8 @@ const noEntity: EntityType = {
         iri: "",
         abbreviation: "",
     },
-    dataSource: noDataSource
+    dataSource: noDataSource,
+    selectedForProjection: false
 };
 
 export {noEntity, variableEntity, variableEntityConstructor}

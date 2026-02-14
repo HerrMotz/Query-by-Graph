@@ -115,7 +115,8 @@ const triggerEvents = [
   "connectioncreated",
   "connectionremoved",
   "nodecreated",
-  "rendered"
+  "rendered",
+  "projectiontoggled"
 ]
 
 onMounted(async () => {
@@ -186,6 +187,41 @@ const setDataSource = (source: WikibaseDataSource) => {
     console.log('selectedDataSource updated to:', selectedDataSource.value);
   }
 };
+
+const selectAllVariablesForProjection = () => {
+  if (editor.value) {
+    const connections = editor.value.exportConnections();
+    connections.forEach((connection: ConnectionInterfaceType) => {
+      if (connection.source.id.startsWith('?')) {
+        connection.source.selectedForProjection = true;
+      }
+      if (connection.target.id.startsWith('?')) {
+        connection.target.selectedForProjection = true;
+      }
+      if (connection.property.id.startsWith('?')) {
+        connection.property.selectedForProjection = true;
+      }
+    });
+  }
+};
+
+const deselectAllVariablesForProjection = () => {
+  if (editor.value) {
+    const connections = editor.value.exportConnections();
+    connections.forEach((connection: ConnectionInterfaceType) => {
+      if (connection.source.id.startsWith('?')) {
+        connection.source.selectedForProjection = false;
+      }
+      if (connection.target.id.startsWith('?')) {
+        connection.target.selectedForProjection = false;
+      }
+      if (connection.property.id.startsWith('?')) {
+        connection.property.selectedForProjection = false;
+      }
+    });
+  }
+};
+
 
 const gotoLink = (url?: string) => {
   const link = url || window.location.href;
@@ -325,6 +361,23 @@ const gotoLink = (url?: string) => {
                       class="inline-flex items-center rounded-sm border border-gray-200 px-1 font-sans text-xs text-gray-200">CTRL+Z</kbd>
                 </Button>
               </div>
+            </div>
+
+            <div class="flex-col flex gap-2">
+              <h4 class="font-semibold">Query Projection</h4>
+              <div class="flex flex-col gap-2">
+                <Button class="grow" @click="selectAllVariablesForProjection">
+                  Select All Variables
+                </Button>
+                <Button class="grow" @click="deselectAllVariablesForProjection">
+                  Deselect All Variables
+                </Button>
+              </div>
+              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
+                <em>Hint:</em>
+                Use the "Include in SELECT" checkbox on variable nodes to control their inclusion in the query projection.
+                Variables with a green border and checkmark (✓) are included in the query results.
+              </p>
             </div>
 
             <div class="flex-col flex gap-2">

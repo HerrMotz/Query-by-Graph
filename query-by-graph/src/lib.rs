@@ -18,6 +18,12 @@ pub struct Entity {
     pub id: String,
     pub label: String,
     pub prefix: Prefix,
+    #[serde(default = "default_selected_for_projection")]
+    pub selected_for_projection: bool,
+}
+
+fn default_selected_for_projection() -> bool {
+    true // Default to true for backward compatibility
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -60,6 +66,7 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
                 vec![&connection.source, &connection.target, &connection.property]
             })
             .filter(|entity| entity.id.starts_with('?'))
+            .filter(|entity| entity.selected_for_projection) // Only include selected variables
             .flat_map(|entity| {
                 let var = entity.id.clone();
                 if add_service_statement {
@@ -209,10 +216,34 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
         match parsed_query {
             Ok(Query::Select { pattern: p, .. }) => match p {
                 GraphPattern::Project {
-                    variables: _,
+                    variables: v,
                     inner: i,
-                } => match i {
-                    _ => match_bgp_or_path_to_vqg(*i),
+                } => {
+                    // Extract projection variable names
+                    let projection_vars: HashSet<String> = v
+                        .iter()
+                        .map(|var| format!("?{}", var.as_str()))
+                        .collect();
+
+                    let mut connections = match_bgp_or_path_to_vqg(*i);
+
+                    // Mark entities based on whether they're in the projection
+                    for connection in &mut connections {
+                        if connection.source.id.starts_with('?') {
+                            connection.source.selected_for_projection =
+                                projection_vars.contains(&connection.source.id);
+                        }
+                        if connection.target.id.starts_with('?') {
+                            connection.target.selected_for_projection =
+                                projection_vars.contains(&connection.target.id);
+                        }
+                        if connection.property.id.starts_with('?') {
+                            connection.property.selected_for_projection =
+                                projection_vars.contains(&connection.property.id);
+                        }
+                    }
+
+                    connections
                 },
                 _ => match_bgp_or_path_to_vqg(p),
             },
@@ -282,6 +313,7 @@ fn connection_constructor(
                 iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
+            selected_for_projection: true, // Default to true
         },
         source: Entity {
             id: subject_name.clone(),
@@ -290,6 +322,7 @@ fn connection_constructor(
                 iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
+            selected_for_projection: true, // Default to true
         },
         target: Entity {
             id: object_name.clone(),
@@ -298,6 +331,7 @@ fn connection_constructor(
                 iri: "".to_string(),
                 abbreviation: "".to_string(),
             },
+            selected_for_projection: true, // Default to true
         },
     }
 }

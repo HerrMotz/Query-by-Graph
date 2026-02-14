@@ -6,6 +6,7 @@ export interface EntityType {
     description: string,
     prefix: PrefixType,
     dataSource: WikibaseDataSource;
+    selectedForProjection?: boolean;
 }
 
 export interface PrefixType {
