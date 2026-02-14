@@ -493,7 +493,7 @@ export async function createEditor(container: HTMLElement) {
         }
 
         if(context.type === 'nodepicked') {
-            const node = context.data as ClassicPreset.Node;
+            const node = context.data as EntityNodeClass;
             console.log(`Node clicked: ${node.id}`);
 
             if (vueCallback){
@@ -647,4 +647,10 @@ export async function createEditor(container: HTMLElement) {
         }
     };
 }
+
+
+
+
+
+
 

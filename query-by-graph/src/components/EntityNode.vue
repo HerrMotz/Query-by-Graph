@@ -1,5 +1,17 @@
 <template>
-  <div class="node bg-indigo-300 hover:bg-indigo-400" :class="{ selected: data.selected, 'bg-violet-400 hover:bg-violet-500': data?.entity?.id.startsWith('?') }" :style="nodeStyles" data-testid="node">
+  <div class="node bg-indigo-300 hover:bg-indigo-400"
+       :class="{
+         selected: data.selected,
+         'bg-violet-400 hover:bg-violet-500': data?.entity?.id.startsWith('?'),
+         'projection-selected': isVariableSelectedForProjection
+       }"
+       :style="nodeStyles"
+       data-testid="node"
+       :title="projectionTooltip">
+    <!-- Projection indicator badge -->
+    <div v-if="isVariableSelectedForProjection" class="projection-badge">
+      ✓
+    </div>
     <div class="p-2">
       <h1 class="text-3xl text-white font-bold" data-testid="title">{{ data.entity.label }} </h1>
       <h2 class="text-2xl text-gray-100 font-bold font-mono">{{data.entity.prefix.abbreviation}}{{ data.entity.prefix.abbreviation && ':'}}{{data.entity.id}}</h2>
@@ -58,11 +70,24 @@ export default defineComponent({
     const controls = computed(() => sortByIndex(Object.entries(props.data.controls)));
     const outputs = computed(() => sortByIndex(Object.entries(props.data.outputs)));
 
+    const isVariable = computed(() => props.data?.entity?.id?.startsWith('?'));
+    const isVariableSelectedForProjection = computed(() =>
+      isVariable.value && props.data?.entity?.selectedForProjection !== false
+    );
+    const projectionTooltip = computed(() => {
+      if (!isVariable.value) return '';
+      return isVariableSelectedForProjection.value
+        ? 'Click to exclude from SELECT projection'
+        : 'Click to include in SELECT projection';
+    });
+
     return {
       nodeStyles,
       inputs,
       controls,
-      outputs
+      outputs,
+      isVariableSelectedForProjection,
+      projectionTooltip
     };
   },
   components: {
@@ -98,6 +123,31 @@ $socket-size: 16px;
     color: black;
     border-color: red;
     background: #ffcf00;
+  }
+
+  &.projection-selected {
+    border-color: #10b981;
+    border-width: 3px;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+
+  .projection-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
   }
 
   .title {

@@ -54,3 +54,49 @@ SELECT ?variable1 WHERE {
     # Johann Wolfgang von Goethe -- [Variable] -> Leipzig University
 }")
 }
+
+#[test]
+fn test_projection_selection_with_selected_variable() {
+    let query = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selected_for_projection":false},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selected_for_projection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selected_for_projection":true}}]"###;
+    let result = vqg_to_query_wasm(query, false, false);
+    assert!(result.contains("SELECT ?university"));
+    assert!(result.contains("wd:Q5879 wdt:P69 ?university"));
+}
+
+#[test]
+fn test_projection_selection_with_no_selected_variables() {
+    let query = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selected_for_projection":false},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selected_for_projection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selected_for_projection":false}}]"###;
+    let result = vqg_to_query_wasm(query, false, false);
+    assert!(result.contains("SELECT *"));
+}
+
+#[test]
+fn test_projection_selection_with_multiple_variables() {
+    let query = r###"[{"property":{"id":"?prop","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selected_for_projection":false},"source":{"id":"?person","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selected_for_projection":true},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selected_for_projection":true}}]"###;
+    let result = vqg_to_query_wasm(query, false, false);
+    assert!(result.contains("SELECT"));
+    assert!(result.contains("?person"));
+    assert!(result.contains("?university"));
+    assert!(!result.contains("?prop") || result.contains("?prop ?person ?university"));
+}
+
+#[test]
+fn test_parse_query_with_specific_projection() {
+    let query = r###"PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?university WHERE {
+     wd:Q5879 wdt:P69 ?university .
+}"###;
+    let result = query_to_vqg_wasm(query);
+    // The result should mark ?university as selected for projection
+    assert!(result.contains("selected_for_projection"));
+}
+
+#[test]
+fn test_backward_compatibility_without_projection_field() {
+    // Old format without selected_for_projection field should default to true
+    let query = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"}},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"}},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""}}}]"###;
+    let result = vqg_to_query_wasm(query, false, false);
+    // Should include the variable by default
+    assert!(result.contains("?university"));
+}
