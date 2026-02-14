@@ -54,7 +54,7 @@ export default defineComponent({
   props: {
     data: Object,
     emit: Function,
-    seed: String
+    seed: [String, Number]
   },
   setup(props) {
     const nodeStyles = computed(() => ({
