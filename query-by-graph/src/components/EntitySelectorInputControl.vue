@@ -36,8 +36,7 @@ export default {
       // Access the control's value via the local controlValue that's kept in sync
       const hasValue = this.controlValue && typeof this.controlValue === 'object';
       const hasId = hasValue && 'id' in this.controlValue && typeof this.controlValue.id === 'string';
-      const result = hasId && this.controlValue.id.startsWith('?');
-      return result;
+      return hasId && this.controlValue.id.startsWith('?');
     }
   },
   methods: {
