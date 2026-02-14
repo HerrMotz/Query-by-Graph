@@ -115,8 +115,7 @@ const triggerEvents = [
   "connectioncreated",
   "connectionremoved",
   "nodecreated",
-  "rendered",
-  "projectiontoggled"
+  "rendered"
 ]
 
 onMounted(async () => {
