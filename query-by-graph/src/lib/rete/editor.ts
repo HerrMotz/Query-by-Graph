@@ -13,7 +13,6 @@ import ConnectionInterfaceType from "../types/ConnectionInterfaceType.ts";
 import EntityNodeComponent from "../../components/EntityNode.vue";
 import CustomInputControl from "../../components/EntitySelectorInputControl.vue";
 import {noEntity, variableEntityConstructor} from "./constants.ts";
-import {noDataSource} from "../constants";
 import {dataSources} from "../../store.ts";
 import {LanguageTaggedLiteral, WikibaseDataSource} from "../types/WikibaseDataSource.ts";
 import WikibaseDataService from "../wikidata/WikibaseDataService.ts";
@@ -247,8 +246,8 @@ class EntitySelectorInputControl extends ClassicPreset.InputControl<"text", Enti
 type Schemes = GetSchemes<EntityNodeClass, Connection<EntityNodeClass>>;
 type AreaExtra = VueArea2D<Schemes>;
 
-function createNode(socket: ClassicPreset.Socket, highestIdCount: number, editor: any, area: any) {
-    const newEntity = variableEntityConstructor(
+function createNode(socket: ClassicPreset.Socket, highestIdCount: number, editor: any, area: any, entity?: EntityType) {
+    const newEntity = entity || variableEntityConstructor(
         highestIdCount.toString()
     )
 
@@ -260,7 +259,7 @@ function createNode(socket: ClassicPreset.Socket, highestIdCount: number, editor
     node.addControl(
         "entityInput",
         new EntitySelectorInputControl({
-            initial: {id: "", label: "", prefix: {iri: "", abbreviation: ""}, description: "", dataSource: noDataSource},
+            initial: newEntity,
             change(value) {
                 // DEBUG
                 // console.log("Entity Input called change")
@@ -603,14 +602,12 @@ export async function createEditor(container: HTMLElement) {
                     // can be parallel as nodes are not connected yet
                     for (const c of convertedConnections){
                         if(!nodeMap.has(c.source.id)){
-                            const subject = createNode(socket, highestIdCount, editor, area);
-                            subject.setEntity(c.source);
+                             const subject = createNode(socket, highestIdCount, editor, area, c.source);
                             nodeMap.set(c.source.id, subject);
                             promises.push(editor.addNode(subject));
                         }
                         if(!nodeMap.has(c.target.id)){
-                            const object = createNode(socket, highestIdCount, editor, area);
-                            object.setEntity(c.target);
+                            const object = createNode(socket, highestIdCount, editor, area, c.target);
                             nodeMap.set(c.target.id, object);
                             promises.push(editor.addNode(object));
                         }
