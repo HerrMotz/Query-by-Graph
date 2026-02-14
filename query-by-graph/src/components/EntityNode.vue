@@ -6,12 +6,7 @@
          'projection-selected': isVariableSelectedForProjection
        }"
        :style="nodeStyles"
-       data-testid="node"
-       :title="projectionTooltip">
-    <!-- Projection indicator badge -->
-    <div v-if="isVariableSelectedForProjection" class="projection-badge">
-      ✓
-    </div>
+       data-testid="node">
     <div class="p-2">
       <h1 class="text-3xl text-white font-bold" data-testid="title">{{ data.entity.label }} </h1>
       <h2 class="text-2xl text-gray-100 font-bold font-mono">{{data.entity.prefix.abbreviation}}{{ data.entity.prefix.abbreviation && ':'}}{{data.entity.id}}</h2>
@@ -125,30 +120,6 @@ $socket-size: 16px;
     background: #ffcf00;
   }
 
-  &.projection-selected {
-    border-color: #10b981;
-    border-width: 3px;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-  }
-
-  .projection-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 24px;
-    height: 24px;
-    background: #10b981;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-  }
 
   .title {
     color: white;
