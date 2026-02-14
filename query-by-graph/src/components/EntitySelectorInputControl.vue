@@ -4,7 +4,7 @@
                     @pointerdown.stop=""
                     @selected-entity="handleEntitySelected"
     />
-    <div v-if="isVariable" class="flex items-center mt-2 px-2">
+    <div v-if="isVariable" class="flex items-center mt-2 px-2" @click.stop @pointerdown.stop @mousedown.stop>
       <input
         type="checkbox"
         :id="`projection-${data.id}`"
@@ -12,7 +12,7 @@
         @change="handleProjectionChange"
         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
       />
-      <label :for="`projection-${data.id}`" class="ml-2 text-sm font-medium text-white">
+      <label :for="`projection-${data.id}`" class="ml-2 text-sm font-medium text-white cursor-pointer">
         Include in SELECT
       </label>
     </div>
@@ -27,7 +27,6 @@ export default {
   props: ['data'],
   data() {
     return {
-      includeInProjection: true,
       controlValue: this.data?.value || this.data?.options?.initial
     }
   },
@@ -37,6 +36,26 @@ export default {
       const hasValue = this.controlValue && typeof this.controlValue === 'object';
       const hasId = hasValue && 'id' in this.controlValue && typeof this.controlValue.id === 'string';
       return hasId && this.controlValue.id.startsWith('?');
+    },
+    includeInProjection: {
+      get() {
+        // Read from the entity's selectedForProjection property (default to true if not set)
+        return this.controlValue?.selectedForProjection !== false;
+      },
+      set(value) {
+        // Write to the entity's selectedForProjection property
+        if (this.controlValue) {
+          this.controlValue.selectedForProjection = value;
+          // Ensure the data value is also updated
+          if (this.data.value) {
+            this.data.value.selectedForProjection = value;
+          }
+          // Trigger change callback to notify the node
+          if (this.data.options.change) {
+            this.data.options.change(this.controlValue);
+          }
+        }
+      }
     }
   },
   methods: {
@@ -51,7 +70,7 @@ export default {
       }
     },
     handleProjectionChange() {
-      // This could be used to trigger updates if needed
+      // Log for debugging
       console.log('Projection changed:', this.includeInProjection);
     }
   },
@@ -75,6 +94,10 @@ export default {
       // Ensure data.value is set if it wasn't already
       if (!this.data.value) {
         this.data.value = initialValue;
+      }
+      // Initialize selectedForProjection to true if not set
+      if (this.controlValue && this.controlValue.selectedForProjection === undefined) {
+        this.controlValue.selectedForProjection = true;
       }
     }
   },
