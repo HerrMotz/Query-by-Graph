@@ -51,7 +51,7 @@ import {getEntityStyles} from "../lib/utils/entityStyles.ts";
 export default defineComponent({
   name: "CustomConnection",
   components: {EntitySelector, ProjectionCheckbox},
-  props: ['data', 'start', 'end', 'path'],
+  props: ['data', 'start', 'end', 'path', 'seed'],
   emits: ['changedEntitySelector'],
   data() {
     return {
@@ -76,6 +76,8 @@ export default defineComponent({
       return (this.end.y + this.start.y) / 2 - 20;
     },
     isVariable() {
+      // Use seed to force re-computation when area.update is called
+      this.seed;
       // Check if the property is a variable (starts with '?')
       const hasValue = this.value && typeof this.value === 'object';
       const hasId = hasValue && 'id' in this.value && typeof this.value.id === 'string';
@@ -86,6 +88,8 @@ export default defineComponent({
     },
     includeInProjection: {
       get() {
+        // Use seed to force re-computation when area.update is called
+        this.seed;
         // Read from the property's selectedForProjection property (default to true if not set)
         return this.value?.selectedForProjection !== false;
       },

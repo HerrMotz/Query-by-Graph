@@ -638,6 +638,10 @@ export async function createEditor(container: HTMLElement) {
         exportConnections: (): ConnectionInterfaceType[] => {
             return exportConnectionsHelper(editor)
         },
+        getNodes: () => editor.getNodes(),
+        getConnections: () => editor.getConnections(),
+        updateNode: (id: string) => area.update('node', id),
+        updateConnection: (id: string) => area.update('connection', id),
         getNode: (id: string) => editor.getNode(id),
         simplify: async() => {
             await simplifyVQG()
