@@ -1,6 +1,7 @@
 <template>
   <div class="node"
        :class="{
+         'selected': data.selected,
          'bg-indigo-300 hover:bg-indigo-400': !isVariable,
          'bg-violet-400 hover:bg-violet-500': isVariable && !isVariableSelectedForProjection,
          'bg-green-600 hover:bg-green-700': isVariable && isVariableSelectedForProjection
@@ -36,8 +37,8 @@
 </template>
 
 <script lang="js">
-import { defineComponent, computed } from 'vue'
-import { Ref } from 'rete-vue-plugin'
+import {computed, defineComponent} from 'vue'
+import {Ref} from 'rete-vue-plugin'
 import EntitySelector from "./EntitySelector.vue";
 
 function sortByIndex(entries) {
@@ -66,10 +67,16 @@ export default defineComponent({
     const controls = computed(() => sortByIndex(Object.entries(props.data.controls)));
     const outputs = computed(() => sortByIndex(Object.entries(props.data.outputs)));
 
-    const isVariable = computed(() => props.data?.entity?.id?.startsWith('?'));
-    const isVariableSelectedForProjection = computed(() =>
-      isVariable.value && props.data?.entity?.selectedForProjection !== false
-    );
+    const isVariable = computed(() => {
+      // Use seed to force re-computation when area.update is called
+      props.seed;
+
+      return props.data?.entity?.id?.startsWith('?');
+    });
+    const isVariableSelectedForProjection = computed(() => {
+      props.seed;
+      return isVariable.value && props.data?.entity?.selectedForProjection !== false;
+    });
     const projectionTooltip = computed(() => {
       if (!isVariable.value) return '';
       return isVariableSelectedForProjection.value
@@ -117,7 +124,6 @@ $socket-size: 16px;
   }
 
   &.selected {
-    color: black;
     border-color: red;
   }
 

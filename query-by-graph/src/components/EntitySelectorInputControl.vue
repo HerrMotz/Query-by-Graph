@@ -13,7 +13,7 @@
         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
       />
       <label :for="`projection-${data.id}`" class="ml-2 text-sm font-medium text-white cursor-pointer">
-        Include in SELECT
+        Select?
       </label>
     </div>
   </div>
@@ -25,34 +25,24 @@ import EntitySelector from "./EntitySelector.vue";
 export default {
   components: {EntitySelector},
   props: ['data'],
-  data() {
-    return {
-      controlValue: this.data?.value || this.data?.options?.initial
-    }
-  },
   computed: {
     isVariable() {
-      // Access the control's value via the local controlValue that's kept in sync
-      const hasValue = this.controlValue && typeof this.controlValue === 'object';
-      const hasId = hasValue && 'id' in this.controlValue && typeof this.controlValue.id === 'string';
-      return hasId && this.controlValue.id.startsWith('?');
+      const val = this.data.value;
+      const hasValue = val && typeof val === 'object';
+      const hasId = hasValue && 'id' in val && typeof val.id === 'string';
+      const variable = hasId && val.id.startsWith('?');
+      console.log('isVariable re-evaluating:', variable, 'for entity:', val?.id);
+      return variable;
     },
     includeInProjection: {
       get() {
-        // Read from the entity's selectedForProjection property (default to true if not set)
-        return this.controlValue?.selectedForProjection !== false;
+        return this.data.value?.selectedForProjection !== false;
       },
       set(value) {
-        // Write to the entity's selectedForProjection property
-        if (this.controlValue) {
-          this.controlValue.selectedForProjection = value;
-          // Ensure the data value is also updated
-          if (this.data.value) {
-            this.data.value.selectedForProjection = value;
-          }
-          // Trigger change callback to notify the node
-          if (this.data.options.change) {
-            this.data.options.change(this.controlValue);
+        if (this.data.value) {
+          this.data.value.selectedForProjection = value;
+          if (this.data.options?.change) {
+            this.data.options.change(this.data.value);
           }
         }
       }
@@ -60,44 +50,23 @@ export default {
   },
   methods: {
     handleEntitySelected(entity) {
-      // Update both the control's value and the local reactive copy
-      this.controlValue = entity;
+      console.log('Entity selected in control:', entity.id);
       this.data.value = entity;
 
-      // Trigger the change callback
-      if (this.data.options.change) {
+      if (this.data.options?.change) {
         this.data.options.change(entity);
       }
     },
     handleProjectionChange() {
-      // Log for debugging
       console.log('Projection changed:', this.includeInProjection);
     }
   },
-  watch: {
-    // Watch for external changes to the control's value
-    'data.value': {
-      handler(newValue) {
-        if (newValue !== this.controlValue) {
-          this.controlValue = newValue;
-        }
-      },
-      deep: true,
-      immediate: true
-    }
-  },
   created() {
-    // Initialize the control's value, prioritizing actual value over initial
-    const initialValue = this.data.value || this.data.options?.initial;
-    if (initialValue) {
-      this.controlValue = initialValue;
-      // Ensure data.value is set if it wasn't already
-      if (!this.data.value) {
-        this.data.value = initialValue;
-      }
-      // Initialize selectedForProjection to true if not set
-      if (this.controlValue && this.controlValue.selectedForProjection === undefined) {
-        this.controlValue.selectedForProjection = true;
+    const val = this.data.value || this.data.options?.initial;
+    if (val) {
+      this.data.value = val;
+      if (this.data.value.selectedForProjection === undefined) {
+        this.data.value.selectedForProjection = true;
       }
     }
   },

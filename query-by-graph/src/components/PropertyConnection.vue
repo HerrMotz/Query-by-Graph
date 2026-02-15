@@ -26,11 +26,10 @@
           type="checkbox"
           :id="`projection-property-${data.id}`"
           v-model="includeInProjection"
-          @change="handleProjectionChange"
           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
         />
         <label :for="`projection-property-${data.id}`" class="ml-2 text-sm font-medium text-gray-800 cursor-pointer">
-          Include in SELECT
+          Select?
         </label>
       </div>
     </div>
@@ -97,12 +96,6 @@ export default defineComponent({
           this.$emit('changedEntitySelector', this.value);
         }
       }
-    }
-  },
-  methods: {
-    handleProjectionChange() {
-      // Log for debugging
-      console.log('Property projection changed:', this.includeInProjection);
     }
   },
   watch: {
