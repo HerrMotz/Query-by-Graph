@@ -1,29 +1,27 @@
 <template>
   <div>
     <EntitySelector type="item" language="en"
+                    :is-variable="isVariable"
+                    :is-selected="includeInProjection"
                     @pointerdown.stop=""
                     @selected-entity="handleEntitySelected"
     />
-    <div v-if="isVariable" class="flex items-center mt-2 px-2" @click.stop @pointerdown.stop @mousedown.stop>
-      <input
-        type="checkbox"
+    <ProjectionCheckbox
         :id="`projection-${data.id}`"
         v-model="includeInProjection"
-        @change="handleProjectionChange"
-        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-      />
-      <label :for="`projection-${data.id}`" class="ml-2 text-sm font-medium text-white cursor-pointer">
-        Select?
-      </label>
-    </div>
+        :is-variable="isVariable"
+        container-classes="px-2"
+        label-classes="text-white"
+    />
   </div>
 </template>
 
 <script>
 import EntitySelector from "./EntitySelector.vue";
+import ProjectionCheckbox from "./ProjectionCheckbox.vue";
 
 export default {
-  components: {EntitySelector},
+  components: {EntitySelector, ProjectionCheckbox},
   props: ['data'],
   computed: {
     isVariable() {
