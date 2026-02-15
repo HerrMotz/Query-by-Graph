@@ -14,6 +14,7 @@ const WIKIBASE_PREFIX: &str = "PREFIX wikibase: <http://wikiba.se/ontology#>";
 const BD_PREFIX: &str = "PREFIX bd: <http://www.bigdata.com/rdf#>";
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Entity {
     pub id: String,
     pub label: String,
@@ -27,12 +28,14 @@ fn default_selected_for_projection() -> bool {
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Prefix {
     iri: String,
     abbreviation: String,
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Connection {
     pub property: Entity,
     pub source: Entity,
