@@ -1,9 +1,9 @@
 <template>
-  <div class="node bg-indigo-300 hover:bg-indigo-400"
+  <div class="node"
        :class="{
-         selected: data.selected,
-         'bg-violet-400 hover:bg-violet-500': data?.entity?.id.startsWith('?'),
-         'projection-selected': isVariableSelectedForProjection
+         'bg-indigo-300 hover:bg-indigo-400': !isVariable,
+         'bg-violet-400 hover:bg-violet-500': isVariable && !isVariableSelectedForProjection,
+         'bg-green-600 hover:bg-green-700': isVariable && isVariableSelectedForProjection
        }"
        :style="nodeStyles"
        data-testid="node">
@@ -82,6 +82,7 @@ export default defineComponent({
       inputs,
       controls,
       outputs,
+      isVariable,
       isVariableSelectedForProjection,
       projectionTooltip
     };
@@ -118,7 +119,6 @@ $socket-size: 16px;
   &.selected {
     color: black;
     border-color: red;
-    background: #ffcf00;
   }
 
 
