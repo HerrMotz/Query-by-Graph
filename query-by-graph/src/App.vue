@@ -63,6 +63,10 @@ interface Editor {
   redo: () => void;
   importConnections: (connections: ConnectionInterfaceType[]) => Promise<Promise<true>[] | undefined>;
   exportConnections: () => ConnectionInterfaceType[];
+  getNodes: () => any[];
+  getConnections: () => any[];
+  updateNode: (id: string) => void;
+  updateConnection: (id: string) => void;
   layout: (animate: boolean) => void;
   getNode: (nodeId: string) => ClassicPreset.Node | undefined;
   simplify: () => void;
@@ -189,16 +193,16 @@ const setDataSource = (source: WikibaseDataSource) => {
 
 const selectAllVariablesForProjection = () => {
   if (editor.value) {
-    const connections = editor.value.exportConnections();
-    connections.forEach((connection: ConnectionInterfaceType) => {
-      if (connection.source.id.startsWith('?')) {
-        connection.source.selectedForProjection = true;
+    editor.value.getNodes().forEach((node: any) => {
+      if (node.entity?.id.startsWith('?')) {
+        node.entity.selectedForProjection = true;
+        editor.value?.updateNode(node.id);
       }
-      if (connection.target.id.startsWith('?')) {
-        connection.target.selectedForProjection = true;
-      }
-      if (connection.property.id.startsWith('?')) {
+    });
+    editor.value.getConnections().forEach((connection: any) => {
+      if (connection.property?.id.startsWith('?')) {
         connection.property.selectedForProjection = true;
+        editor.value?.updateConnection(connection.id);
       }
     });
   }
@@ -206,16 +210,16 @@ const selectAllVariablesForProjection = () => {
 
 const deselectAllVariablesForProjection = () => {
   if (editor.value) {
-    const connections = editor.value.exportConnections();
-    connections.forEach((connection: ConnectionInterfaceType) => {
-      if (connection.source.id.startsWith('?')) {
-        connection.source.selectedForProjection = false;
+    editor.value.getNodes().forEach((node: any) => {
+      if (node.entity?.id.startsWith('?')) {
+        node.entity.selectedForProjection = false;
+        editor.value?.updateNode(node.id);
       }
-      if (connection.target.id.startsWith('?')) {
-        connection.target.selectedForProjection = false;
-      }
-      if (connection.property.id.startsWith('?')) {
+    });
+    editor.value.getConnections().forEach((connection: any) => {
+      if (connection.property?.id.startsWith('?')) {
         connection.property.selectedForProjection = false;
+        editor.value?.updateConnection(connection.id);
       }
     });
   }
