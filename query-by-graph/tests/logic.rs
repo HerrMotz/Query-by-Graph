@@ -95,7 +95,7 @@ SELECT ?3 ?3Label WHERE {
     assert_eq!(connections.len(), 1);
     let c = &connections[0];
 
-    assert_eq!(c["property"]["id"], Value::String("?3".to_string()));
+    assert_eq!(c["properties"][0]["id"], Value::String("?3".to_string()));
     assert_eq!(
         c["source"]["id"],
         Value::String("<http://www.wikidata.org/entity/Q5879>".to_string())
@@ -106,7 +106,7 @@ SELECT ?3 ?3Label WHERE {
     );
 
     // selected_for_projection exists and defaults/sets correctly in current model
-    assert_eq!(c["property"]["selectedForProjection"], Value::Bool(true));
+    assert_eq!(c["properties"][0]["selectedForProjection"], Value::Bool(true));
     assert_eq!(c["source"]["selectedForProjection"], Value::Bool(true));
     assert_eq!(c["target"]["selectedForProjection"], Value::Bool(true));
 }
@@ -121,12 +121,12 @@ fn serialize_graph() {
     let parsed: Value = serde_json::from_str(&graph).expect("Output should be valid JSON");
     let arr = parsed.as_array().expect("Output JSON should be an array");
     assert_eq!(arr.len(), 1, "Expected one connection");
-    assert_eq!(arr[0]["property"]["id"], Value::String("?3".to_string()));
+    assert_eq!(arr[0]["properties"][0]["id"], Value::String("?3".to_string()));
 }
 
 #[test]
 fn test_simple_query() {
-    let graph = r###"[{"property":{"id":"?variable1","label":"Variable","description":"Variable Entity","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""}},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","description":"German writer, artist, natural scientist and politician (1749–1832)","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}},"target":{"id":"Q154804","label":"Leipzig University","description":"university in Leipzig, Saxony, Germany (1409-)","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}}}]"###;
+    let graph = r###"[{"properties":[{"id":"?variable1","label":"Variable","description":"Variable Entity","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""}}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","description":"German writer, artist, natural scientist and politician (1749–1832)","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}},"target":{"id":"Q154804","label":"Leipzig University","description":"university in Leipzig, Saxony, Germany (1409-)","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}}}]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
 
@@ -144,7 +144,7 @@ SELECT ?variable1 WHERE {
 
 #[test]
 fn test_projection_selection_with_selected_variable() {
-    let graph = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true}}]"###;
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true}}]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
     let select = select_line(&result);
@@ -156,7 +156,7 @@ fn test_projection_selection_with_selected_variable() {
 
 #[test]
 fn test_projection_selection_with_no_selected_variables() {
-    let graph = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":false}}]"###;
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":false}}]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
     let select = select_line(&result);
@@ -168,7 +168,7 @@ fn test_projection_selection_with_no_selected_variables() {
 
 #[test]
 fn test_projection_selection_with_multiple_variables() {
-    let graph = r###"[{"property":{"id":"?prop","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":false},"source":{"id":"?person","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true}}]"###;
+    let graph = r###"[{"properties":[{"id":"?prop","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":false}],"source":{"id":"?person","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""},"selectedForProjection":true}}]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
     let select = select_line(&result);
@@ -203,7 +203,7 @@ SELECT ?university WHERE {
 #[test]
 fn test_backward_compatibility_without_projection_field() {
     // Old format without selected_for_projection field should default to true.
-    let graph = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"}},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"}},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""}}}]"###;
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"}}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"}},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""}}}]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
     let select = select_line(&result);
@@ -226,7 +226,7 @@ fn test_non_select_query_returns_empty_vqg() {
 
 #[test]
 fn test_label_service_and_prefixes_generation() {
-    let graph = r###"[{"property":{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true}}]"###;
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true}}]"###;
 
     let result = vqg_to_query_wasm(graph, true, true);
 
@@ -245,4 +245,85 @@ fn test_label_service_and_prefixes_generation() {
         "Generated query with label service and prefixes should parse:\n{}",
         result
     );
+}
+
+#[test]
+fn test_property_path_sequence_logic() {
+    let graph = r###"[
+        {
+            "source": { "id": "?item", "label": "item", "prefix": { "iri": "", "abbreviation": "" } },
+            "target": { "id": "Q5", "label": "Human", "prefix": { "iri": "http://www.wikidata.org/entity/", "abbreviation": "wd" } },
+            "properties": [
+                {
+                    "id": "path",
+                    "label": "instance of subclass of",
+                    "prefix": { "iri": "", "abbreviation": "" },
+                    "pathType": "sequence",
+                    "properties": [
+                        { "id": "P31", "label": "instance of", "prefix": { "iri": "http://www.wikidata.org/prop/direct/", "abbreviation": "wdt" } },
+                        { "id": "P279", "label": "subclass of", "prefix": { "iri": "http://www.wikidata.org/prop/direct/", "abbreviation": "wdt" }, "modifier": "*" }
+                    ]
+                }
+            ]
+        }
+    ]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    assert!(result.contains("wdt:P31/(wdt:P279*)") || result.contains("(wdt:P31/(wdt:P279*))"));
+    
+    // Check that it contains the expected path
+    assert!(result.contains("?item (wdt:P31/(wdt:P279*)) wd:Q5 ."));
+}
+
+#[test]
+fn test_property_path_alternation_logic() {
+    let graph = r###"[
+        {
+            "source": { "id": "?x", "label": "x", "prefix": { "iri": "", "abbreviation": "" } },
+            "target": { "id": "TargetClass", "label": "Target", "prefix": { "iri": "http://example.org/", "abbreviation": "ex" } },
+            "properties": [
+                {
+                    "id": "alt",
+                    "label": "type or subclass",
+                    "prefix": { "iri": "", "abbreviation": "" },
+                    "pathType": "alternation",
+                    "modifier": "+",
+                    "properties": [
+                        { "id": "type", "label": "type", "prefix": { "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#", "abbreviation": "rdf" } },
+                        { "id": "subClassOf", "label": "subclass", "prefix": { "iri": "http://www.w3.org/2000/01/rdf-schema#", "abbreviation": "rdfs" } }
+                    ]
+                }
+            ]
+        }
+    ]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    assert!(result.contains("((rdf:type|rdfs:subClassOf)+) ex:TargetClass"));
+}
+
+#[test]
+fn test_multiple_properties_in_one_connection() {
+    let graph = r###"[
+        {
+            "source": { "id": "?s", "label": "S", "prefix": { "iri": "", "abbreviation": "" } },
+            "target": { "id": "?o", "label": "O", "prefix": { "iri": "", "abbreviation": "" } },
+            "properties": [
+                { "id": "p1", "label": "P1", "prefix": { "iri": "http://example.org/", "abbreviation": "ex" } },
+                { "id": "p2", "label": "P2", "prefix": { "iri": "http://example.org/", "abbreviation": "ex" } }
+            ]
+        }
+    ]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    
+    // Should generate two triple patterns
+    assert!(result.contains("?s ex:p1 ?o ."));
+    assert!(result.contains("?s ex:p2 ?o ."));
+    
+    let expected = r###"PREFIX ex: <http://example.org/>
+SELECT ?o ?s WHERE {
+    ?s ex:p1 ?o .
+    ?s ex:p2 ?o .
+}"###;
+    assert_sparql_equivalent(&result, expected);
 }

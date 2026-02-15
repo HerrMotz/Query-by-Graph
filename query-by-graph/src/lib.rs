@@ -13,7 +13,7 @@ const INDENTATION_COUNT: usize = 4;
 const WIKIBASE_PREFIX: &str = "PREFIX wikibase: <http://wikiba.se/ontology#>";
 const BD_PREFIX: &str = "PREFIX bd: <http://www.bigdata.com/rdf#>";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Entity {
     pub id: String,
@@ -21,6 +21,22 @@ pub struct Entity {
     pub prefix: Prefix,
     #[serde(default = "default_selected_for_projection")]
     pub selected_for_projection: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Property {
+    pub id: String,
+    pub label: String,
+    pub prefix: Prefix,
+    #[serde(default = "default_selected_for_projection")]
+    pub selected_for_projection: bool,
+    #[serde(default)]
+    pub properties: Vec<Property>,
+    #[serde(default)]
+    pub path_type: Option<String>,
+    #[serde(default)]
+    pub modifier: Option<String>,
 }
 
 fn default_selected_for_projection() -> bool {
@@ -37,9 +53,9 @@ pub struct Prefix {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Connection {
-    pub property: Entity,
     pub source: Entity,
     pub target: Entity,
+    pub properties: Vec<Property>,
 }
 
 // wasm method, to get a string containing a JSON, which converts it to Connection
@@ -57,31 +73,98 @@ pub fn vqg_to_query_wasm(
     vqg_to_query(connections, add_label_service, add_label_service_prefixes)
 }
 
-fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_label_service_prefixes: bool) -> String {
+fn get_iri(id: &str, prefix: &Prefix) -> String {
+    if prefix.iri.is_empty() {
+        id.to_string()
+    } else if id.contains(':') || id.starts_with('<') {
+        id.to_string()
+    } else {
+        format!("{}:{}", prefix.abbreviation, id)
+    }
+}
+
+fn generate_property_path(property: &Property) -> String {
+    let iri = get_iri(&property.id, &property.prefix);
+
+    let mut path = if !property.properties.is_empty() {
+        let parts: Vec<String> = property
+            .properties
+            .iter()
+            .map(|p| generate_property_path(p))
+            .collect();
+        let separator = match property.path_type.as_deref() {
+            Some("alternation") => "|",
+            _ => "/",
+        };
+        format!("({})", parts.join(separator))
+    } else {
+        iri
+    };
+
+    if let Some(m) = &property.modifier {
+        path = format!("({}{})", path, m);
+    }
+
+    path
+}
+
+fn vqg_to_query(
+    connections: Vec<Connection>,
+    add_service_statement: bool,
+    add_label_service_prefixes: bool,
+) -> String {
     let indentation = " ".repeat(INDENTATION_COUNT);
 
-    if connections.len() < 1 {
+    if connections.is_empty() {
         String::from("")
     } else {
+        fn collect_vars_from_property(property: &Property, add_service_statement: bool) -> Vec<String> {
+            let mut vars = Vec::new();
+            if property.id.starts_with('?') && property.selected_for_projection {
+                let var = property.id.clone();
+                vars.push(var.clone());
+                if add_service_statement {
+                    vars.push(format!("?{}Label", var.trim_start_matches('?')));
+                }
+            }
+            for p in &property.properties {
+                vars.extend(collect_vars_from_property(p, add_service_statement));
+            }
+            vars
+        }
+
+        fn collect_prefixes_from_property(property: &Property) -> Vec<Prefix> {
+            let mut prefixes = Vec::new();
+            if !property.prefix.iri.is_empty() {
+                prefixes.push(property.prefix.clone());
+            }
+            for p in &property.properties {
+                prefixes.extend(collect_prefixes_from_property(p));
+            }
+            prefixes
+        }
+
         let projection_set = connections
             .iter()
             .flat_map(|connection| {
-                vec![&connection.source, &connection.target, &connection.property]
-            })
-            .filter(|entity| entity.id.starts_with('?'))
-            .filter(|entity| entity.selected_for_projection) // Only include selected variables
-            .flat_map(|entity| {
-                let var = entity.id.clone();
-                if add_service_statement {
-                    let label_var = format!("?{}Label", var.trim_start_matches("?"));
-                    vec![var, label_var]
-                } else {
-                    vec![var]
+                let mut vars = Vec::new();
+                for entity in &[&connection.source, &connection.target] {
+                    if entity.id.starts_with('?') && entity.selected_for_projection {
+                        let var = entity.id.clone();
+                        vars.push(var.clone());
+                        if add_service_statement {
+                            vars.push(format!("?{}Label", var.trim_start_matches('?')));
+                        }
+                    }
                 }
+                for property in &connection.properties {
+                    vars.extend(collect_vars_from_property(property, add_service_statement));
+                }
+                vars
             })
             .collect::<HashSet<_>>();
 
-        let projection_list = if projection_set.len() == 0 {
+        let projection_list = if projection_set.is_empty() {
             String::from("*")
         } else {
             let mut sorted_projection_set: Vec<_> = projection_set.into_iter().collect();
@@ -92,18 +175,24 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
         let prefix_set = connections
             .iter()
             .flat_map(|connection| {
-                vec![&connection.source, &connection.target, &connection.property]
+                let mut prefixes = Vec::new();
+                for entity in &[&connection.source, &connection.target] {
+                    if !entity.prefix.iri.is_empty() {
+                        prefixes.push(entity.prefix.clone());
+                    }
+                }
+                for property in &connection.properties {
+                    prefixes.extend(collect_prefixes_from_property(property));
+                }
+                prefixes
             })
-            .filter(|entity| !entity.prefix.iri.is_empty())
-            .map(|entity| entity.prefix.clone())
             .collect::<HashSet<_>>();
 
-        let prefix_list = if prefix_set.len() == 0 {
+        let prefix_list = if prefix_set.is_empty() {
             String::from("")
         } else {
             let mut temp = prefix_set
                 .into_iter()
-                // e.g. PREFIX wd: <http://www.wikidata.org/entity/>
                 .map(|prefix| format!("PREFIX {}: <{}>", prefix.abbreviation, prefix.iri))
                 .collect::<Vec<_>>();
             temp.sort();
@@ -113,44 +202,23 @@ fn vqg_to_query(connections: Vec<Connection>, add_service_statement: bool, add_l
         let where_clause: String = connections
             .iter()
             .map(|connection| {
-                let source_iri = if connection.source.prefix.iri.is_empty() {
-                    connection.source.id.clone() // Clone the String to avoid moving it
-                } else {
-                    format!(
-                        "{}:{}",
-                        connection.source.prefix.abbreviation, connection.source.id
-                    )
-                };
+                let source_iri = get_iri(&connection.source.id, &connection.source.prefix);
+                let target_iri = get_iri(&connection.target.id, &connection.target.prefix);
 
-                let property_iri = if connection.property.prefix.iri.is_empty() {
-                    connection.property.id.clone() // Clone the String to avoid moving it
-                } else {
+                connection.properties.iter().map(|property| {
+                    let property_path = generate_property_path(property);
                     format!(
-                        "{}:{}",
-                        connection.property.prefix.abbreviation, connection.property.id
+                        "{}{} {} {} .\n{}# {} -- [{}] -> {}\n",
+                        indentation,
+                        source_iri,
+                        property_path,
+                        target_iri,
+                        indentation,
+                        connection.source.label,
+                        property.label,
+                        connection.target.label
                     )
-                };
-
-                let target_iri = if connection.target.prefix.iri.is_empty() {
-                    connection.target.id.clone() // Clone the String to avoid moving it
-                } else {
-                    format!(
-                        "{}:{}",
-                        connection.target.prefix.abbreviation, connection.target.id
-                    )
-                };
-
-                format!(
-                    "{}{} {} {} .\n{}# {} -- [{}] -> {}\n",
-                    indentation,
-                    source_iri,
-                    property_iri,
-                    target_iri,
-                    indentation,
-                    connection.source.label,
-                    connection.property.label,
-                    connection.target.label
-                )
+                }).collect::<Vec<String>>().join("")
             })
             .collect();
 
@@ -240,9 +308,11 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
                             connection.target.selected_for_projection =
                                 projection_vars.contains(&connection.target.id);
                         }
-                        if connection.property.id.starts_with('?') {
-                            connection.property.selected_for_projection =
-                                projection_vars.contains(&connection.property.id);
+                        for property in &mut connection.properties {
+                            if property.id.starts_with('?') {
+                                property.selected_for_projection =
+                                    projection_vars.contains(&property.id);
+                            }
                         }
                     }
 
@@ -294,11 +364,15 @@ fn match_bgp_or_path_to_vqg(p: GraphPattern) -> Vec<Connection> {
             subject: s,
             path: p,
             object: o,
-        } => vec![connection_constructor(
-            s.to_string(),
-            p.to_string(),
-            o.to_string(),
-        )],
+        } => {
+            let connection = connection_constructor(
+                s.to_string(),
+                p.to_string(), // Default string representation for property
+                o.to_string(),
+            );
+            // todo: use spargebra::algebra::PropertyPath, to decompose it here.
+            vec![connection]
+        }
         _ => vec![],
     }
 }
@@ -309,15 +383,6 @@ fn connection_constructor(
     object_name: String,
 ) -> Connection {
     Connection {
-        property: Entity {
-            id: predicate_name.clone(),
-            label: predicate_name.clone(),
-            prefix: Prefix {
-                iri: "".to_string(),
-                abbreviation: "".to_string(),
-            },
-            selected_for_projection: true, // Default to true
-        },
         source: Entity {
             id: subject_name.clone(),
             label: subject_name.clone(),
@@ -336,5 +401,17 @@ fn connection_constructor(
             },
             selected_for_projection: true, // Default to true
         },
+        properties: vec![Property {
+            id: predicate_name.clone(),
+            label: predicate_name.clone(),
+            prefix: Prefix {
+                iri: "".to_string(),
+                abbreviation: "".to_string(),
+            },
+            selected_for_projection: true, // Default to true
+            properties: vec![],
+            path_type: None,
+            modifier: None,
+        }],
     }
 }
