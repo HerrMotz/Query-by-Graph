@@ -21,6 +21,18 @@
       <h3 v-if="value" class="font-bold font-mono w-32 -ml-16 bg-amber-50 text-lg">
         {{value.prefix.abbreviation}}{{ value.prefix.abbreviation && ':'}}{{value.id}}
       </h3>
+      <div v-if="isVariable" class="flex items-center mt-2 w-32 -ml-16 bg-amber-50 px-2 py-1" @click.stop @pointerdown.stop @mousedown.stop>
+        <input
+          type="checkbox"
+          :id="`projection-property-${data.id}`"
+          v-model="includeInProjection"
+          @change="handleProjectionChange"
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+        />
+        <label :for="`projection-property-${data.id}`" class="ml-2 text-sm font-medium text-gray-800 cursor-pointer">
+          Include in SELECT
+        </label>
+      </div>
     </div>
 
   </div>
@@ -46,6 +58,12 @@ export default defineComponent({
       value: this?.data?.property,
     }
   },
+  created() {
+    // Initialize selectedForProjection to true if not set
+    if (this.value && this.value.selectedForProjection === undefined) {
+      this.value.selectedForProjection = true;
+    }
+  },
   mounted() {
     this.isMounted = true;
   },
@@ -55,6 +73,48 @@ export default defineComponent({
     },
     centerY() {
       return (this.end.y + this.start.y) / 2 - 20;
+    },
+    isVariable() {
+      // Check if the property is a variable (starts with '?')
+      const hasValue = this.value && typeof this.value === 'object';
+      const hasId = hasValue && 'id' in this.value && typeof this.value.id === 'string';
+      return hasId && this.value.id.startsWith('?');
+    },
+    includeInProjection: {
+      get() {
+        // Read from the property's selectedForProjection property (default to true if not set)
+        return this.value?.selectedForProjection !== false;
+      },
+      set(value) {
+        // Write to the property's selectedForProjection property
+        if (this.value) {
+          this.value.selectedForProjection = value;
+          // Ensure the data.property is also updated
+          if (this.data.property) {
+            this.data.property.selectedForProjection = value;
+          }
+          // Emit change to notify the editor
+          this.$emit('changedEntitySelector', this.value);
+        }
+      }
+    }
+  },
+  methods: {
+    handleProjectionChange() {
+      // Log for debugging
+      console.log('Property projection changed:', this.includeInProjection);
+    }
+  },
+  watch: {
+    // Watch for external changes to the property value
+    'data.property': {
+      handler(newValue) {
+        if (newValue !== this.value) {
+          this.value = newValue;
+        }
+      },
+      deep: true,
+      immediate: true
     }
   }
 })
