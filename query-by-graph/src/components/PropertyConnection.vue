@@ -2,14 +2,19 @@
   <div class="z-10">
     <svg width="250" height="250" xmlns="http://www.w3.org/2000/svg">
       <!-- This highlights the path on selection -->
+      <!-- Todo: the arrowhead should also change color on selection, currently it does not -->
       <path :d="path"
-            :class="[$props.data.selected ? 'hover:stroke-red-400 stroke-red-500' : 'hover:stroke-blue-400 stroke-blue-600']"/>
+            :class="[
+                $props.data.selected ? 'hover:stroke-red-400 stroke-red-500' : `${entityStyles.connectionHover} ${entityStyles.connection}`
+            ]"/>
     </svg>
     <div class="absolute" :style="{transform: `translate(${centerX}px,${centerY}px)`}">
       <EntitySelector
           type="property"
           language="en"
           input-classes="w-32 -ml-16"
+          :is-variable="isVariable"
+          :is-selected="includeInProjection"
           dropdown-classes="w-80 -ml-40"
           @pointerdown.stop=""
           @dblclick.stop=""
@@ -21,17 +26,12 @@
       <h3 v-if="value" class="font-bold font-mono w-32 -ml-16 bg-amber-50 text-lg">
         {{value.prefix.abbreviation}}{{ value.prefix.abbreviation && ':'}}{{value.id}}
       </h3>
-      <div v-if="isVariable" class="flex items-center mt-2 w-32 -ml-16 bg-amber-50 px-2 py-1" @click.stop @pointerdown.stop @mousedown.stop>
-        <input
-          type="checkbox"
+      <ProjectionCheckbox
           :id="`projection-property-${data.id}`"
           v-model="includeInProjection"
-          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-        />
-        <label :for="`projection-property-${data.id}`" class="ml-2 text-sm font-medium text-gray-800 cursor-pointer">
-          Select?
-        </label>
-      </div>
+          :is-variable="isVariable"
+          container-classes="w-32 -ml-16 bg-amber-50 px-2 py-1"
+      />
     </div>
 
   </div>
@@ -40,6 +40,8 @@
 <script>
 import {defineComponent} from 'vue'
 import EntitySelector from "./EntitySelector.vue";
+import ProjectionCheckbox from "./ProjectionCheckbox.vue";
+import {getEntityStyles} from "../lib/utils/entityStyles.ts";
 
 // This connection component has the following features:
 // - it displays a label in the middle of the connection
@@ -48,7 +50,7 @@ import EntitySelector from "./EntitySelector.vue";
 
 export default defineComponent({
   name: "CustomConnection",
-  components: {EntitySelector},
+  components: {EntitySelector, ProjectionCheckbox},
   props: ['data', 'start', 'end', 'path'],
   emits: ['changedEntitySelector'],
   data() {
@@ -78,6 +80,9 @@ export default defineComponent({
       const hasValue = this.value && typeof this.value === 'object';
       const hasId = hasValue && 'id' in this.value && typeof this.value.id === 'string';
       return hasId && this.value.id.startsWith('?');
+    },
+    entityStyles() {
+      return getEntityStyles(this.isVariable, this.includeInProjection);
     },
     includeInProjection: {
       get() {

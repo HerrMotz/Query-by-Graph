@@ -1,11 +1,10 @@
 <template>
   <div class="node"
-       :class="{
-         'selected': data.selected,
-         'bg-indigo-300 hover:bg-indigo-400': !isVariable,
-         'bg-violet-400 hover:bg-violet-500': isVariable && !isVariableSelectedForProjection,
-         'bg-green-600 hover:bg-green-700': isVariable && isVariableSelectedForProjection
-       }"
+       :class="[
+         data.selected ? 'selected' : '',
+         entityStyles.nodeBg,
+         entityStyles.nodeHoverBg
+       ]"
        :style="nodeStyles"
        data-testid="node">
     <div class="p-2">
@@ -40,6 +39,8 @@
 import {computed, defineComponent} from 'vue'
 import {Ref} from 'rete-vue-plugin'
 import EntitySelector from "./EntitySelector.vue";
+import ProjectionCheckbox from "./ProjectionCheckbox.vue";
+import {getEntityStyles} from "../lib/utils/entityStyles.ts";
 
 function sortByIndex(entries) {
   entries.sort((a, b) => {
@@ -73,10 +74,27 @@ export default defineComponent({
 
       return props.data?.entity?.id?.startsWith('?');
     });
+    /*const isVariableSelectedForProjection = computed({
+      get() {
+        props.seed;
+        return isVariable.value && props.data?.entity?.selectedForProjection !== false;
+      },
+      set(value) {
+        if (props.data?.entity) {
+          props.data.entity.selectedForProjection = value;
+          props.emit('nodeupdate', { id: props.data.id });
+        }
+      }
+    });*/
     const isVariableSelectedForProjection = computed(() => {
       props.seed;
       return isVariable.value && props.data?.entity?.selectedForProjection !== false;
     });
+
+    const entityStyles = computed(() => {
+      return getEntityStyles(isVariable.value, isVariableSelectedForProjection.value);
+    });
+
     const projectionTooltip = computed(() => {
       if (!isVariable.value) return '';
       return isVariableSelectedForProjection.value
@@ -91,11 +109,13 @@ export default defineComponent({
       outputs,
       isVariable,
       isVariableSelectedForProjection,
+      entityStyles,
       projectionTooltip
     };
   },
   components: {
     EntitySelector,
+    ProjectionCheckbox,
     Ref
   }
 });

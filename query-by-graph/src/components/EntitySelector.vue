@@ -7,7 +7,9 @@ const props = defineProps({
   language: {type: String, required: true},
   type: {type: String, required: true}, // will be passed to the wikidata query, can be e.g. "item" or "property"
   inputClasses: {type: String, required: false},
-  dropdownClasses: {type: String, required: false}
+  dropdownClasses: {type: String, required: false},
+  isVariable: {type: Boolean, required: false, default: false},
+  isSelected: {type: Boolean, required: false, default: true}
 });
 
 const language = computed(() => selectedDataSource.value.preferredLanguages[0]);
@@ -36,6 +38,7 @@ import {EntityType} from "../lib/types/EntityType.ts";
 import {noEntity, variableEntity, variableEntityConstructor} from "../lib/rete/constants.ts";
 import {selectedDataSource} from "../store.ts";
 import {debounce} from "../lib/utils";
+import {getEntityStyles} from "../lib/utils/entityStyles.ts";
 
 const queriedEntities = ref([
   noEntity,
@@ -92,6 +95,13 @@ function eventEmitEntityHelper(entity: EntityType) {
   selectedEntity.value = entity;
   emit('selectedEntity', entity);
 }
+
+const computedInputClasses = computed(() => {
+  let classes = props.inputClasses || 'w-full';
+  const styles = getEntityStyles(props.isVariable, props.isSelected);
+  classes += ` ring-2 ${styles.border} ${styles.bg}`;
+  return classes;
+});
 </script>
 
 <template>
@@ -104,8 +114,8 @@ function eventEmitEntityHelper(entity: EntityType) {
       <div class="relative mt-2">
         <ComboboxInput
             :class="[
-                'rounded-md border-0 bg-white py-1.5 pl-3 pr-12 text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
-                inputClasses ? inputClasses : 'w-full'
+                'rounded-md border-0 py-1.5 pl-3 pr-12 text-gray-900 shadow-xs ring-1 ring-inset focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6',
+                computedInputClasses
             ]"
             @change="debouncedQueryHelper($event.target.value)"
             :display-value="displayValue"
