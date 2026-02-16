@@ -118,15 +118,20 @@ fn vqg_to_query(
     if connections.is_empty() {
         String::from("")
     } else {
-        fn collect_vars_from_property(property: &Property, add_service_statement: bool) -> Vec<String> {
+        fn collect_vars(id: &str, selected: bool, add_service_statement: bool) -> Vec<String> {
             let mut vars = Vec::new();
-            if property.id.starts_with('?') && property.selected_for_projection {
-                let var = property.id.clone();
+            if id.starts_with('?') && selected {
+                let var = id.to_string();
                 vars.push(var.clone());
                 if add_service_statement {
                     vars.push(format!("?{}Label", var.trim_start_matches('?')));
                 }
             }
+            vars
+        }
+
+        fn collect_vars_from_property(property: &Property, add_service_statement: bool) -> Vec<String> {
+            let mut vars = collect_vars(&property.id, property.selected_for_projection, add_service_statement);
             for p in &property.properties {
                 vars.extend(collect_vars_from_property(p, add_service_statement));
             }
@@ -149,13 +154,7 @@ fn vqg_to_query(
             .flat_map(|connection| {
                 let mut vars = Vec::new();
                 for entity in &[&connection.source, &connection.target] {
-                    if entity.id.starts_with('?') && entity.selected_for_projection {
-                        let var = entity.id.clone();
-                        vars.push(var.clone());
-                        if add_service_statement {
-                            vars.push(format!("?{}Label", var.trim_start_matches('?')));
-                        }
-                    }
+                    vars.extend(collect_vars(&entity.id, entity.selected_for_projection, add_service_statement));
                 }
                 for property in &connection.properties {
                     vars.extend(collect_vars_from_property(property, add_service_statement));
