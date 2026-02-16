@@ -86,8 +86,12 @@ fn get_iri(id: &str, prefix: &Prefix) -> String {
 fn generate_property_path(property: &Property) -> String {
     let iri = get_iri(&property.id, &property.prefix);
 
-    let path = if property.properties.is_empty() {
-        iri
+    if property.properties.is_empty() {
+        if let Some(m) = &property.modifier {
+            format!("{}{}", iri, m)
+        } else {
+            iri
+        }
     } else {
         let parts: Vec<String> = property
             .properties
@@ -98,13 +102,13 @@ fn generate_property_path(property: &Property) -> String {
             Some("alternation") => "|",
             _ => "/",
         };
-        format!("({})", parts.join(separator))
-    };
+        let path = parts.join(separator);
 
-    if let Some(m) = &property.modifier {
-        format!("({}{})", path, m)
-    } else {
-        path
+        if let Some(m) = &property.modifier {
+            format!("({}){}", path, m)
+        } else {
+            format!("({})", path)
+        }
     }
 }
 

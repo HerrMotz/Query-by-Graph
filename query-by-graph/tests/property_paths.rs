@@ -108,7 +108,7 @@ fn test_structured_sequence_to_query() {
     
     let query = vqg_to_query_wasm(&connections.to_string(), false, false);
     println!("Query:\n{}", query);
-    assert!(query.contains("wdt:P31/(wdt:P279*)"));
+    assert!(query.contains("wdt:P31/wdt:P279*"));
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn test_vql_property_path() {
 
     let query = vqg_to_query_wasm(&connections.to_string(), false, false);
     println!("Query:\n{}", query);
-    assert!(query.contains("wdt:P31/(wdt:P279*)"));
+    assert!(query.contains("wdt:P31/wdt:P279*"));
 }
 
 #[test]
@@ -288,5 +288,5 @@ fn test_wikidata_alternation_plus_modifier() {
     // Expecting (wdt:P279|wdt:P31)+
     assert!(query.contains("(wdt:P279|wdt:P31)+"));
     assert!(query.contains("SELECT ?1 ?2 WHERE"));
-    assert!(query.contains("?1 ((wdt:P279|wdt:P31)+) ?2"));
+    assert!(query.contains("?1 (wdt:P279|wdt:P31)+ ?2"));
 }
