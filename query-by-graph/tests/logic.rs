@@ -269,7 +269,7 @@ fn test_property_path_sequence_logic() {
     ]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
-    assert!(result.contains("?item (wdt:P31/(wdt:P279*)) wd:Q5 ."));
+    assert!(result.contains("?item (wdt:P31/wdt:P279*) wd:Q5 ."));
 }
 
 #[test]
@@ -295,7 +295,7 @@ fn test_property_path_alternation_logic() {
     ]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
-    assert!(result.contains("((rdf:type|rdfs:subClassOf)+) ex:TargetClass"));
+    assert!(result.contains("(rdf:type|rdfs:subClassOf)+ ex:TargetClass"));
 }
 
 #[test]
