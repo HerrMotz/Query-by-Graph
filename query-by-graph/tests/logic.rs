@@ -269,9 +269,6 @@ fn test_property_path_sequence_logic() {
     ]"###;
 
     let result = vqg_to_query_wasm(graph, false, false);
-    assert!(result.contains("wdt:P31/(wdt:P279*)") || result.contains("(wdt:P31/(wdt:P279*))"));
-    
-    // Check that it contains the expected path
     assert!(result.contains("?item (wdt:P31/(wdt:P279*)) wd:Q5 ."));
 }
 

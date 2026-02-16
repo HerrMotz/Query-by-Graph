@@ -3,8 +3,8 @@ mod utils;
 use crate::utils::set_panic_hook;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
-use spargebra::algebra::GraphPattern;
-use spargebra::term::TriplePattern;
+use spargebra::algebra::{GraphPattern, PropertyPathExpression};
+use spargebra::term::{TriplePattern, TermPattern, NamedNodePattern};
 use spargebra::{Query, SparqlSyntaxError};
 use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
@@ -86,7 +86,9 @@ fn get_iri(id: &str, prefix: &Prefix) -> String {
 fn generate_property_path(property: &Property) -> String {
     let iri = get_iri(&property.id, &property.prefix);
 
-    let mut path = if !property.properties.is_empty() {
+    let path = if property.properties.is_empty() {
+        iri
+    } else {
         let parts: Vec<String> = property
             .properties
             .iter()
@@ -97,15 +99,13 @@ fn generate_property_path(property: &Property) -> String {
             _ => "/",
         };
         format!("({})", parts.join(separator))
-    } else {
-        iri
     };
 
     if let Some(m) = &property.modifier {
-        path = format!("({}{})", path, m);
+        format!("({}{})", path, m)
+    } else {
+        path
     }
-
-    path
 }
 
 fn vqg_to_query(
@@ -252,12 +252,110 @@ fn bgp_to_vqg(bgp: Vec<TriplePattern>) -> Vec<Connection> {
     bgp.iter()
         .map(|pattern| {
             connection_constructor(
-                pattern.subject.to_string(),
-                pattern.predicate.to_string(),
-                pattern.object.to_string(),
+                term_pattern_to_string(&pattern.subject),
+                named_node_pattern_to_string(&pattern.predicate),
+                term_pattern_to_string(&pattern.object),
             )
         })
         .collect()
+}
+
+fn term_pattern_to_string(tp: &TermPattern) -> String {
+    match tp {
+        TermPattern::NamedNode(n) => n.to_string(),
+        TermPattern::BlankNode(b) => b.to_string(),
+        TermPattern::Literal(l) => l.to_string(),
+        TermPattern::Variable(v) => format!("?{}", v.as_str()),
+    }
+}
+
+fn named_node_pattern_to_string(nnp: &NamedNodePattern) -> String {
+    match nnp {
+        NamedNodePattern::NamedNode(n) => n.to_string(),
+        NamedNodePattern::Variable(v) => format!("?{}", v.as_str()),
+    }
+}
+
+fn property_path_to_property(path: &PropertyPathExpression) -> Property {
+    match path {
+        PropertyPathExpression::NamedNode(n) => Property {
+            id: n.to_string(),
+            label: n.to_string(),
+            prefix: Prefix {
+                iri: "".to_string(),
+                abbreviation: "".to_string(),
+            },
+            selected_for_projection: true,
+            properties: vec![],
+            path_type: None,
+            modifier: None,
+        },
+        PropertyPathExpression::Reverse(inner) => {
+            let mut p = property_path_to_property(inner);
+            p.modifier = Some("^".to_string());
+            p
+        }
+        PropertyPathExpression::Sequence(left, right) => Property {
+            id: "sequence".to_string(),
+            label: "sequence".to_string(),
+            prefix: Prefix {
+                iri: "".to_string(),
+                abbreviation: "".to_string(),
+            },
+            selected_for_projection: true,
+            properties: vec![
+                property_path_to_property(left),
+                property_path_to_property(right),
+            ],
+            path_type: Some("sequence".to_string()),
+            modifier: None,
+        },
+        PropertyPathExpression::Alternative(left, right) => Property {
+            id: "alternation".to_string(),
+            label: "alternation".to_string(),
+            prefix: Prefix {
+                iri: "".to_string(),
+                abbreviation: "".to_string(),
+            },
+            selected_for_projection: true,
+            properties: vec![
+                property_path_to_property(left),
+                property_path_to_property(right),
+            ],
+            path_type: Some("alternation".to_string()),
+            modifier: None,
+        },
+        PropertyPathExpression::ZeroOrMore(inner) => {
+            let mut p = property_path_to_property(inner);
+            p.modifier = Some("*".to_string());
+            p
+        }
+        PropertyPathExpression::OneOrMore(inner) => {
+            let mut p = property_path_to_property(inner);
+            p.modifier = Some("+".to_string());
+            p
+        }
+        PropertyPathExpression::ZeroOrOne(inner) => {
+            let mut p = property_path_to_property(inner);
+            p.modifier = Some("?".to_string());
+            p
+        }
+        PropertyPathExpression::NegatedPropertySet(nodes) => {
+            let label = format!("!({})", nodes.iter().map(|n| n.to_string()).collect::<Vec<_>>().join("|"));
+            Property {
+                id: label.clone(),
+                label,
+                prefix: Prefix {
+                    iri: "".to_string(),
+                    abbreviation: "".to_string(),
+                },
+                selected_for_projection: true,
+                properties: vec![],
+                path_type: None,
+                modifier: None,
+            }
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -284,40 +382,39 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
     fn _helper(parsed_query: Result<Query, SparqlSyntaxError>) -> Vec<Connection> {
         // Match on the query type.
         match parsed_query {
-            Ok(Query::Select { pattern: p, .. }) => match p {
-                GraphPattern::Project {
-                    variables: v,
-                    inner: i,
-                } => {
-                    // Extract projection variable names
-                    let projection_vars: HashSet<String> = v
-                        .iter()
-                        .map(|var| format!("?{}", var.as_str()))
-                        .collect();
+            Ok(Query::Select { pattern: p, .. }) => {
+                let (connections, projection_vars) = match p {
+                    GraphPattern::Project {
+                        variables: v,
+                        inner: i,
+                    } => (
+                        match_bgp_or_path_to_vqg(*i),
+                        Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>())
+                    ),
+                    _ => (match_bgp_or_path_to_vqg(p), None),
+                };
 
-                    let mut connections = match_bgp_or_path_to_vqg(*i);
-
-                    // Mark entities based on whether they're in the projection
+                let mut connections = connections;
+                // Mark entities based on whether they're in the projection
+                if let Some(vars) = projection_vars {
                     for connection in &mut connections {
                         if connection.source.id.starts_with('?') {
                             connection.source.selected_for_projection =
-                                projection_vars.contains(&connection.source.id);
+                                vars.contains(&connection.source.id);
                         }
                         if connection.target.id.starts_with('?') {
                             connection.target.selected_for_projection =
-                                projection_vars.contains(&connection.target.id);
+                                vars.contains(&connection.target.id);
                         }
                         for property in &mut connection.properties {
                             if property.id.starts_with('?') {
                                 property.selected_for_projection =
-                                    projection_vars.contains(&property.id);
+                                    vars.contains(&property.id);
                             }
                         }
                     }
-
-                    connections
-                },
-                _ => match_bgp_or_path_to_vqg(p),
+                }
+                connections
             },
             _ => vec![],
         }
@@ -364,12 +461,12 @@ fn match_bgp_or_path_to_vqg(p: GraphPattern) -> Vec<Connection> {
             path: p,
             object: o,
         } => {
-            let connection = connection_constructor(
-                s.to_string(),
-                p.to_string(), // Default string representation for property
-                o.to_string(),
+            let mut connection = connection_constructor(
+                term_pattern_to_string(&s),
+                "".to_string(),
+                term_pattern_to_string(&o),
             );
-            // todo: use spargebra::algebra::PropertyPath, to decompose it here.
+            connection.properties = vec![property_path_to_property(&p)];
             vec![connection]
         }
         _ => vec![],
