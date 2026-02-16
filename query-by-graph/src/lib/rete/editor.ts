@@ -23,7 +23,7 @@ function exportConnectionsHelper(editor:any) {
         const source = editor.getNode(c.source);
         const target = editor.getNode(c.target);
         return {
-            property: c.property || noEntity,
+            properties: c.properties || [noEntity],
             source: source.entity,
             target: target.entity
         };
@@ -43,7 +43,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
     // In this case, the prefix will not be replaced.
 
     return connections.map(connection => {
-        const { property, source, target } = connection;
+        const { properties, source, target } = connection;
 
         function _replaceWithPrefix(entity:EntityType) {
             // check if it is a variable
@@ -171,24 +171,24 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
         }
 
         return Promise.allSettled([
-            _replaceWithPrefix(property),
+            Promise.all(properties.map(p => _replaceWithPrefix(p))),
             _replaceWithPrefix(source),
             _replaceWithPrefix(target)
         ]).then((values) => {
             if (
-                values.every(
-                    (result): result is PromiseFulfilledResult<EntityType> => result.status === "fulfilled"
-                )
+                values[0].status === "fulfilled" &&
+                values[1].status === "fulfilled" &&
+                values[2].status === "fulfilled"
             ) {
                 return {
-                    property: (values[0] as PromiseFulfilledResult<EntityType>).value,
+                    properties: (values[0] as PromiseFulfilledResult<EntityType[]>).value,
                     source: (values[1] as PromiseFulfilledResult<EntityType>).value,
                     target: (values[2] as PromiseFulfilledResult<EntityType>).value
                 };
             } else {
                 // this case will not occur, nevertheless typescript requires me to catch it.
                 return {
-                    property: noEntity,
+                    properties: [noEntity],
                     source: noEntity,
                     target: noEntity
                 };
@@ -201,7 +201,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
 // Each connection holds additional data, which is defined here
 class Connection<N extends ClassicPreset.Node> extends ClassicPreset.Connection<N, N> {
     selected?: boolean;
-    property?: EntityType;
+    properties: EntityType[] = [];
 }
 
 // Each node has to have "entity" metadata.
@@ -313,8 +313,8 @@ export async function createEditor(container: HTMLElement) {
             highestIdCount++;
         }
 
-        if (!props.data.property) {
-            props.data.property = variableEntityConstructor(highestIdCount.toString())
+        if (!props.data.properties || props.data.properties.length === 0) {
+            props.data.properties = [variableEntityConstructor(highestIdCount.toString())]
         }
 
         const label = "connection";
@@ -345,7 +345,7 @@ export async function createEditor(container: HTMLElement) {
                 // in order to force the editor to notice the change,
                 // I need to create a copy of the connection,
                 // change the entity and add it back.
-                props.data.property = value;
+                props.data.properties = [value];
                 editor.getConnections().forEach((c) => {
                     area.update("connection", c.id)
                 })
@@ -417,7 +417,7 @@ export async function createEditor(container: HTMLElement) {
                             conn.targetInput
                         );
                         newConn.id = conn.id;
-                        newConn.property = oldConn.property;
+                        newConn.properties = oldConn.properties;
                         newConn.selected = oldConn.selected;
                         await editor.addConnection(newConn);
                     // target is the duplicate --> create connection from source to original
@@ -430,7 +430,7 @@ export async function createEditor(container: HTMLElement) {
                             conn.targetInput
                         );
                         newConn.id = conn.id;
-                        newConn.property = oldConn.property;
+                        newConn.properties = oldConn.properties;
                         newConn.selected = oldConn.selected;
                         await editor.addConnection(newConn);
                     }
@@ -571,9 +571,7 @@ export async function createEditor(container: HTMLElement) {
             const convertedConnectionsPromise = convertConnectionsToPrefixedRepresentation(
                 connections,
                 // put the associated entities of nodes and edges in the same array
-                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().filter(e=>e.property!==undefined).map(e => e.property ?? noEntity)))
-                // I do not know why typescript gives me an error without the default noEntity, but there should be no
-                // case where this comes up, especially with the filter statement.
+                (editor.getNodes().map(n => n.entity).concat(editor.getConnections().flatMap(e => e.properties || [])))
             );
 
             // TODO this function has a race condition. With the debounce in App.vue this is however very seldom.
@@ -623,7 +621,7 @@ export async function createEditor(container: HTMLElement) {
                         const predicate = new Connection(
                             subject, OUTPUT_SOCKET_NAME, object, INPUT_SOCKET_NAME,
                         )
-                        predicate.property = c.property;
+                        predicate.properties = c.properties;
                         predicate.selected = false;
 
                         return new Promise<true>(async function (resolve) {
