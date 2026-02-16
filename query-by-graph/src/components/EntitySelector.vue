@@ -9,7 +9,8 @@ const props = defineProps({
   inputClasses: {type: String, required: false},
   dropdownClasses: {type: String, required: false},
   isVariable: {type: Boolean, required: false, default: false},
-  isSelected: {type: Boolean, required: false, default: true}
+  isSelected: {type: Boolean, required: false, default: true},
+  initialSelection: {type: Object as () => EntityType, required: false}
 });
 
 const language = computed(() => selectedDataSource.value.preferredLanguages[0]);
@@ -24,7 +25,7 @@ const emit = defineEmits<{
   selectedEntity: [EntityType] // named tuple syntax
 }>();
 
-import {ref} from 'vue'
+import {ref, watch} from 'vue'
 import {CheckIcon, ChevronUpDownIcon} from '@heroicons/vue/20/solid'
 import {
   Combobox,
@@ -45,7 +46,13 @@ const queriedEntities = ref([
   variableEntity
 ]);
 
-const selectedEntity = ref(noEntity);
+const selectedEntity = ref(props.initialSelection || noEntity);
+
+watch(() => props.initialSelection, (newVal) => {
+  if (newVal) {
+    selectedEntity.value = newVal;
+  }
+}, { deep: true });
 
 function displayValue(entity: unknown): string {
   if (typeof entity === 'object' && entity !== null && 'label' in entity) {

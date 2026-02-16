@@ -1,7 +1,7 @@
 import {EntityType} from "./EntityType.ts";
 
 interface ConnectionInterfaceType {
-  property: EntityType,
+  properties: EntityType[],
   source: EntityType,
   target: EntityType
 }

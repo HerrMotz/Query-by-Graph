@@ -1,5 +1,10 @@
 import axios, {AxiosInstance} from "axios";
-import {WikiDataEntityDetails, WikiDataResponse, WikiDataSearchApiResponse, WikibaseDataSource} from "../types/WikibaseDataSource.ts";
+import {
+  WikibaseDataSource,
+  WikiDataEntityDetails,
+  WikiDataResponse,
+  WikiDataSearchApiResponse
+} from "../types/WikibaseDataSource.ts";
 
 class WikibaseDataService {
   private api: AxiosInstance;
@@ -24,7 +29,6 @@ class WikibaseDataService {
   /**
    * Fetch metadata about a WikiData item by its ID.
    * @param itemId - The WikiData item ID (e.g., Q42 for Douglas Adams).
-   * @param languages - Array of languages for labels/descriptions.
    * @returns Metadata object.
    */
   async getItemMetaInfo(
@@ -102,8 +106,8 @@ class WikibaseDataService {
             const mainsnak = claim.mainsnak;
             if (mainsnak.datatype === 'wikibase-item' && mainsnak.datavalue) {
               const itemId = mainsnak.datavalue.value.id;
-              const label = itemLabels[itemId] || itemId; // looks up the label for the item and replaces the Q-Number with it
-              mainsnak.datavalue.value = label;
+               // looks up the label for the item and replaces the Q-Number with it
+              mainsnak.datavalue.value = itemLabels[itemId] || itemId;
             }
             else if (mainsnak.datatype === 'time' && mainsnak.datavalue){
               mainsnak.datavalue.value = this.formatWikidataDate(mainsnak.datavalue.value);
@@ -146,7 +150,7 @@ class WikibaseDataService {
     const month = dateStr.substring(5, 7);
     const day = dateStr.substring(8, 10);
 
-    let formattedDate = '';
+    let formattedDate;
     const options: Intl.DateTimeFormatOptions = {};
 
     const language = this.dataSource.preferredLanguages || 'en';
@@ -257,7 +261,6 @@ class WikibaseDataService {
     propertyIds: string[], 
     language: string = 'en'
   ): Promise<{[key: string]: string}> {
-    console.log('test');
     try {
       // For handling API limit
       const chunks = chunkArray(propertyIds, 50);
