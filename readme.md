@@ -9,3 +9,6 @@ The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/ar
 ## Related Works
 - [Sparnatural](https://github.com/sparna-git/Sparnatural)
 - [RDF Explorer](https://rdfexplorer.org/)
+
+## Language Features and JSON Schema
+For detailed documentation on supported language features and the VQG JSON schema, see [VQG_FEATURES.md](query-by-graph/vql.md).
