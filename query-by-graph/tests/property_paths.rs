@@ -163,3 +163,130 @@ fn test_structured_alternation_to_query() {
     println!("Query:\n{}", query);
     assert!(query.contains("(rdf:type|rdfs:subClassOf)+"));
 }
+
+#[test]
+fn test_wikidata_alternation_plus_modifier() {
+    let connections = json!([
+        {
+          "properties": [
+            {
+              "id": "path",
+              "label": "subclass of|instance of",
+              "prefix": {
+                "iri": "",
+                "abbreviation": ""
+              },
+              "pathType": "alternation",
+              "modifier": "+",
+              "properties": [
+                {
+                  "id": "P279",
+                  "label": "subclass of",
+                  "description": "this item is a subclass (subset) of that item; ALL instances of this item are instances of that item; different from P31 (instance of), e.g.: volcano is a subclass of mountain; Everest is an instance of mountain",
+                  "prefix": {
+                    "iri": "http://www.wikidata.org/prop/direct/",
+                    "abbreviation": "wdt"
+                  },
+                  "dataSource": {
+                    "name": "WikiData",
+                    "uri": "https://www.wikidata.org/w/api.php",
+                    "preferredLanguages": [
+                      "en"
+                    ],
+                    "itemPrefix": {
+                      "iri": "http://www.wikidata.org/entity/",
+                      "abbreviation": "wd"
+                    },
+                    "propertyPrefix": {
+                      "iri": "http://www.wikidata.org/prop/direct/",
+                      "abbreviation": "wdt"
+                    },
+                    "queryService": "https://query.wikidata.org/"
+                  }
+                },
+                {
+                  "id": "P31",
+                  "label": "instance of",
+                  "description": "type to which this subject corresponds/belongs. Different from P279 (subclass of); for example: K2 is an instance of mountain; volcano is a subclass of mountain",
+                  "prefix": {
+                    "iri": "http://www.wikidata.org/prop/direct/",
+                    "abbreviation": "wdt"
+                  },
+                  "dataSource": {
+                    "name": "WikiData",
+                    "uri": "https://www.wikidata.org/w/api.php",
+                    "preferredLanguages": [
+                      "en"
+                    ],
+                    "itemPrefix": {
+                      "iri": "http://www.wikidata.org/entity/",
+                      "abbreviation": "wd"
+                    },
+                    "propertyPrefix": {
+                      "iri": "http://www.wikidata.org/prop/direct/",
+                      "abbreviation": "wdt"
+                    },
+                    "queryService": "https://query.wikidata.org/"
+                  }
+                }
+              ]
+            }
+          ],
+          "source": {
+            "id": "?1",
+            "label": "Variable",
+            "description": "Variable Entity",
+            "prefix": {
+              "iri": "",
+              "abbreviation": ""
+            },
+            "dataSource": {
+              "name": "",
+              "uri": "",
+              "preferredLanguages": [],
+              "propertyPrefix": {
+                "iri": "",
+                "abbreviation": ""
+              },
+              "itemPrefix": {
+                "iri": "",
+                "abbreviation": ""
+              },
+              "queryService": ""
+            },
+            "selectedForProjection": true
+          },
+          "target": {
+            "id": "?2",
+            "label": "Variable",
+            "description": "Variable Entity",
+            "prefix": {
+              "iri": "",
+              "abbreviation": ""
+            },
+            "dataSource": {
+              "name": "",
+              "uri": "",
+              "preferredLanguages": [],
+              "propertyPrefix": {
+                "iri": "",
+                "abbreviation": ""
+              },
+              "itemPrefix": {
+                "iri": "",
+                "abbreviation": ""
+              },
+              "queryService": ""
+            },
+            "selectedForProjection": true
+          }
+        }
+    ]);
+
+    let query = vqg_to_query_wasm(&connections.to_string(), false, false);
+    println!("Query:\n{}", query);
+    // Expecting (wdt:P279|wdt:P31)+
+    assert!(query.contains("(wdt:P279|wdt:P31)+"));
+    assert!(query.contains("SELECT ?1 ?2 WHERE"));
+    assert!(query.contains("?1 ((wdt:P279|wdt:P31)+) ?2"));
+}
