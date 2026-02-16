@@ -69,7 +69,7 @@ pub fn vqg_to_query_wasm(
     // for better errors logging in the web browser
     set_panic_hook();
 
-    let connections: Vec<Connection> = from_str(json).unwrap();
+    let connections: Vec<Connection> = from_str(json).unwrap_or_else(|_| vec![]);
     vqg_to_query(connections, add_label_service, add_label_service_prefixes)
 }
 
@@ -425,7 +425,7 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
     }
     let parsed_query = parse_query(query);
     match parsed_query {
-        Err(_error) => {
+        Err(_error) if !query.starts_with(WIKIBASE_PREFIX) && !query.starts_with(BD_PREFIX) => {
             let new_query = format!("{}{}{}", WIKIBASE_PREFIX, BD_PREFIX, query);
             query_to_vqg(&new_query)
         }
