@@ -66,9 +66,9 @@ function displayValue(entity: unknown): string {
 function queryHelper(query: string) {
   console.log(`queryHelper called with query: "${query}"`);
 
-  // Detect literal input: starts and ends with "
+  // Detect literal input: starts and ends with " — only allowed for item nodes, not properties
   const literalMatch = query.match(/^"(.*)"$/s);
-  if (literalMatch !== null) {
+  if (literalMatch !== null && props.type !== 'property') {
     const rawValue = literalMatch[1];
     const literalEntity = literalEntityConstructor(rawValue);
     queriedEntities.value = [literalEntity];
