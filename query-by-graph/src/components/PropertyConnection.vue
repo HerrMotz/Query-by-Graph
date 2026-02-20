@@ -8,7 +8,7 @@
                 $props.data.selected ? 'hover:stroke-red-400 stroke-red-500' : `${entityStyles.connectionHover} ${entityStyles.connection}`
             ]"/>
     </svg>
-    <div class="absolute flex flex-col items-center" :style="{transform: `translate(${centerX}px,${centerY}px)`}">
+    <div class="absolute flex flex-col items-center" :style="{transform: `translate(calc(${centerX}px - 50%), calc(${centerY}px - 50%))`}">
       <!-- Alternation Header -->
       <div v-if="isAlternation" class="bg-amber-100 px-2 py-1 rounded-t-md border-x border-t border-amber-300 flex items-center justify-between w-40">
         <span class="text-xs font-bold uppercase text-amber-800">Alternation (+)</span>
@@ -104,7 +104,7 @@ export default defineComponent({
       return (this.end.x + this.start.x) / 2;
     },
     centerY() {
-      return (this.end.y + this.start.y) / 2 - 20;
+      return (this.end.y + this.start.y) / 2;
     },
     isAlternation() {
       return this.value?.pathType === 'alternation';
@@ -145,7 +145,6 @@ export default defineComponent({
       }
     },
     alternationLabel() {
-      // todo: it only ever prints "Property Path" and never the actual labels, as it is supposed to
       if (!this.isAlternation || !this.value.properties) return 'Property Path';
       
       return this.value.properties
