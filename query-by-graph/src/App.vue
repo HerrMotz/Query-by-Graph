@@ -13,7 +13,7 @@ import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
 import ClipboardButton from "./components/ClipboardButton.vue";
 import QueryButton from './components/QueryButton.vue';
 import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
-import {selectedDataSource, dataSources} from './store.ts';
+import {selectedDataSource, dataSources, setSelectedDataSource} from './store.ts';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {debounce} from "./lib/utils";
 import DataSourcesPopover from "./components/DataSourcesPopover.vue";
@@ -186,7 +186,7 @@ const copyToClipboard = () => {
 
 const setDataSource = (source: WikibaseDataSource) => {
   if (source) {
-    selectedDataSource.value = source;
+    setSelectedDataSource(source);
     console.log('selectedDataSource updated to:', selectedDataSource.value);
   }
 };

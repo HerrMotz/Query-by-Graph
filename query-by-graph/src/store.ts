@@ -8,7 +8,11 @@ export const defaultDataSources = [
     mimoDataSource
 ];
 
-export const selectedDataSource = ref<WikibaseDataSource>(wikiDataDataSource);
+const localstorageSelectedDataSourceKey = 'selectedDataSource';
+const storedSelectedDataSource = localStorage.getItem(localstorageSelectedDataSourceKey);
+export const selectedDataSource = ref<WikibaseDataSource>(
+    storedSelectedDataSource ? JSON.parse(storedSelectedDataSource) : wikiDataDataSource
+);
 
 
 // initialize the data sources from local storage on page load
@@ -22,9 +26,14 @@ const localStoreDataSources = storedDataSources ? JSON.parse(storedDataSources) 
 
 export const dataSources = ref<WikibaseDataSource[]>(localStoreDataSources);
 
+export const setSelectedDataSource = (source: WikibaseDataSource) => {
+    selectedDataSource.value = source;
+    localStorage.setItem(localstorageSelectedDataSourceKey, JSON.stringify(source));
+}
+
 export const resetDataSourceToDefault = () => {
     dataSources.value = defaultDataSources;
-    selectedDataSource.value = defaultDataSources[0];
+    setSelectedDataSource(defaultDataSources[0]);
     localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(defaultDataSources));
 }
 
