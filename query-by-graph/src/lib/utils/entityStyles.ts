@@ -1,4 +1,14 @@
-export function getEntityStyles(isVariable: boolean, isSelected: boolean) {
+export function getEntityStyles(isVariable: boolean, isSelected: boolean, isLiteral?: boolean) {
+  if (isLiteral) {
+    return {
+      border: 'ring-amber-600',
+      bg: 'bg-amber-100',
+      nodeBg: 'bg-amber-500',
+      nodeHoverBg: 'hover:bg-amber-600',
+      connection: 'stroke-amber-600',
+      connectionHover: 'hover:stroke-amber-400'
+    };
+  }
   if (isVariable) {
     if (isSelected) {
       return {

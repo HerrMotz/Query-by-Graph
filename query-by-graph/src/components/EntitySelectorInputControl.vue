@@ -3,10 +3,13 @@
     <EntitySelector type="item" language="en"
                     :is-variable="isVariable"
                     :is-selected="includeInProjection"
+                    :is-literal="isLiteral"
+                    :initial-selection="data.value"
                     @pointerdown.stop=""
                     @selected-entity="handleEntitySelected"
     />
     <ProjectionCheckbox
+        v-if="isVariable"
         :id="`projection-${data.id}`"
         v-model="includeInProjection"
         :is-variable="isVariable"
@@ -24,6 +27,9 @@ export default {
   components: {EntitySelector, ProjectionCheckbox},
   props: ['data'],
   computed: {
+    isLiteral() {
+      return this.data.value?.isLiteral === true;
+    },
     isVariable() {
       const val = this.data.value;
       const hasValue = val && typeof val === 'object';
