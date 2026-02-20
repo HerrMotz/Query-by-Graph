@@ -69,7 +69,10 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                     // This function takes the first found preferred language of the language tagged literal labels
                     // If the preferred language is not available, it will use English
                     // If English is not available, it will use the first available tagged literal.
-                    return languageTaggedDict[preferredLanguages.find(lang => languageTaggedDict[lang].value) || 'en' || Object.keys(languageTaggedDict)[0]].value || "No literal found";
+                    const preferredLang = preferredLanguages.find(lang => languageTaggedDict[lang]?.value);
+                    const fallbackLang = languageTaggedDict['en'] ? 'en' : Object.keys(languageTaggedDict)[0];
+                    const chosenLang = preferredLang || fallbackLang;
+                    return languageTaggedDict[chosenLang]?.value || "No literal found";
                 }
 
                 try {
@@ -85,11 +88,20 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                             // TODO add the remaining fields here (if you can think of any)
                         }
                     }
-                    return entity;
+                    return {
+                        ...entity,
+                        id: newIdentifier,
+                        label: newIdentifier,
+                        prefix: rightPrefix,
+                        dataSource: datasource,
+                    };
                 } catch (e) {
                     return {
                         ...entity,
-                        id: newIdentifier
+                        id: newIdentifier,
+                        label: newIdentifier,
+                        prefix: rightPrefix,
+                        dataSource: datasource,
                     };
                 }
             }
@@ -99,14 +111,9 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 //  1. find a matching node in the VQG and make it equal
                 //  2. if there is no node, fetch from the Wikidata API
                 const foundMatch = vqgEntities.find((e: EntityType) => id === e.id && prefixIri === e.prefix.iri && prefixAbbreviation === e.prefix.abbreviation)
-                // This conditional statement looks a bit sketch, because it does not cleanly differentiate between
-                // edges and nodes. However, I can safely assume, that a node will not have a property prefix and vice
-                // versa. In Wikibase, the id already is indicative of whether it is an item or a prop, but the prefixes
-                // are important to differentiate between Wikibase instances.
-                // In case the above explanation was unclear: This statement would match an edge with an item prefix and
-                // Q-number as identifier. However, this "cannot" be the case, unless something is wrong in the Wikibase
-                // instance data model. At this point, I just assume that it is.
-                if (!foundMatch) {
+                // Reject stale entities that have an empty prefix — they were never properly
+                // enriched and would perpetuate bad data on re-import.
+                if (!foundMatch || !foundMatch.prefix.iri) {
                     return false;
                 }
 
@@ -140,6 +147,7 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                                 return {
                                     ...entity,
                                     id: newIdentifier,
+                                    label: newIdentifier,
                                     prefix: matchingDatasourceForEntity[prefixKey],
                                     dataSource: matchingDatasourceForEntity
                                 }
