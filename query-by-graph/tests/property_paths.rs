@@ -17,12 +17,12 @@ fn test_complex_property_path_decomposition() {
     // First part: ex:p1/ex:p2*
     assert_eq!(sub_props[0]["pathType"], "sequence");
     let seq_props = &sub_props[0]["properties"];
-    assert_eq!(seq_props[0]["id"], "<http://example.org/p1>");
-    assert_eq!(seq_props[1]["id"], "<http://example.org/p2>");
+    assert_eq!(seq_props[0]["id"], "ex:p1");
+    assert_eq!(seq_props[1]["id"], "ex:p2");
     assert_eq!(seq_props[1]["modifier"], "*");
     
     // Second part: ex:p3?
-    assert_eq!(sub_props[1]["id"], "<http://example.org/p3>");
+    assert_eq!(sub_props[1]["id"], "ex:p3");
     assert_eq!(sub_props[1]["modifier"], "?");
 }
 
