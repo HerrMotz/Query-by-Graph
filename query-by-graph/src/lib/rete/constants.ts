@@ -36,7 +36,7 @@ const noEntity: EntityType = {
  * Infer the XSD datatype of a raw string value and return the SPARQL literal representation.
  * - Integer: "42"^^xsd:integer
  * - Decimal: "3.14"^^xsd:decimal
- * - Date (YYYY-MM-DD): "2024-01-01"^^xsd:date
+ * - Date (YYYY-MM-DD): "2024-01-01T00:00:00Z"^^xsd:dateTime  (Wikibase convention: dates are stored as dateTime)
  * - DateTime (ISO 8601): "2024-01-01T00:00:00"^^xsd:dateTime
  * - Boolean: "true"^^xsd:boolean
  * - Default: "hello"^^xsd:string
@@ -68,10 +68,12 @@ function inferXsdLiteral(rawValue: string): { sparqlLiteral: string; xsdType: st
     }
 
     // Date (YYYY-MM-DD)
+    // Wikibase convention: dates are stored as xsd:dateTime, not xsd:date.
+    // A plain date is expanded to midnight UTC to conform to this convention.
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
         const d = new Date(trimmed);
         if (!isNaN(d.getTime())) {
-            return { sparqlLiteral: `"${trimmed}"^^xsd:date`, xsdType: 'date' };
+            return { sparqlLiteral: `"${trimmed}T00:00:00Z"^^xsd:dateTime`, xsdType: 'dateTime' };
         }
     }
 
