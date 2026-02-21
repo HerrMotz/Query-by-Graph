@@ -52,6 +52,11 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
                 return entity;
             }
 
+            // check if it is a literal value (e.g. "42"^^xsd:integer) — return as-is
+            if (entity.id.startsWith('"') || entity.isLiteral) {
+                return entity;
+            }
+
 
             // find out, which data source the entity might belong to
             const fqdn = fqdnRegex.exec(entity.id);

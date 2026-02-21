@@ -10,6 +10,7 @@ const props = defineProps({
   dropdownClasses: {type: String, required: false},
   isVariable: {type: Boolean, required: false, default: false},
   isSelected: {type: Boolean, required: false, default: true},
+  isLiteral: {type: Boolean, required: false, default: false},
   initialSelection: {type: Object as () => EntityType, required: false}
 });
 
@@ -36,7 +37,7 @@ import {
   ComboboxOptions,
 } from '@headlessui/vue'
 import {EntityType} from "../lib/types/EntityType.ts";
-import {noEntity, variableEntity, variableEntityConstructor} from "../lib/rete/constants.ts";
+import {noEntity, variableEntity, variableEntityConstructor, literalEntityConstructor} from "../lib/rete/constants.ts";
 import {selectedDataSource} from "../store.ts";
 import {debounce} from "../lib/utils";
 import {getEntityStyles} from "../lib/utils/entityStyles.ts";
@@ -64,6 +65,16 @@ function displayValue(entity: unknown): string {
 
 function queryHelper(query: string) {
   console.log(`queryHelper called with query: "${query}"`);
+
+  // Detect literal input: starts and ends with " — only allowed for item nodes, not properties
+  const literalMatch = query.match(/^"(.*)"$/s);
+  if (literalMatch !== null && props.type !== 'property') {
+    const rawValue = literalMatch[1];
+    const literalEntity = literalEntityConstructor(rawValue);
+    queriedEntities.value = [literalEntity];
+    return;
+  }
+
   const wds = new WikibaseDataService(selectedDataSource.value);
   wds.queryWikidata({
     language: language.value,
@@ -105,7 +116,7 @@ function eventEmitEntityHelper(entity: EntityType) {
 
 const computedInputClasses = computed(() => {
   let classes = props.inputClasses || 'w-full';
-  const styles = getEntityStyles(props.isVariable, props.isSelected);
+  const styles = getEntityStyles(props.isVariable, props.isSelected, props.isLiteral);
   classes += ` ring-2 ${styles.border} ${styles.bg}`;
   return classes;
 });
