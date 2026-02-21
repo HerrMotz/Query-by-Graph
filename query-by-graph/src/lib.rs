@@ -6,7 +6,7 @@ use serde_json::{from_str, to_string};
 use spargebra::algebra::{GraphPattern, PropertyPathExpression};
 use spargebra::term::{TriplePattern, TermPattern, NamedNodePattern};
 use spargebra::{Query, SparqlSyntaxError};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
 const INDENTATION_COUNT: usize = 4;
@@ -124,20 +124,22 @@ fn vqg_to_query(
     if connections.is_empty() {
         String::from("")
     } else {
-        fn collect_vars(id: &str, selected: bool, add_service_statement: bool) -> Vec<String> {
+        fn collect_vars(id: &str, selected: bool, distinct: bool, add_service_statement: bool) -> Vec<(String, bool)> {
             let mut vars = Vec::new();
             if id.starts_with('?') && selected {
                 let var = id.to_string();
-                vars.push(var.clone());
+                vars.push((var.clone(), distinct));
                 if add_service_statement {
-                    vars.push(format!("?{}Label", var.trim_start_matches('?')));
+                    // Label variables are never marked distinct
+                    vars.push((format!("?{}Label", var.trim_start_matches('?')), false));
                 }
             }
             vars
         }
 
-        fn collect_vars_from_property(property: &Property, add_service_statement: bool) -> Vec<String> {
-            let mut vars = collect_vars(&property.id, property.selected_for_projection, add_service_statement);
+        fn collect_vars_from_property(property: &Property, add_service_statement: bool) -> Vec<(String, bool)> {
+            // Properties never carry the distinct flag
+            let mut vars = collect_vars(&property.id, property.selected_for_projection, false, add_service_statement);
             for p in &property.properties {
                 vars.extend(collect_vars_from_property(p, add_service_statement));
             }
@@ -155,34 +157,46 @@ fn vqg_to_query(
             prefixes
         }
 
-        let projection_set = connections
+        // Collect (variable, is_distinct) pairs; deduplicate with OR on the distinct flag
+        let projection_raw: Vec<(String, bool)> = connections
             .iter()
             .flat_map(|connection| {
-                let mut vars = Vec::new();
+                let mut vars: Vec<(String, bool)> = Vec::new();
                 for entity in &[&connection.source, &connection.target] {
-                    vars.extend(collect_vars(&entity.id, entity.selected_for_projection, add_service_statement));
+                    vars.extend(collect_vars(&entity.id, entity.selected_for_projection, entity.distinct, add_service_statement));
                 }
                 for property in &connection.properties {
                     vars.extend(collect_vars_from_property(property, add_service_statement));
                 }
                 vars
             })
-            .collect::<HashSet<_>>();
+            .collect();
 
-        let has_distinct = connections.iter().any(|connection| {
-            (connection.source.id.starts_with('?') && connection.source.selected_for_projection && connection.source.distinct)
-                || (connection.target.id.starts_with('?') && connection.target.selected_for_projection && connection.target.distinct)
-        });
+        let mut projection_map: HashMap<String, bool> = HashMap::new();
+        for (var, is_distinct) in projection_raw {
+            projection_map
+                .entry(var)
+                .and_modify(|d| *d = *d || is_distinct)
+                .or_insert(is_distinct);
+        }
 
-        let projection_list = if projection_set.is_empty() {
+        let projection_list = if projection_map.is_empty() {
             String::from("*")
         } else {
-            let mut sorted_projection_set: Vec<_> = projection_set.into_iter().collect();
-            sorted_projection_set.sort(); // Sort the collection
-            sorted_projection_set.join(" ")
+            let mut sorted: Vec<(String, bool)> = projection_map.into_iter().collect();
+            sorted.sort_by_key(|(var, _)| var.clone());
+            sorted
+                .iter()
+                .map(|(var, is_distinct)| {
+                    if *is_distinct {
+                        format!("DISTINCT({})", var)
+                    } else {
+                        var.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
         };
-
-        let distinct_keyword = if has_distinct { "DISTINCT " } else { "" };
 
         let prefix_set = connections
             .iter()
@@ -257,13 +271,13 @@ fn vqg_to_query(
 
         if add_label_service_prefixes {
             format!(
-                "{}\n{}\n{}{}SELECT {}{} WHERE {{\n{}{}}}",
-                BD_PREFIX, WIKIBASE_PREFIX, xsd_prefix, prefix_list, distinct_keyword, projection_list, where_clause, service
+                "{}\n{}\n{}{}SELECT {} WHERE {{\n{}{}}}",
+                BD_PREFIX, WIKIBASE_PREFIX, xsd_prefix, prefix_list, projection_list, where_clause, service
             )
         } else {
             format!(
-                "{}{}SELECT {}{} WHERE {{\n{}{}}}",
-                xsd_prefix, prefix_list, distinct_keyword, projection_list, where_clause, service
+                "{}{}SELECT {} WHERE {{\n{}{}}}",
+                xsd_prefix, prefix_list, projection_list, where_clause, service
             )
         }
     }
@@ -408,14 +422,15 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
         // Match on the query type.
         match parsed_query {
             Ok(Query::Select { pattern: p, .. }) => {
-                let (connections, projection_vars, is_distinct) = match p {
+                let (connections, projection_vars) = match p {
+                    // SELECT DISTINCT ... is treated as SELECT ... for import purposes;
+                    // per-variable distinct is set by the user via the UI checkbox.
                     GraphPattern::Distinct { inner } => match *inner {
                         GraphPattern::Project { variables: v, inner: i } => (
                             match_bgp_or_path_to_vqg(*i),
                             Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>()),
-                            true,
                         ),
-                        other => (match_bgp_or_path_to_vqg(other), None, true),
+                        other => (match_bgp_or_path_to_vqg(other), None),
                     },
                     GraphPattern::Project {
                         variables: v,
@@ -423,9 +438,8 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
                     } => (
                         match_bgp_or_path_to_vqg(*i),
                         Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>()),
-                        false,
                     ),
-                    _ => (match_bgp_or_path_to_vqg(p), None, false),
+                    _ => (match_bgp_or_path_to_vqg(p), None),
                 };
 
                 let mut connections = connections;
@@ -435,14 +449,10 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
                         if connection.source.id.starts_with('?') {
                             connection.source.selected_for_projection =
                                 vars.contains(&connection.source.id);
-                            connection.source.distinct =
-                                is_distinct && vars.contains(&connection.source.id);
                         }
                         if connection.target.id.starts_with('?') {
                             connection.target.selected_for_projection =
                                 vars.contains(&connection.target.id);
-                            connection.target.distinct =
-                                is_distinct && vars.contains(&connection.target.id);
                         }
                         for property in &mut connection.properties {
                             if property.id.starts_with('?') {
