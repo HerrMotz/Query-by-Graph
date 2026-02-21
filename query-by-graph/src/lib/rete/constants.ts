@@ -11,7 +11,8 @@ const variableEntity: EntityType = { // EntityType
         abbreviation: "",
     },
     dataSource: noDataSource,
-    selectedForProjection: true
+    selectedForProjection: true,
+    distinct: false
 };
 
 const variableEntityConstructor = (name: string): EntityType => {

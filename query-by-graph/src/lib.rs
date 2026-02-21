@@ -21,6 +21,8 @@ pub struct Entity {
     pub prefix: Prefix,
     #[serde(default = "default_selected_for_projection")]
     pub selected_for_projection: bool,
+    #[serde(default)]
+    pub distinct: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -167,6 +169,11 @@ fn vqg_to_query(
             })
             .collect::<HashSet<_>>();
 
+        let has_distinct = connections.iter().any(|connection| {
+            (connection.source.id.starts_with('?') && connection.source.selected_for_projection && connection.source.distinct)
+                || (connection.target.id.starts_with('?') && connection.target.selected_for_projection && connection.target.distinct)
+        });
+
         let projection_list = if projection_set.is_empty() {
             String::from("*")
         } else {
@@ -174,6 +181,8 @@ fn vqg_to_query(
             sorted_projection_set.sort(); // Sort the collection
             sorted_projection_set.join(" ")
         };
+
+        let distinct_keyword = if has_distinct { "DISTINCT " } else { "" };
 
         let prefix_set = connections
             .iter()
@@ -248,13 +257,13 @@ fn vqg_to_query(
 
         if add_label_service_prefixes {
             format!(
-                "{}\n{}\n{}{}SELECT {} WHERE {{\n{}{}}}",
-                BD_PREFIX, WIKIBASE_PREFIX, xsd_prefix, prefix_list, projection_list, where_clause, service
+                "{}\n{}\n{}{}SELECT {}{} WHERE {{\n{}{}}}",
+                BD_PREFIX, WIKIBASE_PREFIX, xsd_prefix, prefix_list, distinct_keyword, projection_list, where_clause, service
             )
         } else {
             format!(
-                "{}{}SELECT {} WHERE {{\n{}{}}}",
-                xsd_prefix, prefix_list, projection_list, where_clause, service
+                "{}{}SELECT {}{} WHERE {{\n{}{}}}",
+                xsd_prefix, prefix_list, distinct_keyword, projection_list, where_clause, service
             )
         }
     }
@@ -399,15 +408,24 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
         // Match on the query type.
         match parsed_query {
             Ok(Query::Select { pattern: p, .. }) => {
-                let (connections, projection_vars) = match p {
+                let (connections, projection_vars, is_distinct) = match p {
+                    GraphPattern::Distinct { inner } => match *inner {
+                        GraphPattern::Project { variables: v, inner: i } => (
+                            match_bgp_or_path_to_vqg(*i),
+                            Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>()),
+                            true,
+                        ),
+                        other => (match_bgp_or_path_to_vqg(other), None, true),
+                    },
                     GraphPattern::Project {
                         variables: v,
                         inner: i,
                     } => (
                         match_bgp_or_path_to_vqg(*i),
-                        Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>())
+                        Some(v.iter().map(|var| format!("?{}", var.as_str())).collect::<HashSet<String>>()),
+                        false,
                     ),
-                    _ => (match_bgp_or_path_to_vqg(p), None),
+                    _ => (match_bgp_or_path_to_vqg(p), None, false),
                 };
 
                 let mut connections = connections;
@@ -417,10 +435,14 @@ fn query_to_vqg(query: &str) -> Vec<Connection> {
                         if connection.source.id.starts_with('?') {
                             connection.source.selected_for_projection =
                                 vars.contains(&connection.source.id);
+                            connection.source.distinct =
+                                is_distinct && vars.contains(&connection.source.id);
                         }
                         if connection.target.id.starts_with('?') {
                             connection.target.selected_for_projection =
                                 vars.contains(&connection.target.id);
+                            connection.target.distinct =
+                                is_distinct && vars.contains(&connection.target.id);
                         }
                         for property in &mut connection.properties {
                             if property.id.starts_with('?') {
@@ -472,6 +494,7 @@ fn match_bgp_or_path_to_vqg(p: GraphPattern) -> Vec<Connection> {
             let r_parsed = match_bgp_or_path_to_vqg(*r);
             l_parsed.into_iter().chain(r_parsed).collect()
         }
+        GraphPattern::Distinct { inner } => match_bgp_or_path_to_vqg(*inner),
         GraphPattern::Path {
             subject: s,
             path: p,
@@ -503,6 +526,7 @@ fn connection_constructor(
                 abbreviation: "".to_string(),
             },
             selected_for_projection: true, // Default to true
+            distinct: false,
         },
         target: Entity {
             id: object_name.clone(),
@@ -512,6 +536,7 @@ fn connection_constructor(
                 abbreviation: "".to_string(),
             },
             selected_for_projection: true, // Default to true
+            distinct: false,
         },
         properties: vec![Property {
             id: predicate_name.clone(),
