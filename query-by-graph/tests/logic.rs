@@ -324,3 +324,103 @@ SELECT ?o ?s WHERE {
 }"###;
     assert_sparql_equivalent(&result, expected);
 }
+
+#[test]
+fn test_distinct_variable_generates_per_variable_distinct() {
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    // Per-variable DISTINCT: SELECT DISTINCT(?university) WHERE { ... }
+    assert!(select.contains("DISTINCT(?university)"), "Expected DISTINCT(?university) in: {}", select);
+    // SELECT keyword itself should not be followed by the global DISTINCT keyword
+    assert!(!select.starts_with("SELECT DISTINCT "), "Should not use global SELECT DISTINCT, got: {}", select);
+}
+
+#[test]
+fn test_no_distinct_generates_plain_select() {
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":false}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    assert!(!select.contains("DISTINCT"), "Expected plain SELECT but got: {}", select);
+    assert!(select.contains("?university"));
+}
+
+#[test]
+fn test_parse_select_distinct_query_does_not_set_per_variable_distinct_flag() {
+    // Importing SELECT DISTINCT ?university does NOT set distinct=true on individual variables.
+    // Per-variable distinct is only set via the UI checkbox; the global DISTINCT keyword is ignored on import.
+    let query = r###"PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT DISTINCT ?university WHERE {
+    wd:Q5879 wdt:P69 ?university .
+}"###;
+
+    let result = query_to_vqg_wasm(query);
+    let connections = parse_connections_json(&result);
+
+    assert_eq!(connections.len(), 1);
+    let c = &connections[0];
+
+    assert_eq!(c["target"]["id"], Value::String("?university".to_string()));
+    assert_eq!(c["target"]["selectedForProjection"], Value::Bool(true));
+    assert_eq!(c["target"]["distinct"], Value::Bool(false));
+}
+
+#[test]
+fn test_parse_non_distinct_query_does_not_set_distinct_flag() {
+    let query = r###"PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?university WHERE {
+    wd:Q5879 wdt:P69 ?university .
+}"###;
+
+    let result = query_to_vqg_wasm(query);
+    let connections = parse_connections_json(&result);
+
+    assert_eq!(connections.len(), 1);
+    let c = &connections[0];
+
+    assert_eq!(c["target"]["id"], Value::String("?university".to_string()));
+    assert_eq!(c["target"]["distinct"], Value::Bool(false));
+}
+
+#[test]
+fn test_distinct_only_applies_when_variable_is_selected_for_projection() {
+    // distinct=true but selectedForProjection=false → DISTINCT(?var) must NOT appear
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":false,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+
+    assert!(!result.contains("DISTINCT"), "DISTINCT should not appear when variable is not selected for projection: {}", result);
+}
+
+#[test]
+fn test_mixed_distinct_and_non_distinct_variables() {
+    // ?university is distinct, ?person is not → only ?university gets DISTINCT(...)
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"?person","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    assert!(select.contains("DISTINCT(?university)"), "Expected DISTINCT(?university) in: {}", select);
+    // ?person should appear as a plain variable (no DISTINCT wrapper)
+    assert!(select.contains("?person"), "Expected ?person in: {}", select);
+    assert!(!select.contains("DISTINCT(?person)"), "?person should not be wrapped in DISTINCT: {}", select);
+}
+
+#[test]
+fn test_label_vars_not_distinct_even_when_base_var_is_distinct() {
+    // With label service, ?universityLabel must NOT be wrapped in DISTINCT
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, true, true);
+    let select = select_line(&result);
+
+    assert!(select.contains("DISTINCT(?university)"), "Expected DISTINCT(?university) in: {}", select);
+    assert!(!select.contains("DISTINCT(?universityLabel)"), "Label variable must not be wrapped in DISTINCT: {}", select);
+    assert!(select.contains("?universityLabel"), "Label variable should still appear: {}", select);
+}
