@@ -324,3 +324,73 @@ SELECT ?o ?s WHERE {
 }"###;
     assert_sparql_equivalent(&result, expected);
 }
+
+#[test]
+fn test_distinct_variable_generates_select_distinct() {
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    assert!(select.contains("DISTINCT"), "Expected SELECT DISTINCT but got: {}", select);
+    assert!(select.contains("?university"));
+}
+
+#[test]
+fn test_no_distinct_generates_plain_select() {
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":true,"distinct":false}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    assert!(!select.contains("DISTINCT"), "Expected plain SELECT but got: {}", select);
+    assert!(select.contains("?university"));
+}
+
+#[test]
+fn test_parse_select_distinct_query_sets_distinct_flag() {
+    let query = r###"PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT DISTINCT ?university WHERE {
+    wd:Q5879 wdt:P69 ?university .
+}"###;
+
+    let result = query_to_vqg_wasm(query);
+    let connections = parse_connections_json(&result);
+
+    assert_eq!(connections.len(), 1);
+    let c = &connections[0];
+
+    assert_eq!(c["target"]["id"], Value::String("?university".to_string()));
+    assert_eq!(c["target"]["selectedForProjection"], Value::Bool(true));
+    assert_eq!(c["target"]["distinct"], Value::Bool(true));
+}
+
+#[test]
+fn test_parse_non_distinct_query_does_not_set_distinct_flag() {
+    let query = r###"PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?university WHERE {
+    wd:Q5879 wdt:P69 ?university .
+}"###;
+
+    let result = query_to_vqg_wasm(query);
+    let connections = parse_connections_json(&result);
+
+    assert_eq!(connections.len(), 1);
+    let c = &connections[0];
+
+    assert_eq!(c["target"]["id"], Value::String("?university".to_string()));
+    assert_eq!(c["target"]["distinct"], Value::Bool(false));
+}
+
+#[test]
+fn test_distinct_only_applies_when_variable_is_selected_for_projection() {
+    // distinct=true but selectedForProjection=false → should NOT generate SELECT DISTINCT
+    let graph = r###"[{"properties":[{"id":"P69","label":"educated at","prefix":{"iri":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"selectedForProjection":false}],"source":{"id":"Q5879","label":"Goethe","prefix":{"iri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"selectedForProjection":false,"distinct":false},"target":{"id":"?university","label":"Variable","prefix":{"iri":"","abbreviation":""},"selectedForProjection":false,"distinct":true}}]"###;
+
+    let result = vqg_to_query_wasm(graph, false, false);
+    let select = select_line(&result);
+
+    assert!(!select.contains("DISTINCT"), "DISTINCT should not appear when variable is not selected for projection: {}", select);
+}

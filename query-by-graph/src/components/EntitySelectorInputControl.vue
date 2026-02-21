@@ -16,6 +16,15 @@
         container-classes="px-2"
         label-classes="text-white"
     />
+    <ProjectionCheckbox
+        v-if="isVariable"
+        :id="`distinct-${data.id}`"
+        v-model="includeAsDistinct"
+        :is-variable="isVariable"
+        label="Distinct?"
+        container-classes="px-2"
+        label-classes="text-white"
+    />
   </div>
 </template>
 
@@ -50,6 +59,19 @@ export default {
           }
         }
       }
+    },
+    includeAsDistinct: {
+      get() {
+        return this.data.value?.distinct === true;
+      },
+      set(value) {
+        if (this.data.value) {
+          this.data.value.distinct = value;
+          if (this.data.options?.change) {
+            this.data.options.change(this.data.value);
+          }
+        }
+      }
     }
   },
   methods: {
@@ -71,6 +93,9 @@ export default {
       this.data.value = val;
       if (this.data.value.selectedForProjection === undefined) {
         this.data.value.selectedForProjection = true;
+      }
+      if (this.data.value.distinct === undefined) {
+        this.data.value.distinct = false;
       }
     }
   },
