@@ -202,6 +202,18 @@ fn vqg_to_query(
             format!("{}\n\n", temp.join("\n"))
         };
 
+        // Detect whether any entity uses an ^^xsd: typed literal and inject the XSD prefix if so.
+        let uses_xsd = connections.iter().any(|c| {
+            c.source.id.contains("^^xsd:")
+                || c.target.id.contains("^^xsd:")
+                || c.properties.iter().any(|p| p.id.contains("^^xsd:"))
+        });
+        let xsd_prefix = if uses_xsd {
+            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n"
+        } else {
+            ""
+        };
+
         let where_clause: String = connections
             .iter()
             .map(|connection| {
@@ -236,13 +248,13 @@ fn vqg_to_query(
 
         if add_label_service_prefixes {
             format!(
-                "{}\n{}\n{}SELECT {} WHERE {{\n{}{}}}",
-                BD_PREFIX, WIKIBASE_PREFIX, prefix_list, projection_list, where_clause, service
+                "{}\n{}\n{}{}SELECT {} WHERE {{\n{}{}}}",
+                BD_PREFIX, WIKIBASE_PREFIX, xsd_prefix, prefix_list, projection_list, where_clause, service
             )
         } else {
             format!(
-                "{}SELECT {} WHERE {{\n{}{}}}",
-                prefix_list, projection_list, where_clause, service
+                "{}{}SELECT {} WHERE {{\n{}{}}}",
+                xsd_prefix, prefix_list, projection_list, where_clause, service
             )
         }
     }

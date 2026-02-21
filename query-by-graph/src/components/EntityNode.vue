@@ -8,8 +8,14 @@
        :style="nodeStyles"
        data-testid="node">
     <div class="p-2">
-      <h1 class="text-3xl text-white font-bold" data-testid="title">{{ data.entity.label }} </h1>
-      <h2 class="text-2xl text-gray-100 font-bold font-mono">{{data.entity.prefix.abbreviation}}{{ data.entity.prefix.abbreviation && ':'}}{{data.entity.id}}</h2>
+      <template v-if="isLiteral">
+        <h1 class="text-3xl text-white font-bold font-mono" data-testid="title">{{ data.entity.label }}</h1>
+        <h2 class="text-sm text-amber-100 mt-0.5">{{ literalHumanType }}</h2>
+      </template>
+      <template v-else>
+        <h1 class="text-3xl text-white font-bold" data-testid="title">{{ data.entity.label }} </h1>
+        <h2 class="text-2xl text-gray-100 font-bold font-mono">{{data.entity.prefix.abbreviation}}{{ data.entity.prefix.abbreviation && ':'}}{{data.entity.id}}</h2>
+      </template>
     </div>
 
     <!-- Outputs-->
@@ -68,6 +74,11 @@ export default defineComponent({
     const controls = computed(() => sortByIndex(Object.entries(props.data.controls)));
     const outputs = computed(() => sortByIndex(Object.entries(props.data.outputs)));
 
+    const isLiteral = computed(() => {
+      props.seed;
+      return props.data?.entity?.isLiteral === true;
+    });
+
     const isVariable = computed(() => {
       // Use seed to force re-computation when area.update is called
       props.seed;
@@ -92,7 +103,29 @@ export default defineComponent({
     });
 
     const entityStyles = computed(() => {
-      return getEntityStyles(isVariable.value, isVariableSelectedForProjection.value);
+      return getEntityStyles(isVariable.value, isVariableSelectedForProjection.value, isLiteral.value);
+    });
+
+    const literalHumanType = computed(() => {
+      props.seed;
+        const id = props.data?.entity?.id ?? '';
+      // Extract the xsd type from e.g. "42"^^xsd:integer
+      const match = id.match(/\^\^xsd:(\w+)$/);
+      if (!match) return 'string';
+      switch (match[1]) {
+        case 'integer':
+        case 'decimal':
+        case 'float':
+        case 'double':
+          return 'number';
+        case 'date':
+        case 'dateTime':
+          return 'date';
+        case 'boolean':
+          return 'boolean';
+        default:
+          return 'string';
+      }
     });
 
     const projectionTooltip = computed(() => {
@@ -107,6 +140,8 @@ export default defineComponent({
       inputs,
       controls,
       outputs,
+      isLiteral,
+      literalHumanType,
       isVariable,
       isVariableSelectedForProjection,
       entityStyles,

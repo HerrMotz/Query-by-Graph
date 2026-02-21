@@ -1,6 +1,6 @@
 <template>
   <div class="z-10">
-    <svg width="250" height="250" xmlns="http://www.w3.org/2000/svg">
+    <svg class="connection-svg" width="250" height="250" xmlns="http://www.w3.org/2000/svg">
       <!-- This highlights the path on selection -->
       <!-- Todo: the arrowhead should also change color on selection, currently it does not -->
       <path :d="path"
@@ -255,7 +255,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-svg {
+svg.connection-svg {
   overflow: visible !important;
   position: absolute;
   pointer-events: none;
