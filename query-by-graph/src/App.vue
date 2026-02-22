@@ -13,7 +13,7 @@ import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
 import ClipboardButton from "./components/ClipboardButton.vue";
 import QueryButton from './components/QueryButton.vue';
 import WikibaseDataService from './lib/wikidata/WikibaseDataService.ts';
-import {selectedDataSource, dataSources, setSelectedDataSource} from './store.ts';
+import {selectedDataSource, dataSources, setSelectedDataSource, globalDistinct} from './store.ts';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {debounce} from "./lib/utils";
 import DataSourcesPopover from "./components/DataSourcesPopover.vue";
@@ -225,6 +225,19 @@ const deselectAllVariablesForProjection = () => {
   }
 };
 
+const toggleDistinct = () => {
+  globalDistinct.value = !globalDistinct.value;
+  // Sync entity.distinct on every node so the Rust backend export picks it up
+  if (editor.value) {
+    editor.value.getNodes().forEach((node: any) => {
+      if (node.entity) {
+        node.entity.distinct = globalDistinct.value;
+        editor.value?.updateNode(node.id);
+      }
+    });
+  }
+};
+
 
 const gotoLink = (url?: string) => {
   const link = url || window.location.href;
@@ -380,6 +393,20 @@ const gotoLink = (url?: string) => {
                 <em>Hint:</em>
                 Use the "Include in SELECT" checkbox on variable nodes to control their inclusion in the query projection.
                 Variables with a green border and checkmark (✓) are included in the query results.
+              </p>
+            </div>
+
+            <div class="flex-col flex gap-2">
+              <h4 class="font-semibold">Distinct Query</h4>
+              <div class="flex flex-col gap-2">
+                <Button class="grow" :class="{'highlighted': globalDistinct}" @click="toggleDistinct">
+                  {{ globalDistinct ? 'Distinct: ON' : 'Distinct: OFF' }}
+                </Button>
+              </div>
+              <p class="text-gray-600 text-sm hover:text-gray-900 transition-all">
+                <em>Hint:</em>
+                When Distinct is enabled, the <code>SELECT DISTINCT</code> modifier is applied globally to the entire query.
+                Toggling this on any node's "Distinct?" checkbox has the same effect.
               </p>
             </div>
 

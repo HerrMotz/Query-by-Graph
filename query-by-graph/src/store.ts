@@ -2,6 +2,9 @@ import {Ref, ref} from 'vue';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {factGridDataSource, mimoDataSource, wikiDataDataSource} from "./lib/constants";
 
+// Global DISTINCT setting – when true every variable node is marked as distinct
+export const globalDistinct = ref<boolean>(false);
+
 export const defaultDataSources = [
     wikiDataDataSource,
     factGridDataSource,

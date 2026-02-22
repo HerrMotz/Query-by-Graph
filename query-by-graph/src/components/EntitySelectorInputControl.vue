@@ -31,6 +31,7 @@
 <script>
 import EntitySelector from "./EntitySelector.vue";
 import ProjectionCheckbox from "./ProjectionCheckbox.vue";
+import {globalDistinct} from "../store.ts";
 
 export default {
   components: {EntitySelector, ProjectionCheckbox},
@@ -62,9 +63,16 @@ export default {
     },
     includeAsDistinct: {
       get() {
-        return this.data.value?.distinct === true;
+        // Mirror the global flag onto the entity so the backend export picks it up
+        if (this.data.value) {
+          this.data.value.distinct = globalDistinct.value;
+        }
+        return globalDistinct.value;
       },
       set(value) {
+        // Writing to any node's checkbox updates the global setting
+        globalDistinct.value = value;
+        // Also keep every node's entity in sync immediately via the change callback
         if (this.data.value) {
           this.data.value.distinct = value;
           if (this.data.options?.change) {
