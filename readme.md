@@ -12,3 +12,7 @@ The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/ar
 
 ## Language Features and JSON Schema
 For detailed documentation on supported language features and the VQG JSON schema, see [VQG_FEATURES.md](query-by-graph/vql.md).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/image?repos=herrmotz/query-by-graph&type=date&legend=top-left)](https://www.star-history.com/?repos=herrmotz%2Fquery-by-graph&type=date&legend=top-left)
