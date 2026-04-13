@@ -12,7 +12,7 @@
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.5.4",
     "@headlessui/vue": "^1.7.22",
-    "axios": "^1.8.4",
+    "axios": "^1.15.0",
     "highlight.js": "^11.10.0",
     "monaco-editor": "^0.52.2",
     "rete": "^2.0.3",
