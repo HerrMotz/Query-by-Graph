@@ -424,27 +424,31 @@ export async function createEditor(container: HTMLElement) {
                     if (conn.source === node.id) {
                         await editor.removeConnection(conn.id);
                         const newConn = new Connection(
-                            editor.getNode(originalNodeId!),
+                            editor.getNode(originalNodeId!)!,
                             conn.sourceOutput,
-                            editor.getNode(conn.target),
+                            editor.getNode(conn.target)!,
                             conn.targetInput
                         );
                         newConn.id = conn.id;
-                        newConn.properties = oldConn.properties;
-                        newConn.selected = oldConn.selected;
+                        if (oldConn) {
+                            newConn.properties = oldConn.properties;
+                            newConn.selected = oldConn.selected;
+                        }
                         await editor.addConnection(newConn);
                     // target is the duplicate --> create connection from source to original
                     } else if (conn.target === node.id) {
                         await editor.removeConnection(conn.id);
                         const newConn = new Connection(
-                            editor.getNode(conn.source),
+                            editor.getNode(conn.source)!,
                             conn.sourceOutput,
-                            editor.getNode(originalNodeId!),
+                            editor.getNode(originalNodeId!)!,
                             conn.targetInput
                         );
                         newConn.id = conn.id;
-                        newConn.properties = oldConn.properties;
-                        newConn.selected = oldConn.selected;
+                        if (oldConn) {
+                            newConn.properties = oldConn.properties;
+                            newConn.selected = oldConn.selected;
+                        }
                         await editor.addConnection(newConn);
                     }
                 }
