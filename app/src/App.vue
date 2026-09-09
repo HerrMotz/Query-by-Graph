@@ -191,6 +191,12 @@ const setDataSource = (source: WikibaseDataSource) => {
   }
 };
 
+const collectPropertyVariables = (properties: any[] | undefined): any[] =>
+    (properties ?? []).flatMap((property: any) => [
+      ...(property?.id?.startsWith('?') ? [property] : []),
+      ...collectPropertyVariables(property?.properties),
+    ]);
+
 const setAllVariablesForProjection = (selected: boolean) => {
   if (!editor.value) return;
 
@@ -203,8 +209,10 @@ const setAllVariablesForProjection = (selected: boolean) => {
 
   editor.value.getConnections().forEach((connection: any) => {
     // A connection carries a property *path*, so its variables live in the
-    // `properties` list; there is no single `property` on it.
-    const variables = (connection.properties ?? []).filter((property: any) => property?.id?.startsWith('?'));
+    // `properties` list; there is no single `property` on it. Paths nest
+    // (sequence/alternation), so recurse the same way collect_vars_from_property
+    // does in src/lib.rs — otherwise variables inside a path are never selected.
+    const variables = collectPropertyVariables(connection.properties);
     if (variables.length === 0) return;
     variables.forEach((property: any) => property.selectedForProjection = selected);
     editor.value?.updateConnection(connection.id);

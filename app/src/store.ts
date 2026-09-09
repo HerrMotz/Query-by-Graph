@@ -8,21 +8,39 @@ export const defaultDataSources = [
     mimoDataSource
 ];
 
+// This module runs at import time, so a corrupted localStorage entry would
+// otherwise throw before the app ever mounts. Fall back to the defaults instead.
+const readStored = <T>(key: string, isValid: (value: any) => boolean, fallback: T): T => {
+    const stored = localStorage.getItem(key);
+    if (stored === null) return fallback;
+
+    try {
+        const parsed = JSON.parse(stored);
+        return isValid(parsed) ? parsed as T : fallback;
+    } catch {
+        console.warn(`Discarding malformed localStorage entry '${key}'.`);
+        return fallback;
+    }
+}
+
+const isDataSource = (value: any): boolean =>
+    !!value && typeof value === 'object' && !Array.isArray(value);
+
 const localstorageSelectedDataSourceKey = 'selectedDataSource';
-const storedSelectedDataSource = localStorage.getItem(localstorageSelectedDataSourceKey);
 export const selectedDataSource = ref<WikibaseDataSource>(
-    storedSelectedDataSource ? JSON.parse(storedSelectedDataSource) : wikiDataDataSource
+    readStored(localstorageSelectedDataSourceKey, isDataSource, wikiDataDataSource)
 );
 
 
 // initialize the data sources from local storage on page load
 const localstorageDataSourcesKey = 'dataSources';
-const storedDataSources = localStorage.getItem(localstorageDataSourcesKey);
-if (!storedDataSources) {
-    localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(defaultDataSources));
-}
-// add the new data source to the list
-const localStoreDataSources = storedDataSources ? JSON.parse(storedDataSources) : defaultDataSources;
+const localStoreDataSources = readStored<WikibaseDataSource[]>(
+    localstorageDataSourcesKey,
+    // An empty list would leave the app with no source to select.
+    (value) => Array.isArray(value) && value.length > 0 && value.every(isDataSource),
+    defaultDataSources
+);
+localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(localStoreDataSources));
 
 export const dataSources = ref<WikibaseDataSource[]>(localStoreDataSources);
 
@@ -32,7 +50,8 @@ export const setSelectedDataSource = (source: WikibaseDataSource) => {
 }
 
 export const resetDataSourceToDefault = () => {
-    dataSources.value = defaultDataSources;
+    // Copy, so later additions don't mutate the shared defaults array.
+    dataSources.value = [...defaultDataSources];
     setSelectedDataSource(defaultDataSources[0]);
     localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(defaultDataSources));
 }
@@ -44,9 +63,12 @@ export const addDataSourceToStorage = (dataSources: Ref<WikibaseDataSource[]>, s
     dataSources.value.push(source);
 
     // load the local storage data sources
-    const storedDataSources = localStorage.getItem(localstorageDataSourcesKey);
+    const localStoreDataSources = readStored<WikibaseDataSource[]>(
+        localstorageDataSourcesKey,
+        (value) => Array.isArray(value),
+        []
+    );
     // add the new data source to the list
-    const localStoreDataSources = storedDataSources ? JSON.parse(storedDataSources) : [];
     localStoreDataSources.push(source);
     // write the data sources back to local storage
     localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(localStoreDataSources));
@@ -54,6 +76,14 @@ export const addDataSourceToStorage = (dataSources: Ref<WikibaseDataSource[]>, s
 
 export const deleteDataSourceFromStorage = (index: number) => {
     dataSources.value.splice(index, 1);
-    selectedDataSource.value = dataSources.value[0];
+
+    // Deleting the last source would otherwise leave `selectedDataSource`
+    // undefined, which every consumer of the prefixes then chokes on.
+    if (dataSources.value.length === 0) {
+        resetDataSourceToDefault();
+        return;
+    }
+
+    setSelectedDataSource(dataSources.value[0]);
     localStorage.setItem(localstorageDataSourcesKey, JSON.stringify(dataSources.value));
 }
