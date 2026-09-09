@@ -1,45 +1,78 @@
 //! Test suite for the Web and headless browsers.
+//!
+//! These are smoke tests for the `#[wasm_bindgen]` boundary itself — the
+//! conversion logic is covered in depth by the native tests (`logic.rs`,
+//! `resilience.rs`, `property_paths.rs`). Run with `npm run test-rs`.
 
 #![cfg(target_arch = "wasm32")]
 
 extern crate wasm_bindgen_test;
-use std::print;
 
-use wasm_bindgen_test::*;
-use serde_json::to_string;
-use query_by_graph::vqg_to_query_wasm;
 use query_by_graph::query_to_vqg_wasm;
+use query_by_graph::vqg_to_query_wasm;
+use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-#[wasm_bindgen_test]
-fn test_empty_query() {
-    assert_eq!(vqg_to_query_wasm("[]"), "");
-}
+const GOETHE_GRAPH: &str = r###"[{
+    "source": {
+        "id": "Q5879",
+        "label": "Johann Wolfgang von Goethe",
+        "prefix": {"iri": "http://www.wikidata.org/entity/", "abbreviation": "wd"}
+    },
+    "target": {
+        "id": "Q154804",
+        "label": "Leipzig University",
+        "prefix": {"iri": "http://www.wikidata.org/entity/", "abbreviation": "wd"}
+    },
+    "properties": [{
+        "id": "?relation",
+        "label": "Variable",
+        "prefix": {"iri": "", "abbreviation": ""}
+    }]
+}]"###;
 
-#[wasm_bindgen_test]
-fn graph_to_query_works() {
-    let result = query_to_vqg_wasm(r###"PREFIX wd: <http://www.wikidata.org/entity/>
+const GOETHE_QUERY: &str = r###"PREFIX wd: <http://www.wikidata.org/entity/>
 SELECT ?relation WHERE {
      wd:Q5879 ?relation wd:Q154804 .
     # Johann Wolfgang von Goethe -- [Variable] -> Leipzig University
-}"###);
-    assert_eq!(result, "")
+}"###;
+
+#[wasm_bindgen_test]
+fn test_empty_graph_yields_empty_query() {
+    assert_eq!(vqg_to_query_wasm("[]", false, false), "");
 }
 
 #[wasm_bindgen_test]
-fn serialize_graph() {
-    let graph = query_to_vqg_wasm("SELECT ?3 WHERE { <http://www.wikidata.org/entity/Q5879> ?3 <http://www.wikidata.org/entity/Q152838> .}");
-    print!("{:?}", to_string(&graph).unwrap())
+fn test_graph_to_query() {
+    assert_eq!(
+        vqg_to_query_wasm(GOETHE_GRAPH, false, false),
+        "PREFIX wd: <http://www.wikidata.org/entity/>\n\nSELECT ?relation WHERE {\n    wd:Q5879 ?relation wd:Q154804 .\n    # Johann Wolfgang von Goethe -- [Variable] -> Leipzig University\n}"
+    );
 }
 
+#[wasm_bindgen_test]
+fn test_query_to_graph() {
+    let graph = query_to_vqg_wasm(GOETHE_QUERY);
+
+    // The parser resolves prefixes to full IRIs, so the entities come back
+    // expanded; the variable predicate survives verbatim.
+    assert!(graph.contains(r#""id":"?relation""#), "graph was: {}", graph);
+    assert!(
+        graph.contains("http://www.wikidata.org/entity/Q5879"),
+        "graph was: {}",
+        graph
+    );
+    assert!(
+        graph.contains("http://www.wikidata.org/entity/Q154804"),
+        "graph was: {}",
+        graph
+    );
+}
 
 #[wasm_bindgen_test]
-fn test_simple_query() {
-    let query = r###"[{"property":{"id":"?variable1","label":"Variable","description":"Variable Entity","prefix":{"uri":"","abbreviation":""},"dataSource":{"name":"","url":"","preferredLanguages":[],"propertyPrefix":{"url":"","abbreviation":""},"entityPrefix":{"url":"","abbreviation":""},"queryService":""}},"source":{"id":"Q5879","label":"Johann Wolfgang von Goethe","description":"German writer, artist, natural scientist and politician (1749–1832)","prefix":{"uri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}},"target":{"id":"Q154804","label":"Leipzig University","description":"university in Leipzig, Saxony, Germany (1409-)","prefix":{"uri":"http://www.wikidata.org/entity/","abbreviation":"wd"},"dataSource":{"name":"WikiData","url":"https://www.wikidata.org/w/api.php","preferredLanguages":["en"],"entityPrefix":{"url":"http://www.wikidata.org/entity/","abbreviation":"wd"},"propertyPrefix":{"url":"http://www.wikidata.org/prop/direct/","abbreviation":"wdt"},"queryService":"https://query.wikidata.org/ "}}}]"###;
-    assert_eq!(vqg_to_query_wasm(query), "PREFIX wd: <http://www.wikidata.org/entity/>
-SELECT ?variable1 WHERE {
-     wd:Q5879 ?variable1 wd:Q154804 .
-    # Johann Wolfgang von Goethe -- [Variable] -> Leipzig University
-}")
+fn test_unparseable_query_does_not_panic() {
+    // `query_to_vqg_wasm` is deliberately lossy-tolerant: bad input must return
+    // an empty graph rather than trapping the wasm module.
+    assert_eq!(query_to_vqg_wasm("this is not a SPARQL query"), "[]");
 }

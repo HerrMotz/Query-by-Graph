@@ -4,7 +4,11 @@ version = "0.1.0"
 authors = ["Daniel Motz <hello@daniel-motz.de>"]
 description = "Convert Visual Query Graphs to SPARQL queries and vice versa"
 repository = "https://github.com/HerrMotz/bachelor-thesis"
-license = "All Right Reserved."
+# Not an OSI licence; SPDX requires the `LicenseRef-` form for custom terms.
+license = "LicenseRef-AllRightsReserved"
+# This crate is compiled to wasm and consumed locally by the Vite app; it is
+# never uploaded to crates.io.
+publish = false
 edition = "2018"
 
 [lib]
