@@ -28,6 +28,12 @@ export interface SparqlBackend {
 export interface SparqlLanguageServer {
     /** Register `backend` and make it the one used for completions. */
     setBackend: (backend: SparqlBackend) => void;
+    /**
+     * Format a query string. Use this instead of Monaco's format action for
+     * text the application generates: formatting the model instead would edit
+     * it after the fact and feed a change back into the graph round trip.
+     */
+    formatText: (text: string) => Promise<string>;
     dispose: () => void;
 }
 
@@ -82,6 +88,16 @@ function toMonacoRange(range: LspRange): monaco.IRange {
     };
 }
 
+/**
+ * qlue-ls asks the client to open the suggest widget again after an item that
+ * only completes part of a triple. Monaco has no handler for the server's own
+ * command, but it has an equivalent built-in action.
+ */
+function retriggerCommand(command?: { command?: string, title?: string }) {
+    if (command?.command !== 'triggerNewCompletion') return undefined;
+    return {id: 'editor.action.triggerSuggest', title: command.title ?? 'Suggest'};
+}
+
 function markerSeverity(severity?: number): monaco.MarkerSeverity {
     switch (severity) {
         case 1:
@@ -100,11 +116,18 @@ class LanguageServerConnection {
     private readonly model: monaco.editor.ITextModel;
     private readonly uri: string;
     private readonly disposables: monaco.IDisposable[] = [];
-    private readonly pending = new Map<number, { resolve: (value: any) => void, reject: (error: any) => void }>();
+    private readonly pending = new Map<number, {
+        resolve: (value: any) => void,
+        reject: (error: any) => void,
+        timeout: ReturnType<typeof setTimeout>,
+    }>();
 
     private nextRequestId = 0;
     private documentVersion = 0;
     private previousText = '';
+    /** The worker has loaded the WASM module and listens for messages. */
+    private workerReady = false;
+    /** The language server has answered the initialize handshake. */
     private ready = false;
     private disposed = false;
     private backend?: SparqlBackend;
@@ -135,6 +158,12 @@ class LanguageServerConnection {
         this.disposables.forEach(disposable => disposable.dispose());
         this.worker.removeEventListener('message', this.onWorkerMessage);
         this.worker.terminate();
+        // Settle whatever Monaco is still waiting for; an unsettled promise
+        // would keep a suggest or hover operation pending forever.
+        for (const [, callbacks] of this.pending) {
+            clearTimeout(callbacks.timeout);
+            callbacks.resolve(null);
+        }
         this.pending.clear();
         if (!this.model.isDisposed()) monaco.editor.setModelMarkers(this.model, 'qlue-ls', []);
     }
@@ -145,7 +174,30 @@ class LanguageServerConnection {
      * it must never block the editor.
      */
     request(method: string, params: unknown): Promise<any> {
-        if (!this.ready || this.disposed) return Promise.resolve(null);
+        if (!this.ready) return Promise.resolve(null);
+        return this.sendRequest(method, params);
+    }
+
+    /**
+     * Ask the language server to format `text` without going through a
+     * document. Returns `text` unchanged while the worker is still starting up,
+     * rather than making the caller wait for it.
+     */
+    formatText(text: string): Promise<string> {
+        // Formatting a blank query would turn it into a stray newline, which
+        // reads as "there is a query" everywhere the emptiness is checked.
+        if (this.disposed || !this.workerReady || !text.trim()) return Promise.resolve(text);
+        return this.sendRequest('qbg/formatText', text).then(formatted =>
+            typeof formatted === 'string' ? formatted : text);
+    }
+
+    /**
+     * Send a request regardless of the handshake state. Only `initialize` and
+     * the worker's own methods may use this — everything else has to wait until
+     * the server is initialized and therefore goes through {@link request}.
+     */
+    private sendRequest(method: string, params: unknown): Promise<any> {
+        if (this.disposed) return Promise.resolve(null);
         return new Promise(resolve => {
             const id = ++this.nextRequestId;
             const timeout = setTimeout(() => {
@@ -155,6 +207,7 @@ class LanguageServerConnection {
                 }
             }, REQUEST_TIMEOUT_MS);
             this.pending.set(id, {
+                timeout,
                 resolve: value => {
                     clearTimeout(timeout);
                     resolve(value);
@@ -182,6 +235,7 @@ class LanguageServerConnection {
         if (!message || typeof message !== 'object') return;
 
         if (message.type === 'ready') {
+            this.workerReady = true;
             this.initialize();
             return;
         }
@@ -202,7 +256,9 @@ class LanguageServerConnection {
 
     private async initialize() {
         // NOTE: qlue-ls recognises "Code - OSS" as a Monaco based client.
-        await this.request('initialize', {
+        // This is the request that makes the server ready, so it cannot go
+        // through `request()`, which waits for exactly that.
+        await this.sendRequest('initialize', {
             processId: null,
             clientInfo: {name: 'Code - OSS', version: 'query-by-graph'},
             rootUri: null,
@@ -333,23 +389,31 @@ function registerProviders() {
             if (!result) return {suggestions: []};
 
             const items: any[] = Array.isArray(result) ? result : (result.items ?? []);
+            // Values an item may omit because the list declares them once.
+            const itemDefaults = (Array.isArray(result) ? undefined : result.itemDefaults) ?? {};
             const word = model.getWordUntilPosition(position);
-            const defaultRange: monaco.IRange = {
-                startLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: position.column,
-            };
+            const defaultRange: monaco.IRange = itemDefaults.editRange
+                ? toMonacoRange(itemDefaults.editRange.insert ?? itemDefaults.editRange)
+                : {
+                    startLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endLineNumber: position.lineNumber,
+                    endColumn: position.column,
+                };
 
             return {
+                // Keep asking the server as the user types instead of filtering
+                // the first result set; the entity search depends on the term.
+                incomplete: Array.isArray(result) ? false : !!result.isIncomplete,
                 suggestions: items.map(item => {
                     const label = typeof item.label === 'string' ? item.label : (item.label?.label ?? '');
                     const textEdit = item.textEdit;
+                    const insertTextFormat = item.insertTextFormat ?? itemDefaults.insertTextFormat;
                     return {
                         label,
                         kind: COMPLETION_ITEM_KIND[item.kind as number] ?? monaco.languages.CompletionItemKind.Text,
                         insertText: textEdit?.newText ?? item.insertText ?? label,
-                        insertTextRules: item.insertTextFormat === 2
+                        insertTextRules: insertTextFormat === 2
                             ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
                             : undefined,
                         detail: item.detail,
@@ -358,6 +422,8 @@ function registerProviders() {
                             : item.documentation,
                         filterText: item.filterText,
                         sortText: item.sortText,
+                        commitCharacters: item.commitCharacters ?? itemDefaults.commitCharacters,
+                        command: retriggerCommand(item.command),
                         range: textEdit?.range ? toMonacoRange(textEdit.range) : defaultRange,
                     };
                 }),
@@ -421,6 +487,7 @@ export function attachSparqlLanguageServer(
     const connection = new LanguageServerConnection(editor, model, backend);
     return {
         setBackend: (newBackend: SparqlBackend) => connection.setBackend(newBackend),
+        formatText: (text: string) => connection.formatText(text),
         dispose: () => connection.dispose(),
     };
 }

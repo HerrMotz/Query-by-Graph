@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {nextTick, onMounted, onUnmounted, ref, shallowRef, watch} from 'vue';
+import {onMounted, onUnmounted, ref, shallowRef, watch} from 'vue';
 import {createEditor} from "./lib/rete/editor.ts";
 import {ClassicPreset} from 'rete';
 
@@ -81,11 +81,6 @@ const MONACO_EDITOR_OPTIONS = {
   formatOnPaste: true,
 }
 
-// your action
-function formatCode() {
-  codeEditorRef.value?.getAction('editor.action.formatDocument')?.run()
-}
-
 interface Editor {
   setVueCallback: (callback: (context: any) => void) => void;
   removeSelectedItems: () => Promise<void>;
@@ -160,11 +155,15 @@ onMounted(async () => {
       if (triggerEvents.includes(context.type)) {
         setTimeout(async () => {
           const connections = editor.value!.exportConnections()
-          code.value = vqg_to_query_wasm(JSON.stringify(connections), true, false);
-          // wait for the new query to reach the Monaco model, otherwise the
-          // formatter would compute its edits from the previous query
-          await nextTick();
-          formatCode();
+          // The label service uses wikibase: and bd:, so the query has to
+          // declare them — otherwise the language server (rightly) reports
+          // undeclared prefixes on a query we generated ourselves.
+          const query = vqg_to_query_wasm(JSON.stringify(connections), true, true);
+          // Format the query before it reaches the editor. Formatting the model
+          // afterwards would edit it behind the round trip's back: the change
+          // event would re-import the graph, which exports an unformatted query
+          // again, and graph -> query -> graph would never come to rest.
+          code.value = await (languageServer.value?.formatText(query) ?? query);
         }, 10);
       }
 
