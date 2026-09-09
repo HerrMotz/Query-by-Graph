@@ -191,39 +191,29 @@ const setDataSource = (source: WikibaseDataSource) => {
   }
 };
 
-const selectAllVariablesForProjection = () => {
-  if (editor.value) {
-    editor.value.getNodes().forEach((node: any) => {
-      if (node.entity?.id.startsWith('?')) {
-        node.entity.selectedForProjection = true;
-        editor.value?.updateNode(node.id);
-      }
-    });
-    editor.value.getConnections().forEach((connection: any) => {
-      if (connection.property?.id.startsWith('?')) {
-        connection.property.selectedForProjection = true;
-        editor.value?.updateConnection(connection.id);
-      }
-    });
-  }
+const setAllVariablesForProjection = (selected: boolean) => {
+  if (!editor.value) return;
+
+  editor.value.getNodes().forEach((node: any) => {
+    if (node.entity?.id.startsWith('?')) {
+      node.entity.selectedForProjection = selected;
+      editor.value?.updateNode(node.id);
+    }
+  });
+
+  editor.value.getConnections().forEach((connection: any) => {
+    // A connection carries a property *path*, so its variables live in the
+    // `properties` list; there is no single `property` on it.
+    const variables = (connection.properties ?? []).filter((property: any) => property?.id?.startsWith('?'));
+    if (variables.length === 0) return;
+    variables.forEach((property: any) => property.selectedForProjection = selected);
+    editor.value?.updateConnection(connection.id);
+  });
 };
 
-const deselectAllVariablesForProjection = () => {
-  if (editor.value) {
-    editor.value.getNodes().forEach((node: any) => {
-      if (node.entity?.id.startsWith('?')) {
-        node.entity.selectedForProjection = false;
-        editor.value?.updateNode(node.id);
-      }
-    });
-    editor.value.getConnections().forEach((connection: any) => {
-      if (connection.property?.id.startsWith('?')) {
-        connection.property.selectedForProjection = false;
-        editor.value?.updateConnection(connection.id);
-      }
-    });
-  }
-};
+const selectAllVariablesForProjection = () => setAllVariablesForProjection(true);
+
+const deselectAllVariablesForProjection = () => setAllVariablesForProjection(false);
 
 
 const gotoLink = (url?: string) => {

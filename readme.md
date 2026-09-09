@@ -11,7 +11,7 @@ The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/ar
 - [RDF Explorer](https://rdfexplorer.org/)
 
 ## Language Features and JSON Schema
-For detailed documentation on supported language features and the VQG JSON schema, see [VQG_FEATURES.md](query-by-graph/vql.md).
+For detailed documentation on supported language features and the VQG JSON schema, see [vql.md](app/vql.md).
 
 ## Star History
 
