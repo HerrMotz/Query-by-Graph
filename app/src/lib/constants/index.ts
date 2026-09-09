@@ -13,6 +13,7 @@ const wikiDataDataSource: WikibaseDataSource = {
         abbreviation: "wdt"
     },
     queryService: "https://query.wikidata.org/", // do not leave blank spaces in urls
+    sparqlEndpoint: "https://query.wikidata.org/sparql",
 }
 
 const factGridDataSource: WikibaseDataSource = {
@@ -28,6 +29,7 @@ const factGridDataSource: WikibaseDataSource = {
         abbreviation: "fgt"
     },
     queryService: "https://database.factgrid.de/query/",
+    sparqlEndpoint: "https://database.factgrid.de/sparql",
 }
 
 const mimoDataSource: WikibaseDataSource = {
@@ -43,6 +45,7 @@ const mimoDataSource: WikibaseDataSource = {
         abbreviation: "mmdt"
     },
     queryService: "https://query.mimotext.uni-trier.de/", // do not leave blank spaces in urls
+    sparqlEndpoint: "https://query.mimotext.uni-trier.de/proxy/wdqs/bigdata/namespace/wdq/sparql",
 }
 
 const noDataSource: WikibaseDataSource = {

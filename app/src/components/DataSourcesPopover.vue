@@ -162,6 +162,17 @@
                         placeholder="https://query.wikidata.org/"
                     />
                   </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">
+                      SPARQL Endpoint (optional, used for query completions)
+                    </label>
+                    <input
+                        v-model="newDataSource.sparqlEndpoint"
+                        type="text"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        placeholder="https://query.wikidata.org/sparql"
+                    />
+                  </div>
                 </div>
                 <div class="mt-4">
                   <Button @click="addDataSource">
@@ -213,7 +224,8 @@ const newDataSource = ref({
     iri: '',
     abbreviation: ''
   },
-  queryService: ''
+  queryService: '',
+  sparqlEndpoint: ''
 })
 
 // Temporary input for comma-separated preferred languages
@@ -243,7 +255,8 @@ function addDataSource() {
       iri: '',
       abbreviation: ''
     },
-    queryService: ''
+    queryService: '',
+    sparqlEndpoint: ''
   }
   newPreferredLanguages.value = ''
 }

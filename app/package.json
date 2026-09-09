@@ -15,6 +15,7 @@
     "axios": "^1.15.2",
     "highlight.js": "^11.11.1",
     "monaco-editor": "^0.53.0",
+    "qlue-ls": "^3.8.0",
     "rete": "^2.0.6",
     "rete-area-plugin": "^2.1.5",
     "rete-auto-arrange-plugin": "^2.0.2",
