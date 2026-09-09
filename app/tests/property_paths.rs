@@ -14,15 +14,19 @@ fn test_complex_property_path_decomposition() {
     let sub_props = &properties[0]["properties"];
     assert_eq!(sub_props.as_array().unwrap().len(), 2);
     
+    // Import does not shorten IRIs back to prefixed names: the parser has
+    // already expanded them, and nothing maps them onto a prefix again. The
+    // ids are therefore the full IRIs, which round trip correctly but show up
+    // in the editor as <http://example.org/p1> rather than ex:p1.
     // First part: ex:p1/ex:p2*
     assert_eq!(sub_props[0]["pathType"], "sequence");
     let seq_props = &sub_props[0]["properties"];
-    assert_eq!(seq_props[0]["id"], "ex:p1");
-    assert_eq!(seq_props[1]["id"], "ex:p2");
+    assert_eq!(seq_props[0]["id"], "<http://example.org/p1>");
+    assert_eq!(seq_props[1]["id"], "<http://example.org/p2>");
     assert_eq!(seq_props[1]["modifier"], "*");
-    
+
     // Second part: ex:p3?
-    assert_eq!(sub_props[1]["id"], "ex:p3");
+    assert_eq!(sub_props[1]["id"], "<http://example.org/p3>");
     assert_eq!(sub_props[1]["modifier"], "?");
 }
 

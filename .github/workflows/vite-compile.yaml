@@ -15,33 +15,30 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       # Step 2: Set up Rust and wasm-pack
       - name: Install Rust stable
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: nightly
-            override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install wasm-pack
         run: cargo install wasm-pack
 
       # Step 3: Set up Node.js (You can specify the version you use)
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
-          node-version: '18'  # Change this if you're using a different version
+          node-version: '22'  # Vite 8 requires ^20.19.0 || >=22.12.0
 
       # Step 4: Install dependencies for Vue.js and Vite
       - name: Install Node.js dependencies
         run: npm install
-        working-directory: ./query-by-graph
+        working-directory: ./app
 
       # Step 5: Run the build script (npm run build)
       - name: Run build script
         run: npm run build
-        working-directory: ./query-by-graph
+        working-directory: ./app
 
       # Step 6: Fail the build if there are errors
       - name: Fail the build if the build script fails
