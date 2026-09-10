@@ -13,7 +13,6 @@
     "@guolao/vue-monaco-editor": "^1.6.0",
     "@headlessui/vue": "^1.7.23",
     "axios": "^1.15.2",
-    "highlight.js": "^11.11.1",
     "monaco-editor": "^0.53.0",
     "qlue-ls": "^3.8.0",
     "rete": "^2.0.6",
@@ -38,6 +37,7 @@
     "typescript": "^6.0.3",
     "vite": "^8.0.10",
     "vite-plugin-wasm": "^3.6.0",
+    "vscode-languageserver-types": "^3.18.3",
     "vue-tsc": "^3.2.7"
   },
   "allowScripts": {

@@ -1,4 +1,15 @@
-import * as monaco from "monaco-editor";
+import * as monaco from "./monaco.ts";
+import type {
+    CompletionItem,
+    CompletionItemKind as LspCompletionItemKind,
+    CompletionList,
+    Diagnostic,
+    DocumentUri,
+    Hover,
+    Position,
+    Range,
+    TextEdit,
+} from "vscode-languageserver-types";
 
 // Client for the Qlue-ls SPARQL language server (https://github.com/IoannisNezis/Qlue-ls).
 //
@@ -26,8 +37,12 @@ export interface SparqlBackend {
 }
 
 export interface SparqlLanguageServer {
-    /** Register `backend` and make it the one used for completions. */
-    setBackend: (backend: SparqlBackend) => void;
+    /**
+     * Use `backend` for completions. Passing `undefined` unregisters the
+     * current one, so that a data source without a SPARQL endpoint does not
+     * silently keep completing against the previously selected Wikibase.
+     */
+    setBackend: (backend?: SparqlBackend) => void;
     /**
      * Format a query string. Use this instead of Monaco's format action for
      * text the application generates: formatting the model instead would edit
@@ -40,8 +55,13 @@ export interface SparqlLanguageServer {
 const REQUEST_TIMEOUT_MS = 5000;
 const DIAGNOSTICS_DEBOUNCE_MS = 300;
 
-// LSP CompletionItemKind (1-indexed) -> Monaco CompletionItemKind (0-indexed)
-const COMPLETION_ITEM_KIND: Record<number, monaco.languages.CompletionItemKind> = {
+/** The formatting options sent to the server, both for documents and for {@link formatText}. */
+const FORMAT_OPTIONS = {tabSize: 2, insertSpaces: true};
+
+// LSP CompletionItemKind (1-indexed) -> Monaco CompletionItemKind. The two
+// enumerations list the same kinds in different orders, so they have to be
+// mapped rather than cast.
+const COMPLETION_ITEM_KIND: Record<LspCompletionItemKind, monaco.languages.CompletionItemKind> = {
     1: monaco.languages.CompletionItemKind.Text,
     2: monaco.languages.CompletionItemKind.Method,
     3: monaco.languages.CompletionItemKind.Function,
@@ -69,17 +89,31 @@ const COMPLETION_ITEM_KIND: Record<number, monaco.languages.CompletionItemKind> 
     25: monaco.languages.CompletionItemKind.TypeParameter,
 };
 
-interface LspRange {
-    start: { line: number, character: number };
-    end: { line: number, character: number };
-}
+/** InsertTextFormat.Snippet — the item's text contains snippet placeholders. */
+const SNIPPET_FORMAT = 2;
+
+// The semantic token legend qlue-ls declares, which is what colours the editor:
+// there is no client side grammar. Monaco asks a provider for its legend once,
+// before any server has answered, so the legend cannot come from the handshake
+// — `verifySemanticTokenLegend` reports a server that disagrees with it.
+const SEMANTIC_TOKEN_TYPES = [
+    'keyword', 'function', 'variable', 'string', 'number', 'comment', 'operator', 'namespace',
+];
+const SEMANTIC_TOKEN_MODIFIERS = ['async'];
+
+/**
+ * Asks Monaco to fetch semantic tokens again. Monaco requests them as soon as
+ * the model is attached, which is long before the WASM server has started, so
+ * without this the query would stay uncoloured until the next keystroke.
+ */
+const semanticTokensChanged = new monaco.Emitter<void>();
 
 /** Model URI -> connection, so the shared Monaco providers can route requests. */
 const connections = new Map<string, LanguageServerConnection>();
 
 let providersRegistered = false;
 
-function toMonacoRange(range: LspRange): monaco.IRange {
+function toMonacoRange(range: Range): monaco.IRange {
     return {
         startLineNumber: range.start.line + 1,
         startColumn: range.start.character + 1,
@@ -88,14 +122,72 @@ function toMonacoRange(range: LspRange): monaco.IRange {
     };
 }
 
+function toLspPosition(position: monaco.IPosition): Position {
+    return {line: position.lineNumber - 1, character: position.column - 1};
+}
+
+/**
+ * The range covering all of `text`. qlue-ls synchronises incrementally, and
+ * replacing that range is the simplest correct change to send for a document
+ * that is replaced wholesale.
+ */
+function wholeDocumentRange(text: string): Range {
+    const lines = text.split('\n');
+    return {
+        start: {line: 0, character: 0},
+        end: {line: lines.length - 1, character: lines[lines.length - 1].length},
+    };
+}
+
+/** The text of an LSP string-or-markup value. */
+function textOf(content: string | { value: string }): string {
+    return typeof content === 'string' ? content : content.value;
+}
+
+/** The plain text of `contents`, whichever of the three LSP shapes it has. */
+function hoverText(contents: Hover['contents']): string[] {
+    return (Array.isArray(contents) ? contents : [contents]).map(textOf);
+}
+
+/**
+ * Apply LSP text edits to a string. The server answers a formatting request
+ * with edits, and {@link LanguageServerConnection.formatText} formats text that
+ * is not in a model, so Monaco cannot apply them.
+ */
+function applyTextEdits(text: string, edits: TextEdit[]): string {
+    // An edit's range refers to the original text, so applying them back to
+    // front keeps the earlier offsets valid.
+    const lineStarts = [0];
+    for (let index = 0; index < text.length; index++) {
+        if (text[index] === '\n') lineStarts.push(index + 1);
+    }
+    const offsetOf = (position: Position) =>
+        Math.min((lineStarts[position.line] ?? text.length) + position.character, text.length);
+
+    return [...edits]
+        .sort((a, b) => offsetOf(b.range.start) - offsetOf(a.range.start))
+        .reduce(
+            (result, edit) => result.slice(0, offsetOf(edit.range.start)) + edit.newText + result.slice(offsetOf(edit.range.end)),
+            text,
+        );
+}
+
 /**
  * qlue-ls asks the client to open the suggest widget again after an item that
  * only completes part of a triple. Monaco has no handler for the server's own
  * command, but it has an equivalent built-in action.
  */
-function retriggerCommand(command?: { command?: string, title?: string }) {
+function retriggerCommand(command?: CompletionItem['command']) {
     if (command?.command !== 'triggerNewCompletion') return undefined;
     return {id: 'editor.action.triggerSuggest', title: command.title ?? 'Suggest'};
+}
+
+function verifySemanticTokenLegend(legend?: { tokenTypes?: string[] }) {
+    // Monaco indexes into the legend it was given, so a server that reordered
+    // or extended its own would silently colour the wrong tokens.
+    if (legend?.tokenTypes && legend.tokenTypes.join() !== SEMANTIC_TOKEN_TYPES.join()) {
+        console.warn('qlue-ls: unexpected semantic token legend', legend.tokenTypes);
+    }
 }
 
 function markerSeverity(severity?: number): monaco.MarkerSeverity {
@@ -117,16 +209,18 @@ class LanguageServerConnection {
     private readonly uri: string;
     private readonly disposables: monaco.IDisposable[] = [];
     private readonly pending = new Map<number, {
-        resolve: (value: any) => void,
-        reject: (error: any) => void,
+        settle: (value: any) => void,
         timeout: ReturnType<typeof setTimeout>,
     }>();
 
     private nextRequestId = 0;
     private documentVersion = 0;
     private previousText = '';
-    /** The worker has loaded the WASM module and listens for messages. */
-    private workerReady = false;
+    /** The scratch document {@link formatText} formats text in. */
+    private scratchVersion = 0;
+    private scratchText = '';
+    /** Serialises the calls to {@link formatText}, which share that document. */
+    private formatting: Promise<string> = Promise.resolve('');
     /** The language server has answered the initialize handshake. */
     private ready = false;
     private disposed = false;
@@ -148,7 +242,7 @@ class LanguageServerConnection {
 
     setBackend(backend: SparqlBackend) {
         this.backend = backend;
-        if (this.ready) this.registerBackend(backend);
+        if (this.ready) this.applyBackend();
     }
 
     dispose() {
@@ -160,10 +254,7 @@ class LanguageServerConnection {
         this.worker.terminate();
         // Settle whatever Monaco is still waiting for; an unsettled promise
         // would keep a suggest or hover operation pending forever.
-        for (const [, callbacks] of this.pending) {
-            clearTimeout(callbacks.timeout);
-            callbacks.resolve(null);
-        }
+        for (const [, callbacks] of this.pending) callbacks.settle(null);
         this.pending.clear();
         if (!this.model.isDisposed()) monaco.editor.setModelMarkers(this.model, 'qlue-ls', []);
     }
@@ -173,30 +264,62 @@ class LanguageServerConnection {
      * running or does not answer in time — a language server is an enhancement,
      * it must never block the editor.
      */
-    request(method: string, params: unknown): Promise<any> {
+    request<T>(method: string, params: unknown): Promise<T | null> {
         if (!this.ready) return Promise.resolve(null);
-        return this.sendRequest(method, params);
+        return this.sendRequest<T>(method, params);
     }
 
     /**
-     * Ask the language server to format `text` without going through a
-     * document. Returns `text` unchanged while the worker is still starting up,
-     * rather than making the caller wait for it.
+     * Ask the language server to format `text`, which is not one of the open
+     * documents — so it is put into a scratch document kept for exactly this,
+     * and the resulting edits are applied here. Going through the server
+     * (rather than qlue-ls' `format_raw`) is what makes the formatting settings
+     * sent in {@link initialize} apply to generated queries too.
+     *
+     * Returns `text` unchanged while the server is still starting up, rather
+     * than making the caller wait for it.
      */
     formatText(text: string): Promise<string> {
         // Formatting a blank query would turn it into a stray newline, which
         // reads as "there is a query" everywhere the emptiness is checked.
-        if (this.disposed || !this.workerReady || !text.trim()) return Promise.resolve(text);
-        return this.sendRequest('qbg/formatText', text).then(formatted =>
-            typeof formatted === 'string' ? formatted : text);
+        if (!this.ready || !text.trim()) return Promise.resolve(text);
+
+        // There is one scratch document, so overlapping calls would each
+        // overwrite the text the other is having formatted.
+        this.formatting = this.formatting.then(() => this.formatOnce(text));
+        return this.formatting;
+    }
+
+    private async formatOnce(text: string): Promise<string> {
+        const uri = `${this.uri}.format`;
+
+        // qlue-ls does not support `textDocument/didClose`, so the scratch
+        // document is opened once and then overwritten, rather than a new one
+        // being opened per formatted query.
+        this.scratchVersion++;
+        if (this.scratchVersion === 1) {
+            this.notify('textDocument/didOpen', {textDocument: {uri, languageId: 'sparql', version: 1, text}});
+        } else {
+            this.notify('textDocument/didChange', {
+                textDocument: {uri, version: this.scratchVersion},
+                contentChanges: [{range: wholeDocumentRange(this.scratchText), text}],
+            });
+        }
+        this.scratchText = text;
+
+        const edits = await this.request<TextEdit[]>('textDocument/formatting', {
+            textDocument: {uri},
+            options: FORMAT_OPTIONS,
+        });
+        return Array.isArray(edits) ? applyTextEdits(text, edits) : text;
     }
 
     /**
-     * Send a request regardless of the handshake state. Only `initialize` and
-     * the worker's own methods may use this — everything else has to wait until
-     * the server is initialized and therefore goes through {@link request}.
+     * Send a request regardless of the handshake state. Only `initialize` may
+     * use this — everything else has to wait until the server is initialized
+     * and therefore goes through {@link request}.
      */
-    private sendRequest(method: string, params: unknown): Promise<any> {
+    private sendRequest<T>(method: string, params: unknown): Promise<T | null> {
         if (this.disposed) return Promise.resolve(null);
         return new Promise(resolve => {
             const id = ++this.nextRequestId;
@@ -208,14 +331,9 @@ class LanguageServerConnection {
             }, REQUEST_TIMEOUT_MS);
             this.pending.set(id, {
                 timeout,
-                resolve: value => {
+                settle: value => {
                     clearTimeout(timeout);
                     resolve(value);
-                },
-                reject: error => {
-                    clearTimeout(timeout);
-                    console.warn(`qlue-ls: "${method}" failed`, error);
-                    resolve(null);
                 },
             });
             this.send({jsonrpc: '2.0', id, method, params});
@@ -235,21 +353,32 @@ class LanguageServerConnection {
         if (!message || typeof message !== 'object') return;
 
         if (message.type === 'ready') {
-            this.workerReady = true;
             this.initialize();
+            return;
+        }
+
+        if (message.type === 'error') {
+            // The worker cannot answer any more. Settle what is outstanding
+            // instead of letting every request run into its timeout.
+            console.error('qlue-ls: the language server worker failed', message.error);
+            this.ready = false;
+            for (const [, callbacks] of this.pending) callbacks.settle(null);
+            this.pending.clear();
             return;
         }
 
         if ('id' in message && !('method' in message)) {
             const callback = this.pending.get(message.id);
-            if (callback) {
-                this.pending.delete(message.id);
-                message.error ? callback.reject(message.error) : callback.resolve(message.result);
-            }
+            if (!callback) return;
+            this.pending.delete(message.id);
+            if (message.error) console.warn('qlue-ls: request failed', message.error);
+            callback.settle(message.error ? null : message.result);
             return;
         }
 
-        if (message.method === 'textDocument/publishDiagnostics') {
+        // The throwaway documents of `formatText` get diagnostics too; only the
+        // ones for the edited model may become markers.
+        if (message.method === 'textDocument/publishDiagnostics' && message.params?.uri === this.uri) {
             this.setDiagnostics(message.params?.diagnostics ?? []);
         }
     };
@@ -258,7 +387,9 @@ class LanguageServerConnection {
         // NOTE: qlue-ls recognises "Code - OSS" as a Monaco based client.
         // This is the request that makes the server ready, so it cannot go
         // through `request()`, which waits for exactly that.
-        await this.sendRequest('initialize', {
+        const response = await this.sendRequest<{
+            capabilities?: { semanticTokensProvider?: { legend?: { tokenTypes?: string[] } } },
+        }>('initialize', {
             processId: null,
             clientInfo: {name: 'Code - OSS', version: 'query-by-graph'},
             rootUri: null,
@@ -268,8 +399,15 @@ class LanguageServerConnection {
                     completion: {completionItem: {snippetSupport: true}},
                     hover: {contentFormat: ['markdown', 'plaintext']},
                     formatting: {},
+                    onTypeFormatting: {},
                     publishDiagnostics: {},
                     diagnostic: {},
+                    semanticTokens: {
+                        requests: {full: true, range: false},
+                        tokenTypes: SEMANTIC_TOKEN_TYPES,
+                        tokenModifiers: SEMANTIC_TOKEN_MODIFIERS,
+                        formats: ['relative'],
+                    },
                 },
             },
         });
@@ -277,13 +415,14 @@ class LanguageServerConnection {
 
         this.notify('initialized', {});
         this.ready = true;
+        verifySemanticTokenLegend(response?.capabilities?.semanticTokensProvider?.legend);
 
         this.notify('qlueLs/changeSettings', {
             format: {
                 alignPredicates: true,
                 capitalizeKeywords: true,
-                insertSpaces: true,
-                tabSize: 2,
+                insertSpaces: FORMAT_OPTIONS.insertSpaces,
+                tabSize: FORMAT_OPTIONS.tabSize,
             },
             completion: {
                 resultSizeLimit: 50,
@@ -291,7 +430,7 @@ class LanguageServerConnection {
             },
         });
 
-        if (this.backend) this.registerBackend(this.backend);
+        this.applyBackend();
 
         this.previousText = this.model.getValue();
         this.documentVersion = 1;
@@ -304,9 +443,14 @@ class LanguageServerConnection {
             },
         });
         this.requestDiagnostics();
+        semanticTokensChanged.fire();
     }
 
-    private registerBackend(backend: SparqlBackend) {
+    /** Register {@link backend} with the server and make it the default. */
+    private applyBackend() {
+        const backend = this.backend;
+        if (!backend) return;
+
         this.notify('qlueLs/addBackend', {
             name: backend.name,
             url: backend.url,
@@ -326,19 +470,10 @@ class LanguageServerConnection {
         const text = this.model.getValue();
         if (text === this.previousText) return;
 
-        // qlue-ls uses incremental synchronisation; replacing a range that spans
-        // the whole previous document is the simplest correct change to send.
-        const previousLines = this.previousText.split('\n');
         this.documentVersion++;
         this.notify('textDocument/didChange', {
             textDocument: {uri: this.uri, version: this.documentVersion},
-            contentChanges: [{
-                range: {
-                    start: {line: 0, character: 0},
-                    end: {line: previousLines.length - 1, character: previousLines[previousLines.length - 1].length},
-                },
-                text,
-            }],
+            contentChanges: [{range: wholeDocumentRange(this.previousText), text}],
         });
         this.previousText = text;
 
@@ -350,21 +485,44 @@ class LanguageServerConnection {
      * qlue-ls only pushes diagnostics on save, which never happens here, so they
      * are pulled after every change instead.
      */
-    private async requestDiagnostics() {
-        const report = await this.request('textDocument/diagnostic', {textDocument: {uri: this.uri}});
-        if (report?.items) this.setDiagnostics(report.items);
+    private requestDiagnostics() {
+        // The document may well have changed again while the server was
+        // answering; markers computed for an older text would sit under
+        // unrelated words.
+        const version = this.documentVersion;
+        this.request<{ items?: Diagnostic[] }>('textDocument/diagnostic', {textDocument: {uri: this.uri}})
+            .then(report => {
+                if (report?.items && version === this.documentVersion) this.setDiagnostics(report.items);
+            })
+            .catch(error => console.warn('qlue-ls: could not pull diagnostics', error));
     }
 
-    private setDiagnostics(diagnostics: any[]) {
+    private setDiagnostics(diagnostics: Diagnostic[]) {
         if (this.disposed || this.model.isDisposed()) return;
-        monaco.editor.setModelMarkers(this.model, 'qlue-ls', diagnostics.map(diagnostic => ({
-            ...toMonacoRange(diagnostic.range),
-            severity: markerSeverity(diagnostic.severity),
-            message: diagnostic.message,
-            code: typeof diagnostic.code === 'object' ? diagnostic.code?.value : diagnostic.code,
-            source: diagnostic.source ?? 'qlue-ls',
-        })));
+        monaco.editor.setModelMarkers(this.model, 'qlue-ls', diagnostics
+            .filter(diagnostic => !!diagnostic?.range)
+            .map(diagnostic => ({
+                ...toMonacoRange(diagnostic.range),
+                severity: markerSeverity(diagnostic.severity),
+                message: textOf(diagnostic.message),
+                code: diagnostic.code === undefined ? undefined : String(diagnostic.code),
+                source: diagnostic.source ?? 'qlue-ls',
+            })));
     }
+}
+
+/** The connection that serves `model`, if the language server is attached to it. */
+function connectionFor(model: monaco.editor.ITextModel): LanguageServerConnection | undefined {
+    return connections.get(model.uri.toString());
+}
+
+function textDocument(model: monaco.editor.ITextModel): { uri: DocumentUri } {
+    return {uri: model.uri.toString()};
+}
+
+function toMonacoEdits(edits: TextEdit[] | null): monaco.languages.TextEdit[] {
+    if (!Array.isArray(edits)) return [];
+    return edits.map(edit => ({range: toMonacoRange(edit.range), text: edit.newText}));
 }
 
 function registerProviders() {
@@ -372,14 +530,16 @@ function registerProviders() {
     providersRegistered = true;
 
     monaco.languages.registerCompletionItemProvider('sparql', {
+        // A space starts a new token in SPARQL, so it is a completion trigger
+        // just as much as the token prefixes are.
         triggerCharacters: [' ', '<', '?', ':'],
         async provideCompletionItems(model, position, context) {
-            const connection = connections.get(model.uri.toString());
+            const connection = connectionFor(model);
             if (!connection) return {suggestions: []};
 
-            const result = await connection.request('textDocument/completion', {
-                textDocument: {uri: model.uri.toString()},
-                position: {line: position.lineNumber - 1, character: position.column - 1},
+            const result = await connection.request<CompletionList | CompletionItem[]>('textDocument/completion', {
+                textDocument: textDocument(model),
+                position: toLspPosition(position),
                 // Monaco's trigger kind is 0-indexed, the LSP one is 1-indexed.
                 context: {
                     triggerKind: context.triggerKind + 1,
@@ -388,12 +548,13 @@ function registerProviders() {
             });
             if (!result) return {suggestions: []};
 
-            const items: any[] = Array.isArray(result) ? result : (result.items ?? []);
+            const list: CompletionList = Array.isArray(result) ? {isIncomplete: false, items: result} : result;
             // Values an item may omit because the list declares them once.
-            const itemDefaults = (Array.isArray(result) ? undefined : result.itemDefaults) ?? {};
+            const itemDefaults = list.itemDefaults ?? {};
+            const editRange = itemDefaults.editRange;
             const word = model.getWordUntilPosition(position);
-            const defaultRange: monaco.IRange = itemDefaults.editRange
-                ? toMonacoRange(itemDefaults.editRange.insert ?? itemDefaults.editRange)
+            const defaultRange: monaco.IRange = editRange
+                ? toMonacoRange('insert' in editRange ? editRange.insert : editRange)
                 : {
                     startLineNumber: position.lineNumber,
                     startColumn: word.startColumn,
@@ -404,68 +565,95 @@ function registerProviders() {
             return {
                 // Keep asking the server as the user types instead of filtering
                 // the first result set; the entity search depends on the term.
-                incomplete: Array.isArray(result) ? false : !!result.isIncomplete,
-                suggestions: items.map(item => {
-                    const label = typeof item.label === 'string' ? item.label : (item.label?.label ?? '');
+                incomplete: list.isIncomplete,
+                suggestions: (list.items ?? []).map(item => {
                     const textEdit = item.textEdit;
                     const insertTextFormat = item.insertTextFormat ?? itemDefaults.insertTextFormat;
                     return {
-                        label,
-                        kind: COMPLETION_ITEM_KIND[item.kind as number] ?? monaco.languages.CompletionItemKind.Text,
-                        insertText: textEdit?.newText ?? item.insertText ?? label,
-                        insertTextRules: insertTextFormat === 2
+                        label: item.label,
+                        kind: COMPLETION_ITEM_KIND[item.kind!] ?? monaco.languages.CompletionItemKind.Text,
+                        insertText: textEdit?.newText ?? item.insertText ?? item.label,
+                        insertTextRules: insertTextFormat === SNIPPET_FORMAT
                             ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
                             : undefined,
                         detail: item.detail,
                         documentation: typeof item.documentation === 'object'
-                            ? item.documentation?.value
+                            ? item.documentation.value
                             : item.documentation,
                         filterText: item.filterText,
                         sortText: item.sortText,
                         commitCharacters: item.commitCharacters ?? itemDefaults.commitCharacters,
                         command: retriggerCommand(item.command),
-                        range: textEdit?.range ? toMonacoRange(textEdit.range) : defaultRange,
+                        range: textEdit && 'range' in textEdit ? toMonacoRange(textEdit.range) : defaultRange,
                     };
                 }),
             };
         },
     });
 
-    monaco.languages.registerHoverProvider('sparql', {
-        async provideHover(model, position) {
-            const connection = connections.get(model.uri.toString());
+    // The only thing that colours the editor — there is no Monarch grammar.
+    monaco.languages.registerDocumentSemanticTokensProvider('sparql', {
+        onDidChange: semanticTokensChanged.event,
+        getLegend: () => ({tokenTypes: SEMANTIC_TOKEN_TYPES, tokenModifiers: SEMANTIC_TOKEN_MODIFIERS}),
+        async provideDocumentSemanticTokens(model) {
+            const connection = connectionFor(model);
             if (!connection) return null;
 
-            const result = await connection.request('textDocument/hover', {
-                textDocument: {uri: model.uri.toString()},
-                position: {line: position.lineNumber - 1, character: position.column - 1},
+            const result = await connection.request<{ data: number[] }>('textDocument/semanticTokens/full', {
+                textDocument: textDocument(model),
+            });
+            // While the server is starting up there are no tokens yet; `null`
+            // leaves the text in the default colour rather than blanking it.
+            return result?.data ? {data: Uint32Array.from(result.data)} : null;
+        },
+        releaseDocumentSemanticTokens() {
+            // No result ids are requested, so there is nothing to release.
+        },
+    });
+
+    monaco.languages.registerHoverProvider('sparql', {
+        async provideHover(model, position) {
+            const connection = connectionFor(model);
+            if (!connection) return null;
+
+            const result = await connection.request<Hover>('textDocument/hover', {
+                textDocument: textDocument(model),
+                position: toLspPosition(position),
             });
             if (!result?.contents) return null;
 
-            const contents = Array.isArray(result.contents) ? result.contents : [result.contents];
             return {
                 range: result.range ? toMonacoRange(result.range) : undefined,
-                contents: contents.map((content: any) => ({
-                    value: typeof content === 'string' ? content : (content.value ?? String(content)),
-                })),
+                contents: hoverText(result.contents).map(value => ({value})),
             };
         },
     });
 
     monaco.languages.registerDocumentFormattingEditProvider('sparql', {
         async provideDocumentFormattingEdits(model, options) {
-            const connection = connections.get(model.uri.toString());
+            const connection = connectionFor(model);
             if (!connection) return [];
 
-            const edits = await connection.request('textDocument/formatting', {
-                textDocument: {uri: model.uri.toString()},
+            return toMonacoEdits(await connection.request<TextEdit[]>('textDocument/formatting', {
+                textDocument: textDocument(model),
                 options: {tabSize: options.tabSize, insertSpaces: options.insertSpaces},
-            });
-            if (!Array.isArray(edits)) return [];
+            }));
+        },
+    });
 
-            return edits.map((edit: any) => ({
-                range: toMonacoRange(edit.range),
-                text: edit.newText,
+    monaco.languages.registerOnTypeFormattingEditProvider('sparql', {
+        // qlue-ls indents the next line to the predicate column once a triple
+        // is terminated, which is what makes `formatOnType` worth enabling.
+        autoFormatTriggerCharacters: ['\n', ';', '.'],
+        async provideOnTypeFormattingEdits(model, position, character, options) {
+            const connection = connectionFor(model);
+            if (!connection) return [];
+
+            return toMonacoEdits(await connection.request<TextEdit[]>('textDocument/onTypeFormatting', {
+                textDocument: textDocument(model),
+                position: toLspPosition(position),
+                ch: character,
+                options: {tabSize: options.tabSize, insertSpaces: options.insertSpaces},
             }));
         },
     });
@@ -484,9 +672,24 @@ export function attachSparqlLanguageServer(
     const model = editor.getModel();
     if (!model) throw new Error('Cannot attach the SPARQL language server to an editor without a model');
 
-    const connection = new LanguageServerConnection(editor, model, backend);
+    let connection = new LanguageServerConnection(editor, model, backend);
+    let current = backend;
+
     return {
-        setBackend: (newBackend: SparqlBackend) => connection.setBackend(newBackend),
+        setBackend: (newBackend?: SparqlBackend) => {
+            if (newBackend) {
+                current = newBackend;
+                connection.setBackend(newBackend);
+                return;
+            }
+            if (!current) return;
+            // qlue-ls can add a backend but not remove one, so the only way to
+            // stop completing against the Wikibase selected before is to start
+            // the server over without it.
+            current = undefined;
+            connection.dispose();
+            connection = new LanguageServerConnection(editor, model);
+        },
         formatText: (text: string) => connection.formatText(text),
         dispose: () => connection.dispose(),
     };

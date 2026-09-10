@@ -6,7 +6,7 @@ import {ClassicPreset} from 'rete';
 import {query_to_vqg_wasm, vqg_to_query_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
-import * as monaco from "monaco-editor"
+import type * as monaco from "./lib/monaco/monaco.ts"
 
 import Button from "./components/Button.vue";
 import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
@@ -20,39 +20,12 @@ import DataSourcesPopover from "./components/DataSourcesPopover.vue";
 import {attachSparqlLanguageServer, SparqlLanguageServer} from "./lib/monaco/sparqlLanguageServer.ts";
 import {backendFromDataSource} from "./lib/monaco/sparqlBackend.ts";
 
-monaco.editor.defineTheme('custom-theme', {
-  base: 'vs', // Use 'vs-light' as the base theme
-  inherit: true, // Inherit the syntax highlighting rules of 'vs-light'
-  rules: [
-    {token: 'comment', foreground: '8b8b8b', fontStyle: 'italic'},
-    {token: 'keyword', foreground: '0000c0'},
-    {token: 'predefined', foreground: '795e26'},
-    {token: 'namespace', foreground: '267f99'},
-    {token: 'variable', foreground: '0f7c30'},
-    {token: 'type', foreground: '267f99'},
-  ],
-  colors: {
-    "editor.background": "#ffffff00", // Fully transparent background
-    "editor.foreground": "#BDAE9D",
-    "editor.selectionBackground": "#e9ffc3",
-    "editor.lineHighlightBackground": "#3A312C",
-    "editorCursor.foreground": "#889AFF",
-    "editorWhitespace.foreground": "#BFBFBF",
-    "editorIndentGuide.background": "#5e81ce52",
-    "editor.selectionHighlightBorder": "#122d42",
-    'editor.inactiveSelectionBackground': '#ff000066',
-    'editor.selectionHighlight': '#00ff0066',
-  }
-});
-
-const codeEditorRef = shallowRef();
 const languageServer = shallowRef<SparqlLanguageServer | null>(null);
 
 const handleMount = (codeEditor: monaco.editor.IStandaloneCodeEditor) => {
-  codeEditorRef.value = codeEditor;
-
-  // Set the theme explicitly on mount
-  monaco.editor.setTheme('custom-theme');
+  // The editor may be mounted again (hot reload, or a re-created editor); the
+  // previous server would otherwise keep its worker running for nobody.
+  languageServer.value?.dispose();
 
   // Qlue-ls provides completion, hover, diagnostics and formatting for the
   // query editor. It runs entirely in a web worker, so a failure to start it
@@ -61,13 +34,15 @@ const handleMount = (codeEditor: monaco.editor.IStandaloneCodeEditor) => {
     languageServer.value = attachSparqlLanguageServer(codeEditor, backendFromDataSource(selectedDataSource.value));
   } catch (error) {
     console.error("Could not start the SPARQL language server", error);
+    languageServer.value = null;
   }
 };
 
-// Let the language server complete against the Wikibase that is currently selected.
+// Let the language server complete against the Wikibase that is currently
+// selected — and against none at all when that one has no SPARQL endpoint,
+// rather than against the one selected before.
 watch(selectedDataSource, (dataSource) => {
-  const backend = backendFromDataSource(dataSource);
-  if (backend) languageServer.value?.setBackend(backend);
+  languageServer.value?.setBackend(backendFromDataSource(dataSource));
 });
 
 onUnmounted(() => {
@@ -77,8 +52,12 @@ onUnmounted(() => {
 
 const MONACO_EDITOR_OPTIONS = {
   automaticLayout: true,
+  // The language server provides on-type formatting; it has no range
+  // formatting, which is what `formatOnPaste` would need.
   formatOnType: true,
-  formatOnPaste: true,
+  // Monaco's standalone themes disable semantic highlighting, and it is the
+  // only source of syntax colours here — see `sparqlLanguageServer.ts`.
+  'semanticHighlighting.enabled': true,
 }
 
 interface Editor {
