@@ -44,9 +44,10 @@ export interface SparqlLanguageServer {
      */
     setBackend: (backend?: SparqlBackend) => void;
     /**
-     * Format a query string. Use this instead of Monaco's format action for
-     * text the application generates: formatting the model instead would edit
-     * it after the fact and feed a change back into the graph round trip.
+     * Format a query string with qlue-ls' standalone formatter. Use this
+     * instead of Monaco's format action for text the application generates:
+     * formatting the model instead would edit it after the fact and feed a
+     * change back into the graph round trip.
      */
     formatText: (text: string) => Promise<string>;
     dispose: () => void;
@@ -54,9 +55,6 @@ export interface SparqlLanguageServer {
 
 const REQUEST_TIMEOUT_MS = 5000;
 const DIAGNOSTICS_DEBOUNCE_MS = 300;
-
-/** The formatting options sent to the server, both for documents and for {@link formatText}. */
-const FORMAT_OPTIONS = {tabSize: 2, insertSpaces: true};
 
 // LSP CompletionItemKind (1-indexed) -> Monaco CompletionItemKind. The two
 // enumerations list the same kinds in different orders, so they have to be
@@ -126,19 +124,6 @@ function toLspPosition(position: monaco.IPosition): Position {
     return {line: position.lineNumber - 1, character: position.column - 1};
 }
 
-/**
- * The range covering all of `text`. qlue-ls synchronises incrementally, and
- * replacing that range is the simplest correct change to send for a document
- * that is replaced wholesale.
- */
-function wholeDocumentRange(text: string): Range {
-    const lines = text.split('\n');
-    return {
-        start: {line: 0, character: 0},
-        end: {line: lines.length - 1, character: lines[lines.length - 1].length},
-    };
-}
-
 /** The text of an LSP string-or-markup value. */
 function textOf(content: string | { value: string }): string {
     return typeof content === 'string' ? content : content.value;
@@ -147,29 +132,6 @@ function textOf(content: string | { value: string }): string {
 /** The plain text of `contents`, whichever of the three LSP shapes it has. */
 function hoverText(contents: Hover['contents']): string[] {
     return (Array.isArray(contents) ? contents : [contents]).map(textOf);
-}
-
-/**
- * Apply LSP text edits to a string. The server answers a formatting request
- * with edits, and {@link LanguageServerConnection.formatText} formats text that
- * is not in a model, so Monaco cannot apply them.
- */
-function applyTextEdits(text: string, edits: TextEdit[]): string {
-    // An edit's range refers to the original text, so applying them back to
-    // front keeps the earlier offsets valid.
-    const lineStarts = [0];
-    for (let index = 0; index < text.length; index++) {
-        if (text[index] === '\n') lineStarts.push(index + 1);
-    }
-    const offsetOf = (position: Position) =>
-        Math.min((lineStarts[position.line] ?? text.length) + position.character, text.length);
-
-    return [...edits]
-        .sort((a, b) => offsetOf(b.range.start) - offsetOf(a.range.start))
-        .reduce(
-            (result, edit) => result.slice(0, offsetOf(edit.range.start)) + edit.newText + result.slice(offsetOf(edit.range.end)),
-            text,
-        );
 }
 
 /**
@@ -216,11 +178,6 @@ class LanguageServerConnection {
     private nextRequestId = 0;
     private documentVersion = 0;
     private previousText = '';
-    /** The scratch document {@link formatText} formats text in. */
-    private scratchVersion = 0;
-    private scratchText = '';
-    /** Serialises the calls to {@link formatText}, which share that document. */
-    private formatting: Promise<string> = Promise.resolve('');
     /** The language server has answered the initialize handshake. */
     private ready = false;
     private disposed = false;
@@ -270,48 +227,22 @@ class LanguageServerConnection {
     }
 
     /**
-     * Ask the language server to format `text`, which is not one of the open
-     * documents — so it is put into a scratch document kept for exactly this,
-     * and the resulting edits are applied here. Going through the server
-     * (rather than qlue-ls' `format_raw`) is what makes the formatting settings
-     * sent in {@link initialize} apply to generated queries too.
+     * Format `text`, which is not one of the open documents — qlue-ls' formatter
+     * is a plain function next to the language server, so it needs no document
+     * at all (see `sparqlLs.worker.ts`).
      *
      * Returns `text` unchanged while the server is still starting up, rather
      * than making the caller wait for it.
      */
-    formatText(text: string): Promise<string> {
+    async formatText(text: string): Promise<string> {
         // Formatting a blank query would turn it into a stray newline, which
         // reads as "there is a query" everywhere the emptiness is checked.
-        if (!this.ready || !text.trim()) return Promise.resolve(text);
+        if (!this.ready || !text.trim()) return text;
 
-        // There is one scratch document, so overlapping calls would each
-        // overwrite the text the other is having formatted.
-        this.formatting = this.formatting.then(() => this.formatOnce(text));
-        return this.formatting;
-    }
-
-    private async formatOnce(text: string): Promise<string> {
-        const uri = `${this.uri}.format`;
-
-        // qlue-ls does not support `textDocument/didClose`, so the scratch
-        // document is opened once and then overwritten, rather than a new one
-        // being opened per formatted query.
-        this.scratchVersion++;
-        if (this.scratchVersion === 1) {
-            this.notify('textDocument/didOpen', {textDocument: {uri, languageId: 'sparql', version: 1, text}});
-        } else {
-            this.notify('textDocument/didChange', {
-                textDocument: {uri, version: this.scratchVersion},
-                contentChanges: [{range: wholeDocumentRange(this.scratchText), text}],
-            });
-        }
-        this.scratchText = text;
-
-        const edits = await this.request<TextEdit[]>('textDocument/formatting', {
-            textDocument: {uri},
-            options: FORMAT_OPTIONS,
-        });
-        return Array.isArray(edits) ? applyTextEdits(text, edits) : text;
+        const formatted = await this.awaitReply<string>('format', id => ({type: 'format', id, text}));
+        // The formatter terminates its output with a newline; the editor would
+        // show that as a trailing empty line.
+        return formatted?.replace(/\n$/, '') ?? text;
     }
 
     /**
@@ -320,12 +251,21 @@ class LanguageServerConnection {
      * and therefore goes through {@link request}.
      */
     private sendRequest<T>(method: string, params: unknown): Promise<T | null> {
+        return this.awaitReply<T>(method, id => ({jsonrpc: '2.0', id, method, params}));
+    }
+
+    /**
+     * Post a message built with a fresh request id and resolve with whatever
+     * the worker sends back under that id — `null` if it does not answer in
+     * time. `label` names the request in that warning.
+     */
+    private awaitReply<T>(label: string, message: (id: number) => unknown): Promise<T | null> {
         if (this.disposed) return Promise.resolve(null);
         return new Promise(resolve => {
             const id = ++this.nextRequestId;
             const timeout = setTimeout(() => {
                 if (this.pending.delete(id)) {
-                    console.warn(`qlue-ls: no response to "${method}" within ${REQUEST_TIMEOUT_MS}ms`);
+                    console.warn(`qlue-ls: no response to "${label}" within ${REQUEST_TIMEOUT_MS}ms`);
                     resolve(null);
                 }
             }, REQUEST_TIMEOUT_MS);
@@ -336,7 +276,7 @@ class LanguageServerConnection {
                     resolve(value);
                 },
             });
-            this.send({jsonrpc: '2.0', id, method, params});
+            this.send(message(id));
         });
     }
 
@@ -367,6 +307,14 @@ class LanguageServerConnection {
             return;
         }
 
+        if (message.type === 'formatted') {
+            const callback = this.pending.get(message.id);
+            if (!callback) return;
+            this.pending.delete(message.id);
+            callback.settle(message.text);
+            return;
+        }
+
         if ('id' in message && !('method' in message)) {
             const callback = this.pending.get(message.id);
             if (!callback) return;
@@ -376,8 +324,7 @@ class LanguageServerConnection {
             return;
         }
 
-        // The throwaway documents of `formatText` get diagnostics too; only the
-        // ones for the edited model may become markers.
+        // Only diagnostics for the edited model may become markers.
         if (message.method === 'textDocument/publishDiagnostics' && message.params?.uri === this.uri) {
             this.setDiagnostics(message.params?.diagnostics ?? []);
         }
@@ -417,13 +364,12 @@ class LanguageServerConnection {
         this.ready = true;
         verifySemanticTokenLegend(response?.capabilities?.semanticTokensProvider?.legend);
 
+        // NOTE: formatting is deliberately left unconfigured. qlue-ls ignores
+        // the options an LSP formatting request carries and formats by its own
+        // settings, which `format_raw` — the formatter behind `formatText` —
+        // cannot be given. Overriding them here would make generated queries
+        // format differently from typed ones.
         this.notify('qlueLs/changeSettings', {
-            format: {
-                alignPredicates: true,
-                capitalizeKeywords: true,
-                insertSpaces: FORMAT_OPTIONS.insertSpaces,
-                tabSize: FORMAT_OPTIONS.tabSize,
-            },
             completion: {
                 resultSizeLimit: 50,
                 timeoutMs: 3000,
@@ -471,9 +417,12 @@ class LanguageServerConnection {
         if (text === this.previousText) return;
 
         this.documentVersion++;
+        // A change without a range replaces the whole document, which is what
+        // every change here is: the model is rewritten by the graph round trip
+        // as often as it is typed in.
         this.notify('textDocument/didChange', {
             textDocument: {uri: this.uri, version: this.documentVersion},
-            contentChanges: [{range: wholeDocumentRange(this.previousText), text}],
+            contentChanges: [{text}],
         });
         this.previousText = text;
 
