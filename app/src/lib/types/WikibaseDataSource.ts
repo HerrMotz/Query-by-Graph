@@ -10,6 +10,12 @@ export interface WikibaseDataSource {
     },
     itemPrefix: PrefixType,
     queryService: string,
+    /**
+     * The SPARQL endpoint of the query service, which is not necessarily the
+     * query service UI under {@link queryService}. Optional, because data
+     * sources added by the user are read back from localStorage without it.
+     */
+    sparqlEndpoint?: string,
 }
 
 export type WikiDataEntity = {

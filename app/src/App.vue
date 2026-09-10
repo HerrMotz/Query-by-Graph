@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {onMounted, ref, shallowRef} from 'vue';
+import {onMounted, onUnmounted, ref, shallowRef, watch} from 'vue';
 import {createEditor} from "./lib/rete/editor.ts";
 import {ClassicPreset} from 'rete';
 
 import {query_to_vqg_wasm, vqg_to_query_wasm} from "../pkg";
 
 import {VueMonacoEditor} from '@guolao/vue-monaco-editor'
-import * as monaco from "monaco-editor"
+import type * as monaco from "./lib/monaco/monaco.ts"
 
 import Button from "./components/Button.vue";
 import ConnectionInterfaceType from "./lib/types/ConnectionInterfaceType.ts";
@@ -17,42 +17,47 @@ import {selectedDataSource, dataSources, setSelectedDataSource} from './store.ts
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {debounce} from "./lib/utils";
 import DataSourcesPopover from "./components/DataSourcesPopover.vue";
+import {attachSparqlLanguageServer, SparqlLanguageServer} from "./lib/monaco/sparqlLanguageServer.ts";
+import {backendFromDataSource} from "./lib/monaco/sparqlBackend.ts";
 
-monaco.editor.defineTheme('custom-theme', {
-  base: 'vs', // Use 'vs-light' as the base theme
-  inherit: false, // Inherit other colors and styles from 'vs-light'
-  rules: [], // Leave empty to inherit syntax highlighting from 'vs-light'
-  colors: {
-    "editor.background": "#ffffff00", // Fully transparent background
-    "editor.foreground": "#BDAE9D",
-    "editor.selectionBackground": "#e9ffc3",
-    "editor.lineHighlightBackground": "#3A312C",
-    "editorCursor.foreground": "#889AFF",
-    "editorWhitespace.foreground": "#BFBFBF",
-    "editorIndentGuide.background": "#5e81ce52",
-    "editor.selectionHighlightBorder": "#122d42",
-    'editor.inactiveSelectionBackground': '#ff000066',
-    'editor.selectionHighlight': '#00ff0066',
+const languageServer = shallowRef<SparqlLanguageServer | null>(null);
+
+const handleMount = (codeEditor: monaco.editor.IStandaloneCodeEditor) => {
+  // The editor may be mounted again (hot reload, or a re-created editor); the
+  // previous server would otherwise keep its worker running for nobody.
+  languageServer.value?.dispose();
+
+  // Qlue-ls provides completion, hover, diagnostics and formatting for the
+  // query editor. It runs entirely in a web worker, so a failure to start it
+  // must not take the editor down with it.
+  try {
+    languageServer.value = attachSparqlLanguageServer(codeEditor, backendFromDataSource(selectedDataSource.value));
+  } catch (error) {
+    console.error("Could not start the SPARQL language server", error);
+    languageServer.value = null;
   }
+};
+
+// Let the language server complete against the Wikibase that is currently
+// selected — and against none at all when that one has no SPARQL endpoint,
+// rather than against the one selected before.
+watch(selectedDataSource, (dataSource) => {
+  languageServer.value?.setBackend(backendFromDataSource(dataSource));
 });
 
-const codeEditorRef = shallowRef();
-const handleMount = (codeEditor: any) => {
-  codeEditorRef.value = codeEditor;
-
-  // Set the theme explicitly on mount
-  monaco.editor.setTheme('custom-theme');
-};
+onUnmounted(() => {
+  languageServer.value?.dispose();
+  languageServer.value = null;
+});
 
 const MONACO_EDITOR_OPTIONS = {
   automaticLayout: true,
+  // The language server provides on-type formatting; it has no range
+  // formatting, which is what `formatOnPaste` would need.
   formatOnType: true,
-  formatOnPaste: true,
-}
-
-// your action
-function formatCode() {
-  codeEditorRef.value?.getAction('editor.action.formatDocument').run()
+  // Monaco's standalone themes disable semantic highlighting, and it is the
+  // only source of syntax colours here — see `sparqlLanguageServer.ts`.
+  'semanticHighlighting.enabled': true,
 }
 
 interface Editor {
@@ -127,10 +132,17 @@ onMounted(async () => {
     editor.value = await createEditor(rete.value);
     editor.value?.setVueCallback((context) => { // add pipe to parent scope
       if (triggerEvents.includes(context.type)) {
-        setTimeout(() => {
+        setTimeout(async () => {
           const connections = editor.value!.exportConnections()
-          code.value = vqg_to_query_wasm(JSON.stringify(connections), true, false);
-          formatCode();
+          // The label service uses wikibase: and bd:, so the query has to
+          // declare them — otherwise the language server (rightly) reports
+          // undeclared prefixes on a query we generated ourselves.
+          const query = vqg_to_query_wasm(JSON.stringify(connections), true, true);
+          // Format the query before it reaches the editor. Formatting the model
+          // afterwards would edit it behind the round trip's back: the change
+          // event would re-import the graph, which exports an unformatted query
+          // again, and graph -> query -> graph would never come to rest.
+          code.value = await (languageServer.value?.formatText(query) ?? query);
         }, 10);
       }
 
