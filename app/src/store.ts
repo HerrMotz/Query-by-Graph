@@ -1,11 +1,13 @@
 import {Ref, ref} from 'vue';
 import {WikibaseDataSource} from "./lib/types/WikibaseDataSource.ts";
 import {factGridDataSource, mimoDataSource, wikiDataDataSource} from "./lib/constants";
+import {zebratlasDataSource} from "./lib/constants/zebratlas.ts";
 
 export const defaultDataSources = [
     wikiDataDataSource,
     factGridDataSource,
-    mimoDataSource
+    mimoDataSource,
+    ...(import.meta.env.VITE_ENABLE_ZEBRATLAS === 'true' ? [zebratlasDataSource] : [])
 ];
 
 /**

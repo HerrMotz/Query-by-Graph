@@ -38,7 +38,7 @@ class WikibaseDataService {
     const languages = this.languages;
 
     // check if it is a variable or a literal value — neither needs an API call
-    if (itemId.startsWith('?') || itemId.startsWith('"')) {
+    if (this.dataSource.kind === 'sparql' || itemId.startsWith('?') || itemId.startsWith('"')) {
       return null;
     }
 

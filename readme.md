@@ -10,6 +10,12 @@ The motivation for this work came from [Olaf Simons](https://blog.factgrid.de/ar
 - [Sparnatural](https://github.com/sparna-git/Sparnatural)
 - [RDF Explorer](https://rdfexplorer.org/)
 
+## Optional Zebratlas source
+
+Query by Graph can also build queries for [Zebratlas](https://zebratlas.org)'s
+read-only rare-disease RDF graph. Enable it with `VITE_ENABLE_ZEBRATLAS=true`;
+the Wikibase defaults remain available. See the [setup and example query](docs/examples/zebratlas.md).
+
 ## Language Features and JSON Schema
 For detailed documentation on supported language features and the VQG JSON schema, see [vql.md](app/vql.md).
 
