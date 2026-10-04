@@ -2,8 +2,6 @@ import {PrefixType} from "./EntityType.ts";
 
 export interface WikibaseDataSource {
     kind?: 'sparql';
-    prefixMap?: Record<string, string>;
-    vocabulary?: {id: string, label: string, type: 'item' | 'property'}[];
     name: string;
     uri: string,
     preferredLanguages: string[],

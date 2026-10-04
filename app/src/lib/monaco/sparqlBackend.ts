@@ -1,6 +1,5 @@
 import type {WikibaseDataSource} from "../types/WikibaseDataSource.ts";
 import type {SparqlBackend} from "./sparqlLanguageServer.ts";
-import {rdfEntity, rdfPrefixes} from "../utils/rdfVocabulary.ts";
 
 /**
  * Describe the selected data source to the SPARQL language server, so that it
@@ -14,32 +13,10 @@ export function backendFromDataSource(dataSource: WikibaseDataSource): SparqlBac
     const url = sparqlEndpointOf(dataSource);
     if (!url) return undefined;
 
-    if (dataSource.kind === 'sparql') {
-        const vocabularyQuery = (type: 'item' | 'property') => {
-            const rows = (dataSource.vocabulary ?? []).filter(entry => entry.type === type).map(entry => {
-                const entity = rdfEntity(dataSource, entry.id)!;
-                return `(<${entity.prefix.iri}${entity.id}> ${JSON.stringify(entry.label)} "")`;
-            }).join('\n');
-            return `SELECT ?qls_entity ?qls_label ?qls_alias WHERE {
-  VALUES (?qls_entity ?qls_label ?qls_alias) { ${rows} }
-} LIMIT {{ limit }}`;
-        };
-        const items = vocabularyQuery('item');
-        const properties = vocabularyQuery('property');
-        return {
-            name: dataSource.name, url, requestMethod: 'GET', prefixMap: rdfPrefixes(dataSource),
-            queries: {
-                subjectCompletion: items,
-                objectCompletionContextSensitive: items,
-                objectCompletionContextInsensitive: items,
-                valuesCompletionContextSensitive: items,
-                valuesCompletionContextInsensitive: items,
-                predicateCompletionContextSensitive: properties,
-                predicateCompletionContextInsensitive: properties,
-                hover: 'SELECT ?qls_label ?qls_alias WHERE { {{ entity }} <http://www.w3.org/2000/01/rdf-schema#label> ?qls_label } LIMIT 1'
-            }
-        };
-    }
+    if (dataSource.kind === 'sparql') return {
+        name: dataSource.name, url, requestMethod: 'GET',
+        prefixMap: {[dataSource.itemPrefix.abbreviation]: dataSource.itemPrefix.iri, [dataSource.propertyPrefix.abbreviation]: dataSource.propertyPrefix.iri}
+    };
 
     const prefixMap: Record<string, string> = {};
     for (const prefix of [dataSource.itemPrefix, dataSource.propertyPrefix]) {

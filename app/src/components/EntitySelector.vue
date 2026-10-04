@@ -41,7 +41,6 @@ import {noEntity, variableEntity, variableEntityConstructor, literalEntityConstr
 import {selectedDataSource} from "../store.ts";
 import {debounce} from "../lib/utils";
 import {getEntityStyles} from "../lib/utils/entityStyles.ts";
-import {searchRdfVocabulary} from "../lib/utils/rdfVocabulary.ts";
 
 const queriedEntities = ref([
   noEntity,
@@ -73,13 +72,6 @@ function queryHelper(query: string) {
     const rawValue = literalMatch[1];
     const literalEntity = literalEntityConstructor(rawValue);
     queriedEntities.value = [literalEntity];
-    return;
-  }
-
-  if (selectedDataSource.value.kind === 'sparql') {
-    queriedEntities.value = searchRdfVocabulary(selectedDataSource.value, query, props.type).concat([
-      variableEntityConstructor(query.startsWith('?') ? query.slice(1) : query)
-    ]);
     return;
   }
 

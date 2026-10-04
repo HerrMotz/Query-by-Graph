@@ -19,7 +19,6 @@ import {debounce} from "./lib/utils";
 import DataSourcesPopover from "./components/DataSourcesPopover.vue";
 import {attachSparqlLanguageServer, SparqlLanguageServer} from "./lib/monaco/sparqlLanguageServer.ts";
 import {backendFromDataSource} from "./lib/monaco/sparqlBackend.ts";
-import {queryUrl} from "./lib/utils/rdfVocabulary.ts";
 
 const languageServer = shallowRef<SparqlLanguageServer | null>(null);
 
@@ -462,7 +461,7 @@ const gotoLink = (url?: string) => {
             </span>
             <span class="flex items-center space-x-2">
               <ClipboardButton @click="copyToClipboard();"/>
-              <QueryButton @click="gotoLink(queryUrl(selectedDataSource, code));"/>
+              <QueryButton @click="gotoLink(selectedDataSource.queryService+(selectedDataSource.kind === 'sparql' ? '?query=' : '#')+encodeURIComponent(code));"/>
             </span>
           </h2>
           <span>

@@ -16,7 +16,6 @@ import {noEntity, variableEntityConstructor} from "./constants.ts";
 import {dataSources} from "../../store.ts";
 import {LanguageTaggedLiteral, WikibaseDataSource} from "../types/WikibaseDataSource.ts";
 import WikibaseDataService from "../wikidata/WikibaseDataService.ts";
-import {rdfEntity} from "../utils/rdfVocabulary.ts";
 
 function exportConnectionsHelper(editor:any) {
     return editor.getConnections().map((connection:any) => {
@@ -56,17 +55,6 @@ function convertConnectionsToPrefixedRepresentation(connections: Array<Connectio
             // check if it is a literal value (e.g. "42"^^xsd:integer) — return as-is
             if (entity.id.startsWith('"') || entity.isLiteral) {
                 return entity;
-            }
-
-            const rdfSource = dataSources.value.find(s => s.kind === 'sparql' &&
-                [s.itemPrefix.iri, s.propertyPrefix.iri, ...Object.values(s.prefixMap ?? {})]
-                    .some(iri => entity.id.replace(/^</, '').startsWith(iri)));
-            if (rdfSource) {
-                const term = rdfSource.vocabulary?.find(entry => {
-                    const candidate = rdfEntity(rdfSource, entry.id);
-                    return candidate && `<${candidate.prefix.iri}${candidate.id}>` === entity.id;
-                });
-                return {...entity, ...rdfEntity(rdfSource, entity.id, term?.label ?? entity.label)};
             }
 
 

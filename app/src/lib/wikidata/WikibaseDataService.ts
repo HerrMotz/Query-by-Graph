@@ -231,6 +231,28 @@ class WikibaseDataService {
     };
 
     try {
+      if (this.dataSource.kind === 'sparql') {
+        const prefix = type === 'property' ? this.dataSource.propertyPrefix : this.dataSource.itemPrefix;
+        const pattern = type === 'property'
+          ? '?s ?entity ?o . OPTIONAL { ?entity <http://www.w3.org/2000/01/rdf-schema#label> ?label }'
+          : '?entity <http://www.w3.org/2000/01/rdf-schema#label> ?label .';
+        const query = `SELECT DISTINCT ?entity ?name WHERE {
+          ${pattern}
+          FILTER(isIRI(?entity))
+          BIND(COALESCE(?label, REPLACE(STR(?entity), "^.*[/#]", "")) AS ?name)
+          FILTER(CONTAINS(LCASE(STR(?name)), LCASE(${JSON.stringify(search)})))
+        } LIMIT 12`;
+        const response = await this.api.get('', {
+          params: {query, origin: undefined}, headers: {Accept: 'application/sparql-results+json'}
+        });
+        return {
+          errors: [], searchinfo: {}, success: 1,
+          search: response.data.results.bindings.map((row: {entity: {value: string}, name: {value: string}}) => ({
+            id: row.entity.value.startsWith(prefix.iri) ? row.entity.value.slice(prefix.iri.length) : `<${row.entity.value}>`,
+            display: {label: {value: row.name.value}, description: {value: ''}}
+          }))
+        };
+      }
       const response = await this.api.get<WikiDataSearchApiResponse>('', { params });
       console.log("Api response for query: ", response.data);
       return response.data;
