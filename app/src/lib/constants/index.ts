@@ -63,4 +63,15 @@ const noDataSource: WikibaseDataSource = {
     queryService: "",
 }
 
-export {wikiDataDataSource,factGridDataSource,mimoDataSource,noDataSource}
+const zebratlasDataSource: WikibaseDataSource = {
+    name: "Zebratlas",
+    kind: 'sparql',
+    uri: "https://zebratlas.org/sparql",
+    preferredLanguages: ['en'],
+    itemPrefix: {iri: "https://w3id.org/rare-disease-atlas/id/", abbreviation: "raid"},
+    propertyPrefix: {iri: "https://w3id.org/rare-disease-atlas/vocab#", abbreviation: "ra"},
+    queryService: "https://zebratlas.org/sparql",
+    sparqlEndpoint: "https://zebratlas.org/sparql",
+}
+
+export {wikiDataDataSource,factGridDataSource,mimoDataSource,noDataSource,zebratlasDataSource}

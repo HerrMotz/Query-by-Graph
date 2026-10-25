@@ -13,6 +13,11 @@ export function backendFromDataSource(dataSource: WikibaseDataSource): SparqlBac
     const url = sparqlEndpointOf(dataSource);
     if (!url) return undefined;
 
+    if (dataSource.kind === 'sparql') return {
+        name: dataSource.name, url, requestMethod: 'GET',
+        prefixMap: {[dataSource.itemPrefix.abbreviation]: dataSource.itemPrefix.iri, [dataSource.propertyPrefix.abbreviation]: dataSource.propertyPrefix.iri}
+    };
+
     const prefixMap: Record<string, string> = {};
     for (const prefix of [dataSource.itemPrefix, dataSource.propertyPrefix]) {
         if (prefix?.abbreviation && prefix?.iri) prefixMap[prefix.abbreviation] = prefix.iri;

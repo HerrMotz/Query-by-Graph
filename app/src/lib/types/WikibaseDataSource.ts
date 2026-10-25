@@ -1,6 +1,7 @@
 import {PrefixType} from "./EntityType.ts";
 
 export interface WikibaseDataSource {
+    kind?: 'sparql';
     name: string;
     uri: string,
     preferredLanguages: string[],

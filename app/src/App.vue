@@ -137,7 +137,8 @@ onMounted(async () => {
           // The label service uses wikibase: and bd:, so the query has to
           // declare them — otherwise the language server (rightly) reports
           // undeclared prefixes on a query we generated ourselves.
-          const query = vqg_to_query_wasm(JSON.stringify(connections), true, true);
+          const useLabelService = selectedDataSource.value.kind !== 'sparql';
+          const query = vqg_to_query_wasm(JSON.stringify(connections), useLabelService, useLabelService);
           // Format the query before it reaches the editor. Formatting the model
           // afterwards would edit it behind the round trip's back: the change
           // event would re-import the graph, which exports an unformatted query
@@ -460,7 +461,7 @@ const gotoLink = (url?: string) => {
             </span>
             <span class="flex items-center space-x-2">
               <ClipboardButton @click="copyToClipboard();"/>
-              <QueryButton @click="gotoLink(selectedDataSource.queryService+'#'+encodeURIComponent(code));"/>
+              <QueryButton @click="gotoLink(selectedDataSource.queryService+(selectedDataSource.kind === 'sparql' ? '?query=' : '#')+encodeURIComponent(code));"/>
             </span>
           </h2>
           <span>
